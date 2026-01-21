@@ -14,7 +14,7 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
 
     return {
       success: true,
-      ...result,
+      data: result,
     };
   });
 
