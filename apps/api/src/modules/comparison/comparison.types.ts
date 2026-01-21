@@ -9,10 +9,19 @@ export interface ExtractedCertificateData {
   agentName?: string;
   agentLicense?: string;
 
-  // Insured party
+  // Certificate requester (מבקש האישור) - the entity requesting the certificate
+  certificateRequester?: {
+    name?: string;
+    id?: string; // Company ID (ח.פ)
+  };
+
+  // Insured party (המבוטח)
   insuredName?: string;
   insuredId?: string; // Company ID (ח.פ)
   insuredAddress?: string;
+
+  // Service codes from Israeli standard (קוד השירות)
+  serviceCodes?: string[];
 
   // Policies
   policies: ExtractedPolicy[];
@@ -42,8 +51,12 @@ export interface ExtractedPolicy {
   // Dates
   effectiveDate?: string;
   expirationDate?: string;
+  retroactiveDate?: string; // תאריך רטרו - for claims-made policies
 
-  // Endorsements
+  // Endorsement codes (Israeli standard 3-digit codes like 309, 318, 321)
+  endorsementCodes?: string[];
+
+  // Endorsements (text descriptions)
   endorsements?: string[];
 
   // Special conditions
@@ -83,7 +96,10 @@ export interface PolicyRequirement {
   minimumLimit: number;
   maximumDeductible?: number;
 
-  // Required endorsements
+  // Required endorsement codes (Israeli standard 3-digit codes like 309, 318, 321)
+  requiredEndorsementCodes?: string[];
+
+  // Required endorsements (text descriptions, for backwards compatibility)
   requiredEndorsements?: string[];
 
   // Additional insured requirements
