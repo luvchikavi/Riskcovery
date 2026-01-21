@@ -1,10 +1,9 @@
 'use client';
 
-import { type ReactNode, useMemo } from 'react';
-
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
+import { type ReactNode, useMemo } from 'react';
 import { prefixer } from 'stylis';
 import rtlPlugin from 'stylis-plugin-rtl';
 
