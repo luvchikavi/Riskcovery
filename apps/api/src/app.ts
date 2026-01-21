@@ -6,6 +6,7 @@ import Fastify from 'fastify';
 import { env } from './config/env.js';
 import { healthRoutes } from './routes/health.js';
 import { rfqRoutes } from './modules/rfq/rfq.routes.js';
+import { comparisonRoutes } from './modules/comparison/comparison.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -44,6 +45,7 @@ export async function buildApp() {
   // Routes
   await app.register(healthRoutes, { prefix: '/api/v1' });
   await app.register(rfqRoutes, { prefix: '/api/v1/rfq' });
+  await app.register(comparisonRoutes, { prefix: '/api/v1/comparison' });
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {

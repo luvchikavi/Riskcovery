@@ -339,6 +339,80 @@ model InsuranceKnowledgeBase {
   @@map("insurance_knowledge_base")
 }
 
+// ==================== COMPARISON MODULE ====================
+
+model ComparisonDocument {
+  id            String    @id @default(uuid())
+  fileName      String    @map("file_name")
+  originalName  String    @map("original_name")
+  mimeType      String    @map("mime_type")
+  size          Int
+  s3Key         String    @map("s3_key")
+  status        String    @default("uploaded")
+  extractedData Json?     @map("extracted_data")
+  uploadedAt    DateTime  @default(now()) @map("uploaded_at")
+  processedAt   DateTime? @map("processed_at")
+  vendorId      String?   @map("vendor_id")
+  clientId      String?   @map("client_id")
+
+  comparisons ComparisonAnalysis[]
+
+  @@map("comparison_documents")
+}
+
+model ComparisonTemplate {
+  id            String   @id @default(uuid())
+  name          String
+  nameHe        String   @map("name_he")
+  description   String?
+  descriptionHe String?  @map("description_he")
+  sector        String?
+  contractType  String?  @map("contract_type")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  requirements ComparisonRequirement[]
+  analyses     ComparisonAnalysis[]
+
+  @@map("comparison_templates")
+}
+
+model ComparisonRequirement {
+  id                       String   @id @default(uuid())
+  templateId               String   @map("template_id")
+  policyType               String   @map("policy_type")
+  policyTypeHe             String   @map("policy_type_he")
+  minimumLimit             Decimal  @map("minimum_limit")
+  maximumDeductible        Decimal? @map("maximum_deductible")
+  requiredEndorsements     Json     @default("[]") @map("required_endorsements")
+  requireAdditionalInsured Boolean  @default(false) @map("require_additional_insured")
+  requireWaiverSubrogation Boolean  @default(false) @map("require_waiver_subrogation")
+  minimumValidityDays      Int?     @map("minimum_validity_days")
+  isMandatory              Boolean  @default(true) @map("is_mandatory")
+  notes                    String?
+  notesHe                  String?  @map("notes_he")
+
+  template ComparisonTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("comparison_requirements")
+}
+
+model ComparisonAnalysis {
+  id              String   @id @default(uuid())
+  documentId      String   @map("document_id")
+  templateId      String   @map("template_id")
+  overallStatus   String   @map("overall_status")
+  complianceScore Int      @map("compliance_score")
+  results         Json
+  analyzedAt      DateTime @default(now()) @map("analyzed_at")
+
+  document ComparisonDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  template ComparisonTemplate  @relation(fields: [templateId], references: [id])
+
+  @@map("comparison_analyses")
+}
+
 // ==================== NOTIFICATIONS ====================
 
 model Notification {

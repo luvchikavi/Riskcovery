@@ -283,3 +283,185 @@ export interface InsuranceRequirement {
   descriptionHe?: string;
   commonEndorsements: string[];
 }
+
+// Comparison Module Types
+export interface ComparisonDocument {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  s3Key: string;
+  status: 'uploaded' | 'processing' | 'processed' | 'failed';
+  extractedData?: ExtractedCertificateData;
+  uploadedAt: string;
+  processedAt?: string;
+  vendorId?: string;
+  clientId?: string;
+}
+
+export interface ExtractedCertificateData {
+  certificateNumber?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  insurerName?: string;
+  insurerNameHe?: string;
+  agentName?: string;
+  insuredName?: string;
+  insuredId?: string;
+  insuredAddress?: string;
+  policies: ExtractedPolicy[];
+  additionalInsured?: {
+    name?: string;
+    isNamedAsAdditional: boolean;
+    waiverOfSubrogation: boolean;
+  };
+  rawText?: string;
+  confidence?: number;
+}
+
+export interface ExtractedPolicy {
+  policyType: string;
+  policyTypeHe: string;
+  policyNumber?: string;
+  coverageLimit?: number;
+  deductible?: number;
+  effectiveDate?: string;
+  expirationDate?: string;
+  endorsements?: string[];
+  confidence?: number;
+}
+
+export interface ComparisonTemplate {
+  id: string;
+  name: string;
+  nameHe: string;
+  description?: string;
+  descriptionHe?: string;
+  sector?: string;
+  contractType?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  requirements: ComparisonRequirement[];
+  _count?: {
+    analyses: number;
+  };
+}
+
+export interface ComparisonRequirement {
+  id: string;
+  templateId: string;
+  policyType: string;
+  policyTypeHe: string;
+  minimumLimit: number;
+  maximumDeductible?: number;
+  requiredEndorsements: string[];
+  requireAdditionalInsured: boolean;
+  requireWaiverSubrogation: boolean;
+  minimumValidityDays?: number;
+  isMandatory: boolean;
+  notes?: string;
+  notesHe?: string;
+}
+
+export interface ComparisonAnalysis {
+  id: string;
+  certificateId: string;
+  requirementTemplateId: string;
+  overallStatus: 'compliant' | 'partial' | 'non_compliant' | 'missing' | 'expired';
+  complianceScore: number;
+  policyResults: PolicyComparisonResult[];
+  totalRequirements: number;
+  compliantCount: number;
+  partialCount: number;
+  nonCompliantCount: number;
+  missingCount: number;
+  analyzedAt: string;
+}
+
+export interface PolicyComparisonResult {
+  requirementId: string;
+  policyType: string;
+  policyTypeHe: string;
+  status: 'compliant' | 'partial' | 'non_compliant' | 'missing' | 'expired';
+  foundPolicy?: ExtractedPolicy;
+  gaps: ComplianceGap[];
+  limitCompliant: boolean;
+  deductibleCompliant?: boolean;
+  endorsementsCompliant?: boolean;
+  validityCompliant?: boolean;
+  additionalInsuredCompliant?: boolean;
+}
+
+export interface ComplianceGap {
+  type: string;
+  severity: 'critical' | 'major' | 'minor';
+  description: string;
+  descriptionHe: string;
+  required?: string | number;
+  found?: string | number;
+  recommendation: string;
+  recommendationHe: string;
+}
+
+// Comparison API functions
+export const comparisonApi = {
+  // Documents
+  documents: {
+    list: (params?: { vendorId?: string; clientId?: string; status?: string }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.vendorId) searchParams.set('vendorId', params.vendorId);
+      if (params?.clientId) searchParams.set('clientId', params.clientId);
+      if (params?.status) searchParams.set('status', params.status);
+      const query = searchParams.toString();
+      return api.get<ComparisonDocument[]>(`/comparison/documents${query ? `?${query}` : ''}`);
+    },
+    get: (id: string) => api.get<ComparisonDocument>(`/comparison/documents/${id}`),
+    upload: (data: {
+      fileName: string;
+      originalName: string;
+      mimeType: string;
+      size: number;
+      content: string;
+      vendorId?: string;
+      clientId?: string;
+    }) => api.post<ComparisonDocument>('/comparison/documents', data),
+    process: (id: string) => api.post<ComparisonDocument>(`/comparison/documents/${id}/process`),
+    delete: (id: string) => api.delete(`/comparison/documents/${id}`),
+  },
+
+  // Templates
+  templates: {
+    list: (params?: { sector?: string; isActive?: boolean }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.sector) searchParams.set('sector', params.sector);
+      if (params?.isActive !== undefined) searchParams.set('isActive', String(params.isActive));
+      const query = searchParams.toString();
+      return api.get<ComparisonTemplate[]>(`/comparison/templates${query ? `?${query}` : ''}`);
+    },
+    get: (id: string) => api.get<ComparisonTemplate>(`/comparison/templates/${id}`),
+    create: (data: {
+      name: string;
+      nameHe: string;
+      description?: string;
+      descriptionHe?: string;
+      sector?: string;
+      contractType?: string;
+      requirements: Omit<ComparisonRequirement, 'id' | 'templateId'>[];
+    }) => api.post<ComparisonTemplate>('/comparison/templates', data),
+    update: (id: string, data: Partial<ComparisonTemplate>) =>
+      api.patch<ComparisonTemplate>(`/comparison/templates/${id}`, data),
+    delete: (id: string) => api.delete(`/comparison/templates/${id}`),
+  },
+
+  // Analysis
+  analysis: {
+    run: (documentId: string, templateId: string) =>
+      api.post<ComparisonAnalysis>('/comparison/analyze', { documentId, templateId }),
+    get: (id: string) => api.get<ComparisonAnalysis>(`/comparison/analyses/${id}`),
+    getForDocument: (documentId: string) =>
+      api.get<ComparisonAnalysis[]>(`/comparison/documents/${documentId}/analyses`),
+    delete: (id: string) => api.delete(`/comparison/analyses/${id}`),
+  },
+};
