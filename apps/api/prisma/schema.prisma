@@ -1,0 +1,376 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== CORE ENTITIES ====================
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users                User[]
+  vendors              Vendor[]
+  requirementTemplates RequirementTemplate[]
+  rfqClients           RfqClient[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  email          String   @unique
+  name           String?
+  role           UserRole
+  phone          String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization         @relation(fields: [organizationId], references: [id])
+  verifiedDocs Document[]           @relation("VerifiedBy")
+  tasks        VerificationTask[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  COMPLIANCE_MANAGER
+  CONTRACT_MANAGER
+  REVIEWER
+  EXPERT_REVIEWER
+}
+
+model Vendor {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  email          String?
+  phone          String?
+  vendorType     String?      @map("vendor_type")
+  companyId      String?      @map("company_id")
+  status         VendorStatus @default(PENDING)
+  magicLinkToken String?      @map("magic_link_token")
+  tokenExpiresAt DateTime?    @map("token_expires_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  contracts         Contract[]
+  documents         Document[]
+  requirements      VendorRequirement[]
+  complianceResults ComplianceResult[]
+
+  @@map("vendors")
+}
+
+enum VendorStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ==================== DOCUMENTS & OCR ====================
+
+model Document {
+  id           String         @id @default(uuid())
+  vendorId     String         @map("vendor_id")
+  fileName     String         @map("file_name")
+  originalName String         @map("original_name")
+  s3Key        String         @map("s3_key")
+  fileSize     Int            @map("file_size")
+  mimeType     String         @map("mime_type")
+  status       DocumentStatus @default(UPLOADED)
+  aiConfidence Float?         @map("ai_confidence")
+  ocrProvider  String?        @map("ocr_provider")
+  ocrRawText   String?        @map("ocr_raw_text")
+  verifiedBy   String?        @map("verified_by")
+  verifiedAt   DateTime?      @map("verified_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  vendor    Vendor             @relation(fields: [vendorId], references: [id])
+  verifier  User?              @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+  coverages ExtractedCoverage[]
+  tasks     VerificationTask[]
+
+  @@map("documents")
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  AI_COMPLETE
+  REVIEW_NEEDED
+  VERIFIED
+  REJECTED
+}
+
+model ExtractedCoverage {
+  id                  String    @id @default(uuid())
+  documentId          String    @map("document_id")
+  policyType          String    @map("policy_type")
+  policyNumber        String?   @map("policy_number")
+  insurerName         String?   @map("insurer_name")
+  insuredName         String?   @map("insured_name")
+  effectiveDate       DateTime? @map("effective_date")
+  expirationDate      DateTime? @map("expiration_date")
+  limitAmount         Decimal?  @map("limit_amount")
+  currency            String    @default("ILS")
+  deductible          Decimal?
+  endorsements        Json      @default("[]")
+  additionalInsured   Boolean   @default(false) @map("additional_insured")
+  waiverOfSubrogation Boolean   @default(false) @map("waiver_of_subrogation")
+  aiConfidence        Float?    @map("ai_confidence")
+  fieldConfidences    Json?     @map("field_confidences")
+  isVerified          Boolean   @default(false) @map("is_verified")
+  verifiedAt          DateTime? @map("verified_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  document          Document           @relation(fields: [documentId], references: [id])
+  complianceResults ComplianceResult[]
+
+  @@map("extracted_coverages")
+}
+
+// ==================== REQUIREMENTS & COMPLIANCE ====================
+
+model RequirementTemplate {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  description    String?
+  vendorType     String?  @map("vendor_type")
+  isDefault      Boolean  @default(false) @map("is_default")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  requirements TemplateRequirement[]
+
+  @@map("requirement_templates")
+}
+
+model TemplateRequirement {
+  id                   String   @id @default(uuid())
+  templateId           String   @map("template_id")
+  policyType           String   @map("policy_type")
+  minLimit             Decimal? @map("min_limit")
+  currency             String   @default("ILS")
+  requiredEndorsements Json     @default("[]") @map("required_endorsements")
+  isMandatory          Boolean  @default(true) @map("is_mandatory")
+  notes                String?
+
+  template RequirementTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("template_requirements")
+}
+
+model VendorRequirement {
+  id                   String    @id @default(uuid())
+  vendorId             String    @map("vendor_id")
+  contractId           String?   @map("contract_id")
+  policyType           String    @map("policy_type")
+  minLimit             Decimal?  @map("min_limit")
+  currency             String    @default("ILS")
+  requiredEndorsements Json      @default("[]") @map("required_endorsements")
+  isMandatory          Boolean   @default(true) @map("is_mandatory")
+  notes                String?
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  vendor            Vendor             @relation(fields: [vendorId], references: [id])
+  contract          Contract?          @relation(fields: [contractId], references: [id])
+  complianceResults ComplianceResult[]
+
+  @@map("vendor_requirements")
+}
+
+model ComplianceResult {
+  id            String           @id @default(uuid())
+  vendorId      String           @map("vendor_id")
+  requirementId String           @map("requirement_id")
+  coverageId    String?          @map("coverage_id")
+  status        ComplianceStatus
+  gapDetails    Json?            @map("gap_details")
+  checkedAt     DateTime         @default(now()) @map("checked_at")
+
+  vendor      Vendor             @relation(fields: [vendorId], references: [id])
+  requirement VendorRequirement  @relation(fields: [requirementId], references: [id])
+  coverage    ExtractedCoverage? @relation(fields: [coverageId], references: [id])
+
+  @@map("compliance_results")
+}
+
+enum ComplianceStatus {
+  COMPLIANT
+  WARNING
+  NON_COMPLIANT
+  PENDING
+}
+
+// ==================== CONTRACTS ====================
+
+model Contract {
+  id             String    @id @default(uuid())
+  vendorId       String    @map("vendor_id")
+  contractNumber String?   @map("contract_number")
+  title          String?
+  startDate      DateTime? @map("start_date")
+  endDate        DateTime? @map("end_date")
+  insuranceTerms Json?     @map("insurance_terms")
+  documentUrl    String?   @map("document_url")
+  status         String    @default("active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  vendor       Vendor              @relation(fields: [vendorId], references: [id])
+  requirements VendorRequirement[]
+
+  @@map("contracts")
+}
+
+// ==================== VERIFICATION ====================
+
+model VerificationTask {
+  id          String       @id @default(uuid())
+  documentId  String       @map("document_id")
+  assignedTo  String?      @map("assigned_to")
+  priority    TaskPriority @default(MEDIUM)
+  status      TaskStatus   @default(PENDING)
+  slaDeadline DateTime?    @map("sla_deadline")
+  startedAt   DateTime?    @map("started_at")
+  completedAt DateTime?    @map("completed_at")
+  notes       String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id])
+  assignee User?    @relation(fields: [assignedTo], references: [id])
+
+  @@map("verification_tasks")
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  ESCALATED
+}
+
+// ==================== RFQ MODULE ====================
+
+model RfqClient {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  companyId      String?  @map("company_id")
+  sector         String
+  subSector      String?  @map("sub_sector")
+  employeeCount  Int?     @map("employee_count")
+  annualRevenue  Decimal? @map("annual_revenue")
+  riskProfile    Json?    @map("risk_profile")
+  contactName    String?  @map("contact_name")
+  contactEmail   String?  @map("contact_email")
+  contactPhone   String?  @map("contact_phone")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization   Organization       @relation(fields: [organizationId], references: [id])
+  questionnaires RfqQuestionnaire[]
+  documents      RfqDocument[]
+
+  @@map("rfq_clients")
+}
+
+model RfqQuestionnaire {
+  id        String   @id @default(uuid())
+  clientId  String   @map("client_id")
+  answers   Json
+  status    String   @default("draft")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client RfqClient @relation(fields: [clientId], references: [id])
+
+  @@map("rfq_questionnaires")
+}
+
+model RfqDocument {
+  id        String   @id @default(uuid())
+  clientId  String   @map("client_id")
+  fileName  String   @map("file_name")
+  s3Key     String   @map("s3_key")
+  format    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  client RfqClient @relation(fields: [clientId], references: [id])
+
+  @@map("rfq_documents")
+}
+
+model InsuranceKnowledgeBase {
+  id                 String   @id @default(uuid())
+  sector             String
+  policyType         String   @map("policy_type")
+  policyTypeHe       String   @map("policy_type_he")
+  recommendedLimit   Decimal? @map("recommended_limit")
+  isMandatory        Boolean  @default(false) @map("is_mandatory")
+  commonEndorsements Json     @default("[]") @map("common_endorsements")
+  riskFactors        Json     @default("[]") @map("risk_factors")
+  description        String?
+  descriptionHe      String?  @map("description_he")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@unique([sector, policyType])
+  @@map("insurance_knowledge_base")
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id            String   @id @default(uuid())
+  recipientId   String   @map("recipient_id")
+  recipientType String   @map("recipient_type")
+  type          String
+  title         String
+  message       String
+  data          Json?
+  isRead        Boolean  @default(false) @map("is_read")
+  sentVia       String[] @map("sent_via")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+// ==================== AUDIT ====================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  action     String
+  actorId    String?  @map("actor_id")
+  actorType  String   @map("actor_type")
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@map("audit_log")
+}
