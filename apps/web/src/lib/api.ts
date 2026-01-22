@@ -140,6 +140,8 @@ export const rfqApi = {
       api.post<QuestionnaireResponse>('/rfq/questionnaire', { clientId, answers, status: 'completed' }),
     getRecommendations: (sector: string, answers: QuestionnaireAnswers) =>
       api.post<CoverageRecommendation[]>('/rfq/questionnaire/recommendations', { sector, answers }),
+    getByClient: (clientId: string) =>
+      api.get<QuestionnaireResponse[]>(`/rfq/questionnaire/client?clientId=${clientId}`),
   },
 
   // Documents
@@ -158,6 +160,272 @@ export const rfqApi = {
     getAll: () => api.get<InsuranceRequirement[]>('/rfq/knowledge-base'),
   },
 };
+
+// Admin API functions for questionnaire management
+export const adminApi = {
+  // Templates
+  templates: {
+    list: (includeInactive = false) =>
+      api.get<QuestionnaireTemplateAdmin[]>(
+        `/rfq/admin/templates${includeInactive ? '?includeInactive=true' : ''}`
+      ),
+    get: (id: string) => api.get<QuestionnaireTemplateAdmin>(`/rfq/admin/templates/${id}`),
+    create: (data: CreateTemplateData) =>
+      api.post<QuestionnaireTemplateAdmin>('/rfq/admin/templates', data),
+    update: (id: string, data: UpdateTemplateData) =>
+      api.put<QuestionnaireTemplateAdmin>(`/rfq/admin/templates/${id}`, data),
+    delete: (id: string) => api.delete(`/rfq/admin/templates/${id}`),
+    duplicate: (id: string, newSector: string, newSectorHe: string) =>
+      api.post<QuestionnaireTemplateAdmin>(`/rfq/admin/templates/${id}/duplicate`, {
+        newSector,
+        newSectorHe,
+      }),
+  },
+
+  // Sections
+  sections: {
+    get: (id: string) => api.get<QuestionnaireSectionAdmin>(`/rfq/admin/sections/${id}`),
+    create: (templateId: string, data: CreateSectionData) =>
+      api.post<QuestionnaireSectionAdmin>(`/rfq/admin/templates/${templateId}/sections`, data),
+    update: (id: string, data: UpdateSectionData) =>
+      api.put<QuestionnaireSectionAdmin>(`/rfq/admin/sections/${id}`, data),
+    delete: (id: string) => api.delete(`/rfq/admin/sections/${id}`),
+    reorder: (templateId: string, sectionIds: string[]) =>
+      api.patch<QuestionnaireSectionAdmin[]>(
+        `/rfq/admin/templates/${templateId}/sections/reorder`,
+        { sectionIds }
+      ),
+  },
+
+  // Questions
+  questions: {
+    get: (id: string) => api.get<QuestionAdmin>(`/rfq/admin/questions/${id}`),
+    create: (sectionId: string, data: CreateQuestionData) =>
+      api.post<QuestionAdmin>(`/rfq/admin/sections/${sectionId}/questions`, data),
+    update: (id: string, data: UpdateQuestionData) =>
+      api.put<QuestionAdmin>(`/rfq/admin/questions/${id}`, data),
+    delete: (id: string) => api.delete(`/rfq/admin/questions/${id}`),
+    reorder: (sectionId: string, questionIds: string[]) =>
+      api.patch<QuestionAdmin[]>(`/rfq/admin/questions/reorder`, { sectionId, questionIds }),
+    move: (id: string, newSectionId: string, newOrder?: number) =>
+      api.patch<QuestionAdmin>(`/rfq/admin/questions/${id}/move`, { newSectionId, newOrder }),
+    duplicate: (id: string, newQuestionId?: string) =>
+      api.post<QuestionAdmin>(`/rfq/admin/questions/${id}/duplicate`, { newQuestionId }),
+  },
+
+  // Rules
+  rules: {
+    get: (id: string) => api.get<CoverageRuleAdmin>(`/rfq/admin/rules/${id}`),
+    list: (templateId: string, includeInactive = false) =>
+      api.get<CoverageRuleAdmin[]>(
+        `/rfq/admin/templates/${templateId}/rules${includeInactive ? '?includeInactive=true' : ''}`
+      ),
+    create: (templateId: string, data: CreateRuleData) =>
+      api.post<CoverageRuleAdmin>(`/rfq/admin/templates/${templateId}/rules`, data),
+    update: (id: string, data: UpdateRuleData) =>
+      api.put<CoverageRuleAdmin>(`/rfq/admin/rules/${id}`, data),
+    delete: (id: string) => api.delete(`/rfq/admin/rules/${id}`),
+    toggle: (id: string) => api.patch<CoverageRuleAdmin>(`/rfq/admin/rules/${id}/toggle`, {}),
+    duplicate: (id: string) => api.post<CoverageRuleAdmin>(`/rfq/admin/rules/${id}/duplicate`),
+    reorder: (templateId: string, ruleIds: string[]) =>
+      api.patch<CoverageRuleAdmin[]>(`/rfq/admin/templates/${templateId}/rules/reorder`, {
+        ruleIds,
+      }),
+  },
+};
+
+// Admin Types
+export interface QuestionnaireTemplateAdmin {
+  id: string;
+  sector: string;
+  sectorHe: string;
+  description?: string;
+  descriptionHe?: string;
+  version: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  sections?: QuestionnaireSectionAdmin[];
+  rules?: CoverageRuleAdmin[];
+  _count?: {
+    sections: number;
+    rules: number;
+  };
+}
+
+export interface QuestionnaireSectionAdmin {
+  id: string;
+  templateId: string;
+  title: string;
+  titleHe: string;
+  description?: string;
+  descriptionHe?: string;
+  order: number;
+  showIf?: QuestionCondition[];
+  createdAt: string;
+  updatedAt: string;
+  questions?: QuestionAdmin[];
+}
+
+export interface QuestionAdmin {
+  id: string;
+  sectionId: string;
+  questionId: string;
+  label: string;
+  labelHe: string;
+  description?: string;
+  descriptionHe?: string;
+  type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean' | 'date' | 'currency';
+  options?: QuestionOption[];
+  placeholder?: string;
+  placeholderHe?: string;
+  required: boolean;
+  order: number;
+  min?: number;
+  max?: number;
+  showIf?: QuestionCondition[];
+  riskWeight?: number;
+  policyAffinity: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuestionOption {
+  value: string;
+  label: string;
+  labelHe: string;
+}
+
+export interface QuestionCondition {
+  questionId: string;
+  operator: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan' | 'contains' | 'in';
+  value: string | number | boolean | string[];
+}
+
+export interface CoverageRuleAdmin {
+  id: string;
+  templateId: string;
+  name: string;
+  nameHe: string;
+  description?: string;
+  descriptionHe?: string;
+  priority: number;
+  isActive: boolean;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RuleCondition {
+  field: string;
+  operator: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan' | 'in' | 'contains';
+  value: unknown;
+}
+
+export interface RuleAction {
+  type: 'addPolicy' | 'removePolicy' | 'adjustLimit' | 'addEndorsement' | 'setMandatory';
+  policyType?: string;
+  endorsement?: string;
+  multiplier?: number;
+  amount?: number;
+  mandatory?: boolean;
+}
+
+export interface CreateTemplateData {
+  sector: string;
+  sectorHe: string;
+  description?: string;
+  descriptionHe?: string;
+  version?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateTemplateData {
+  sectorHe?: string;
+  description?: string;
+  descriptionHe?: string;
+  version?: string;
+  isActive?: boolean;
+}
+
+export interface CreateSectionData {
+  title: string;
+  titleHe: string;
+  description?: string;
+  descriptionHe?: string;
+  order?: number;
+  showIf?: QuestionCondition[];
+}
+
+export interface UpdateSectionData {
+  title?: string;
+  titleHe?: string;
+  description?: string;
+  descriptionHe?: string;
+  order?: number;
+  showIf?: QuestionCondition[] | null;
+}
+
+export interface CreateQuestionData {
+  questionId: string;
+  label: string;
+  labelHe: string;
+  description?: string;
+  descriptionHe?: string;
+  type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean' | 'date' | 'currency';
+  options?: QuestionOption[];
+  placeholder?: string;
+  placeholderHe?: string;
+  required?: boolean;
+  order?: number;
+  min?: number;
+  max?: number;
+  showIf?: QuestionCondition[];
+  riskWeight?: number;
+  policyAffinity?: string[];
+}
+
+export interface UpdateQuestionData {
+  questionId?: string;
+  label?: string;
+  labelHe?: string;
+  description?: string;
+  descriptionHe?: string;
+  type?: 'text' | 'number' | 'select' | 'multiselect' | 'boolean' | 'date' | 'currency';
+  options?: QuestionOption[] | null;
+  placeholder?: string;
+  placeholderHe?: string;
+  required?: boolean;
+  order?: number;
+  min?: number | null;
+  max?: number | null;
+  showIf?: QuestionCondition[] | null;
+  riskWeight?: number | null;
+  policyAffinity?: string[];
+}
+
+export interface CreateRuleData {
+  name: string;
+  nameHe: string;
+  description?: string;
+  descriptionHe?: string;
+  priority?: number;
+  isActive?: boolean;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+}
+
+export interface UpdateRuleData {
+  name?: string;
+  nameHe?: string;
+  description?: string;
+  descriptionHe?: string;
+  priority?: number;
+  isActive?: boolean;
+  conditions?: RuleCondition[];
+  actions?: RuleAction[];
+}
 
 // Types
 export interface Client {

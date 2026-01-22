@@ -448,3 +448,91 @@ model AuditLog {
 
   @@map("audit_log")
 }
+
+// ==================== DYNAMIC QUESTIONNAIRE ====================
+
+// Questionnaire template (one per sector)
+model QuestionnaireTemplate {
+  id            String   @id @default(uuid())
+  sector        String   @unique
+  sectorHe      String   @map("sector_he")
+  description   String?
+  descriptionHe String?  @map("description_he")
+  version       String   @default("1.0")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sections QuestionnaireSection[]
+  rules    CoverageRule[]
+
+  @@map("questionnaire_templates")
+}
+
+// Section groups questions
+model QuestionnaireSection {
+  id            String   @id @default(uuid())
+  templateId    String   @map("template_id")
+  title         String
+  titleHe       String   @map("title_he")
+  description   String?
+  descriptionHe String?  @map("description_he")
+  order         Int      @default(0)
+  showIf        Json?    @map("show_if")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  template  QuestionnaireTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@map("questionnaire_sections")
+}
+
+// Individual question
+model Question {
+  id             String   @id @default(uuid())
+  sectionId      String   @map("section_id")
+  questionId     String   @map("question_id")
+  label          String
+  labelHe        String   @map("label_he")
+  description    String?
+  descriptionHe  String?  @map("description_he")
+  type           String   // boolean, number, select, multiselect, text, date, currency
+  options        Json?    // for select types: [{value, label, labelHe}]
+  placeholder    String?
+  placeholderHe  String?  @map("placeholder_he")
+  required       Boolean  @default(false)
+  order          Int      @default(0)
+  min            Float?
+  max            Float?
+  showIf         Json?    @map("show_if") // [{questionId, operator, value}]
+  riskWeight     Float?   @default(0) @map("risk_weight")
+  policyAffinity String[] @map("policy_affinity") // which policies this affects
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  section QuestionnaireSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, questionId])
+  @@map("questions")
+}
+
+// Coverage rule for dynamic recommendations
+model CoverageRule {
+  id            String   @id @default(uuid())
+  templateId    String   @map("template_id")
+  name          String
+  nameHe        String   @map("name_he")
+  description   String?
+  descriptionHe String?  @map("description_he")
+  priority      Int      @default(50)
+  isActive      Boolean  @default(true) @map("is_active")
+  conditions    Json     // [{field, operator, value}]
+  actions       Json     // [{type, policyType, multiplier, endorsement, amount, mandatory}]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  template QuestionnaireTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("coverage_rules")
+}

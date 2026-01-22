@@ -5,6 +5,7 @@ import {
   Send as SendIcon,
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -28,6 +29,8 @@ import {
   StepLabel,
   Chip,
   InputAdornment,
+  LinearProgress,
+  Snackbar,
 } from '@mui/material';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -53,6 +56,8 @@ export default function QuestionnairePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedNotification, setSavedNotification] = useState(false);
+  const [hasExistingAnswers, setHasExistingAnswers] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -72,6 +77,22 @@ export default function QuestionnairePage() {
           setQuestionnaire(templateResponse.data);
         } else {
           setError('Failed to load questionnaire template');
+        }
+
+        // Try to load existing questionnaire answers
+        try {
+          const existingResponse = await rfqApi.questionnaire.getByClient(clientId);
+          if (existingResponse.success && existingResponse.data && existingResponse.data.length > 0) {
+            // Get the most recent draft or the latest one
+            const latestQuestionnaire = existingResponse.data
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+            if (latestQuestionnaire && latestQuestionnaire.answers) {
+              setAnswers(latestQuestionnaire.answers as QuestionnaireAnswers);
+              setHasExistingAnswers(true);
+            }
+          }
+        } catch {
+          // No existing answers, that's fine
         }
       } catch (err) {
         setError('Failed to load data');
@@ -119,15 +140,80 @@ export default function QuestionnairePage() {
     [answers]
   );
 
+  // Calculate progress
+  const calculateProgress = useCallback(() => {
+    if (!questionnaire) return { answered: 0, total: 0, percentage: 0 };
+
+    let answered = 0;
+    let total = 0;
+
+    for (const section of questionnaire.sections) {
+      for (const question of section.questions) {
+        if (shouldShowQuestion(question)) {
+          total++;
+          const answer = answers[question.id];
+          if (answer !== undefined && answer !== null && answer !== '') {
+            if (Array.isArray(answer) && answer.length === 0) continue;
+            answered++;
+          }
+        }
+      }
+    }
+
+    return {
+      answered,
+      total,
+      percentage: total > 0 ? Math.round((answered / total) * 100) : 0,
+    };
+  }, [questionnaire, answers, shouldShowQuestion]);
+
+  // Validate required fields in current section
+  const validateCurrentSection = useCallback(() => {
+    if (!questionnaire) return { isValid: true, missingFields: [] };
+
+    const currentSection = questionnaire.sections[activeStep];
+    if (!currentSection) return { isValid: true, missingFields: [] };
+
+    const missingFields: string[] = [];
+
+    for (const question of currentSection.questions) {
+      if (shouldShowQuestion(question) && question.required) {
+        const answer = answers[question.id];
+        if (answer === undefined || answer === null || answer === '') {
+          missingFields.push(question.labelHe);
+        } else if (Array.isArray(answer) && answer.length === 0) {
+          missingFields.push(question.labelHe);
+        }
+      }
+    }
+
+    return {
+      isValid: missingFields.length === 0,
+      missingFields,
+    };
+  }, [questionnaire, activeStep, answers, shouldShowQuestion]);
+
   const handleSave = async (submit = false) => {
     setSaving(true);
     setError(null);
+
+    // Validate before submit
+    if (submit) {
+      const validation = validateCurrentSection();
+      if (!validation.isValid) {
+        setError(`יש למלא את השדות הבאים: ${validation.missingFields.join(', ')}`);
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       if (submit) {
         await rfqApi.questionnaire.submit(clientId, answers);
         router.push(`/rfq/documents/${clientId}?answers=${encodeURIComponent(JSON.stringify(answers))}`);
       } else {
         await rfqApi.questionnaire.save(clientId, answers);
+        setSavedNotification(true);
       }
     } catch (err) {
       setError('Failed to save questionnaire');
@@ -364,6 +450,36 @@ export default function QuestionnairePage() {
         </Button>
       </Box>
 
+      {/* Progress Bar */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent sx={{ py: 2 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="body2" color="text.secondary">
+              התקדמות השאלון
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              {hasExistingAnswers && (
+                <Chip
+                  icon={<CheckCircleIcon />}
+                  label="נטען מטיוטה קודמת"
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                />
+              )}
+              <Typography variant="body2" fontWeight="bold">
+                {calculateProgress().answered}/{calculateProgress().total} שאלות ({calculateProgress().percentage}%)
+              </Typography>
+            </Box>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={calculateProgress().percentage}
+            sx={{ height: 8, borderRadius: 1 }}
+          />
+        </CardContent>
+      </Card>
+
       {/* Stepper */}
       <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
         {questionnaire.sections.map((section, index) => (
@@ -440,6 +556,15 @@ export default function QuestionnairePage() {
           )}
         </Box>
       </Box>
+
+      {/* Save Notification */}
+      <Snackbar
+        open={savedNotification}
+        autoHideDuration={3000}
+        onClose={() => setSavedNotification(false)}
+        message="השאלון נשמר בהצלחה"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }

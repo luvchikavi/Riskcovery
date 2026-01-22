@@ -29,15 +29,11 @@ export const documentRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    // Generate recommendations
-    const recommendations = await questionnaireService.generateRecommendations(
-      client.sector,
-      answers as QuestionnaireAnswers
-    );
-    const riskScore = questionnaireService.calculateRiskScore(
-      client.sector,
-      answers as QuestionnaireAnswers
-    );
+    // Generate recommendations and calculate risk score
+    const [recommendations, riskScore] = await Promise.all([
+      questionnaireService.generateRecommendations(client.sector, answers as QuestionnaireAnswers),
+      questionnaireService.calculateRiskScoreAsync(client.sector, answers as QuestionnaireAnswers),
+    ]);
 
     // Build document data
     const documentData: RfqDocumentData = {
@@ -97,14 +93,10 @@ export const documentRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    const recommendations = await questionnaireService.generateRecommendations(
-      client.sector,
-      answers as QuestionnaireAnswers
-    );
-    const riskScore = questionnaireService.calculateRiskScore(
-      client.sector,
-      answers as QuestionnaireAnswers
-    );
+    const [recommendations, riskScore] = await Promise.all([
+      questionnaireService.generateRecommendations(client.sector, answers as QuestionnaireAnswers),
+      questionnaireService.calculateRiskScoreAsync(client.sector, answers as QuestionnaireAnswers),
+    ]);
 
     return {
       success: true,

@@ -264,6 +264,7 @@ export default function DocumentsPage() {
                           <TableCell>גבול אחריות מומלץ</TableCell>
                           <TableCell>חובה</TableCell>
                           <TableCell>הרחבות נדרשות</TableCell>
+                          <TableCell>כללים שהופעלו</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -302,6 +303,25 @@ export default function DocumentsPage() {
                                   <Typography color="text.secondary">-</Typography>
                                 )}
                               </Box>
+                            </TableCell>
+                            <TableCell>
+                              {rec.adjustmentReason ? (
+                                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                  {rec.adjustmentReason.split(', ').map((rule, idx) => (
+                                    <Chip
+                                      key={idx}
+                                      label={rule}
+                                      size="small"
+                                      color="info"
+                                      variant="outlined"
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Typography variant="caption" color="text.secondary">
+                                  ברירת מחדל
+                                </Typography>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}

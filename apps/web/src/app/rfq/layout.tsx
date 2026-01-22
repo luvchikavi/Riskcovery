@@ -6,6 +6,7 @@ import {
   People as PeopleIcon,
   Book as KnowledgeIcon,
   Home as HomeIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/rfq', icon: <DashboardIcon /> },
   { label: 'Clients', labelHe: 'לקוחות', href: '/rfq/clients', icon: <PeopleIcon /> },
   { label: 'Knowledge Base', labelHe: 'מאגר ידע', href: '/rfq/knowledge', icon: <KnowledgeIcon /> },
+  { label: 'Templates Admin', labelHe: 'ניהול תבניות', href: '/rfq/admin/templates', icon: <SettingsIcon /> },
 ];
 
 export default function RfqLayout({ children }: { children: React.ReactNode }) {

@@ -13,13 +13,19 @@ const saveAnswersSchema = z.object({
 export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
   // Get available sectors
   fastify.get('/sectors', async () => {
-    const sectors = questionnaireService.getAvailableSectors();
+    const sectors = await questionnaireService.getAvailableSectorsAsync();
     return { success: true, data: sectors };
   });
 
   // Get questionnaire template by sector
-  fastify.get<{ Params: { sector: string } }>('/template/:sector', async (request) => {
-    const template = questionnaireService.getTemplate(request.params.sector);
+  fastify.get<{ Params: { sector: string } }>('/template/:sector', async (request, reply) => {
+    const template = await questionnaireService.getTemplateAsync(request.params.sector);
+    if (!template) {
+      return reply.status(404).send({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Template not found' },
+      });
+    }
     return { success: true, data: template };
   });
 
@@ -78,11 +84,10 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
   // Generate coverage recommendations
   fastify.post<{ Params: { sector: string } }>('/recommendations/:sector', async (request) => {
     const answers = request.body as QuestionnaireAnswers;
-    const recommendations = await questionnaireService.generateRecommendations(
-      request.params.sector,
-      answers
-    );
-    const riskScore = questionnaireService.calculateRiskScore(request.params.sector, answers);
+    const [recommendations, riskScore] = await Promise.all([
+      questionnaireService.generateRecommendations(request.params.sector, answers),
+      questionnaireService.calculateRiskScoreAsync(request.params.sector, answers),
+    ]);
 
     return {
       success: true,
@@ -97,7 +102,10 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
   // Calculate risk score
   fastify.post<{ Params: { sector: string } }>('/risk-score/:sector', async (request) => {
     const answers = request.body as QuestionnaireAnswers;
-    const riskScore = questionnaireService.calculateRiskScore(request.params.sector, answers);
+    const riskScore = await questionnaireService.calculateRiskScoreAsync(
+      request.params.sector,
+      answers
+    );
 
     return {
       success: true,
