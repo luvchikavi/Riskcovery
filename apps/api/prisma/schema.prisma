@@ -449,6 +449,96 @@ model AuditLog {
   @@map("audit_log")
 }
 
+// ==================== INSURANCE PRODUCT CATALOG ====================
+
+model InsuranceProduct {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  nameHe          String   @map("name_he")
+  nameEn          String   @map("name_en")
+  category        String   // property, liability, financial, engineering
+  coverageTrigger String   @map("coverage_trigger") // occurrence, claims-made, discovery, all-risks, named-perils
+  structure       Json     @default("{}") // {chapters, description}
+  insurer         String?
+  bitStandard     String?  @map("bit_standard") // e.g. "BIT 2019"
+  description     String?
+  descriptionHe   String?  @map("description_he")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  extensions         PolicyExtension[]
+  exclusions         PolicyExclusion[]
+  relationsFrom      CrossPolicyRelation[] @relation("FromProduct")
+  relationsTo        CrossPolicyRelation[] @relation("ToProduct")
+  sectorMappings     SectorProductMapping[]
+
+  @@map("insurance_products")
+}
+
+model PolicyExtension {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  chapterCode  String?  @map("chapter_code") // e.g. "3" for Part A, "10" for Part B
+  code         String   // e.g. "3.1", "10.1"
+  nameHe       String   @map("name_he")
+  nameEn       String   @map("name_en")
+  description  String?
+  defaultLimit Decimal? @map("default_limit")
+  isFirstLoss  Boolean  @default(false) @map("is_first_loss")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  product InsuranceProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, code])
+  @@map("policy_extensions")
+}
+
+model PolicyExclusion {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  chapterCode String?  @map("chapter_code")
+  nameHe      String   @map("name_he")
+  nameEn      String   @map("name_en")
+  description String?
+  isGeneral   Boolean  @default(true) @map("is_general")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  product InsuranceProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, nameEn])
+  @@map("policy_exclusions")
+}
+
+model CrossPolicyRelation {
+  id            String   @id @default(uuid())
+  fromProductId String   @map("from_product_id")
+  toProductId   String   @map("to_product_id")
+  relationType  String   @map("relation_type") // complementary, bundled, residual
+  description   String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  fromProduct InsuranceProduct @relation("FromProduct", fields: [fromProductId], references: [id], onDelete: Cascade)
+  toProduct   InsuranceProduct @relation("ToProduct", fields: [toProductId], references: [id], onDelete: Cascade)
+
+  @@unique([fromProductId, toProductId])
+  @@map("cross_policy_relations")
+}
+
+model SectorProductMapping {
+  id        String   @id @default(uuid())
+  sector    String
+  productId String   @map("product_id")
+  necessity String   // mandatory, recommended, optional
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product InsuranceProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([sector, productId])
+  @@map("sector_product_mappings")
+}
+
 // ==================== DYNAMIC QUESTIONNAIRE ====================
 
 // Questionnaire template (one per sector)

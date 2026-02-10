@@ -53,17 +53,33 @@ const ACTION_TYPES = [
   { value: 'adjustLimit', label: 'התאם גבול', labelEn: 'Adjust Limit' },
   { value: 'addEndorsement', label: 'הוסף הרחבה', labelEn: 'Add Endorsement' },
   { value: 'setMandatory', label: 'קבע כחובה', labelEn: 'Set Mandatory' },
+  { value: 'addExtension', label: 'הוסף הרחבת מוצר', labelEn: 'Add Extension' },
+  { value: 'removeExtension', label: 'הסר הרחבת מוצר', labelEn: 'Remove Extension' },
+  { value: 'flagCoverageGap', label: 'סמן פער כיסוי', labelEn: 'Flag Coverage Gap' },
 ];
 
 const POLICY_TYPES = [
-  { value: 'GENERAL_LIABILITY', label: 'אחריות כלפי צד שלישי' },
-  { value: 'EMPLOYER_LIABILITY', label: 'אחריות מעבידים' },
-  { value: 'PROFESSIONAL_INDEMNITY', label: 'אחריות מקצועית' },
-  { value: 'CYBER_LIABILITY', label: 'אחריות סייבר' },
-  { value: 'CAR_INSURANCE', label: 'ביטוח עבודות קבלניות' },
-  { value: 'PROPERTY_INSURANCE', label: 'ביטוח רכוש' },
-  { value: 'D&O_LIABILITY', label: 'אחריות דירקטורים ונושאי משרה' },
+  { value: 'FIRE_CONSEQUENTIAL_LOSS', label: 'אש ואובדן רווחים' },
+  { value: 'MECHANICAL_BREAKDOWN', label: 'שבר מכני' },
+  { value: 'THIRD_PARTY_LIABILITY', label: 'אחריות כלפי צד שלישי' },
+  { value: 'EMPLOYERS_LIABILITY', label: 'אחריות מעבידים' },
   { value: 'PRODUCT_LIABILITY', label: 'אחריות מוצר' },
+  { value: 'CASH_MONEY', label: 'כספים' },
+  { value: 'FIDELITY_CRIME', label: 'נאמנות עובדים' },
+  { value: 'CARGO_IN_TRANSIT', label: 'מטענים בהעברה' },
+  { value: 'TERRORISM', label: 'ביטוח טרור' },
+  { value: 'ELECTRONIC_EQUIPMENT', label: 'ציוד אלקטרוני' },
+  { value: 'HEAVY_ENGINEERING_EQUIPMENT', label: 'ציוד הנדסי כבד' },
+  { value: 'CONTRACTOR_WORKS_CAR', label: 'עבודות קבלניות' },
+];
+
+const COVERAGE_GAP_TYPES = [
+  { value: 'E&O', label: 'אחריות מקצועית (E&O)' },
+  { value: 'D&O', label: 'אחריות נושאי משרה (D&O)' },
+  { value: 'Cyber', label: 'ביטוח סייבר' },
+  { value: 'Environmental', label: 'אחריות סביבתית' },
+  { value: 'Marine', label: 'ביטוח ימי' },
+  { value: 'Motor', label: 'ביטוח רכב' },
 ];
 
 // Priority phases - using 10-step gaps allows inserting rules between phases
@@ -177,6 +193,10 @@ export function RuleBuilder({
       multiplier: current.multiplier,
       amount: current.amount,
       mandatory: current.mandatory,
+      extensionCode: current.extensionCode,
+      extensionName: current.extensionName,
+      gapType: current.gapType,
+      gapDescription: current.gapDescription,
       [field]: value,
     } as RuleAction;
     setActions(newActions);
@@ -396,20 +416,38 @@ export function RuleBuilder({
                         ))}
                       </Select>
                     </FormControl>
-                    <FormControl size="small" fullWidth>
-                      <InputLabel>סוג פוליסה</InputLabel>
-                      <Select
-                        value={action.policyType || ''}
-                        label="סוג פוליסה"
-                        onChange={(e) => updateAction(index, 'policyType', e.target.value)}
-                      >
-                        {POLICY_TYPES.map((p) => (
-                          <MenuItem key={p.value} value={p.value}>
-                            {p.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    {action.type !== 'flagCoverageGap' && (
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>מוצר ביטוח</InputLabel>
+                        <Select
+                          value={action.policyType || ''}
+                          label="מוצר ביטוח"
+                          onChange={(e) => updateAction(index, 'policyType', e.target.value)}
+                        >
+                          {POLICY_TYPES.map((p) => (
+                            <MenuItem key={p.value} value={p.value}>
+                              {p.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                    {action.type === 'flagCoverageGap' && (
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>סוג פער כיסוי</InputLabel>
+                        <Select
+                          value={action.gapType || ''}
+                          label="סוג פער כיסוי"
+                          onChange={(e) => updateAction(index, 'gapType', e.target.value)}
+                        >
+                          {COVERAGE_GAP_TYPES.map((g) => (
+                            <MenuItem key={g.value} value={g.value}>
+                              {g.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
                   </Box>
 
                   <Box display="grid" gridTemplateColumns="1fr 1fr 1fr auto" gap={2}>
@@ -461,6 +499,39 @@ export function RuleBuilder({
                           />
                         }
                         label="חובה"
+                      />
+                    )}
+
+                    {(action.type === 'addExtension' || action.type === 'removeExtension') && (
+                      <>
+                        <TextField
+                          label="קוד הרחבה"
+                          value={action.extensionCode || ''}
+                          onChange={(e) => updateAction(index, 'extensionCode', e.target.value)}
+                          size="small"
+                          fullWidth
+                          placeholder="EXT_FIRE_001"
+                          helperText="קוד ההרחבה מקטלוג המוצרים"
+                        />
+                        <TextField
+                          label="שם הרחבה"
+                          value={action.extensionName || ''}
+                          onChange={(e) => updateAction(index, 'extensionName', e.target.value)}
+                          size="small"
+                          fullWidth
+                          placeholder="כיסוי רעידת אדמה"
+                        />
+                      </>
+                    )}
+
+                    {action.type === 'flagCoverageGap' && (
+                      <TextField
+                        label="תיאור פער"
+                        value={action.gapDescription || ''}
+                        onChange={(e) => updateAction(index, 'gapDescription', e.target.value)}
+                        size="small"
+                        fullWidth
+                        placeholder="לא מכוסה בפוליסות BIT תקניות"
                       />
                     )}
 

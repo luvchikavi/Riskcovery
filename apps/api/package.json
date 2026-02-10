@@ -18,7 +18,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "db:seed:templates": "tsx prisma/seed-templates.ts"
+    "db:seed:templates": "tsx prisma/seed-templates.ts",
+    "db:seed:products": "tsx prisma/seed-insurance-products.ts"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",

@@ -5,6 +5,7 @@
 
 import { prisma } from '../../../lib/prisma.js';
 import { knowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
+import { productService } from '../products/product.service.js';
 import { questionnaireTemplates, coverageRules } from './questionnaire.templates.js';
 import type {
   QuestionnaireAnswers,
@@ -14,7 +15,10 @@ import type {
   Questionnaire,
   QuestionSection,
   Question,
+  EnrichedCoverageRecommendation,
+  CoverageGap,
 } from './questionnaire.types.js';
+import { STANDARD_COVERAGE_GAPS } from './questionnaire.types.js';
 
 // Use any for now - will be properly typed after prisma generate
 const db = prisma as any;
@@ -270,7 +274,7 @@ export class QuestionnaireService {
     });
   }
 
-  // Generate coverage recommendations based on answers
+  // Generate coverage recommendations based on answers (legacy format)
   async generateRecommendations(
     sector: string,
     answers: QuestionnaireAnswers
@@ -318,6 +322,79 @@ export class QuestionnaireService {
     });
   }
 
+  // Generate enriched recommendations using the product catalog
+  async generateEnrichedRecommendations(
+    sector: string,
+    answers: QuestionnaireAnswers
+  ): Promise<{ recommendations: EnrichedCoverageRecommendation[]; coverageGaps: CoverageGap[] }> {
+    // Get products for this sector from the catalog
+    const sectorProducts = await productService.findBySector(sector);
+
+    // Build enriched recommendations
+    const recommendations: Map<string, EnrichedCoverageRecommendation> = new Map();
+
+    for (const product of sectorProducts) {
+      // Get extensions and relations for each product
+      const [extensions, exclusions, relations] = await Promise.all([
+        productService.getExtensions(product.code),
+        productService.getExclusions(product.code),
+        productService.getRelatedProducts(product.code),
+      ]);
+
+      recommendations.set(product.code, {
+        productCode: product.code,
+        productNameHe: product.nameHe,
+        productNameEn: product.nameEn,
+        category: product.category,
+        coverageTrigger: product.coverageTrigger,
+        recommendedLimit: this.getDefaultLimit(product.code),
+        isMandatory: (product as any).necessity === 'mandatory',
+        necessity: (product as any).necessity || 'recommended',
+        endorsements: [],
+        extensions: extensions.map((ext) => ({
+          code: ext.code,
+          nameHe: ext.nameHe,
+          nameEn: ext.nameEn,
+          chapterCode: ext.chapterCode ?? undefined,
+          defaultLimit: ext.defaultLimit ? Number(ext.defaultLimit) : undefined,
+          isFirstLoss: ext.isFirstLoss,
+        })),
+        exclusionCount: exclusions.length,
+        relatedProducts: relations.map((rel) => ({
+          productCode: rel.product.code,
+          productNameHe: rel.product.nameHe,
+          productNameEn: rel.product.nameEn,
+          relationType: rel.relationType,
+          description: rel.description ?? undefined,
+        })),
+        description: product.description ?? undefined,
+        descriptionHe: product.descriptionHe ?? undefined,
+      });
+    }
+
+    // Apply rules
+    const rules = await this.getRulesAsync(sector);
+    const applicableRules = this.evaluateRulesFromList(answers, rules);
+    const coverageGaps: CoverageGap[] = [];
+
+    for (const rule of applicableRules) {
+      for (const action of rule.actions) {
+        this.applyEnrichedAction(recommendations, action, rule.name, coverageGaps);
+      }
+    }
+
+    // Add standard coverage gaps based on sector
+    const standardGaps = this.getApplicableCoverageGaps(sector, answers);
+    coverageGaps.push(...standardGaps);
+
+    const sortedRecommendations = Array.from(recommendations.values()).sort((a, b) => {
+      if (a.isMandatory !== b.isMandatory) return a.isMandatory ? -1 : 1;
+      return b.recommendedLimit - a.recommendedLimit;
+    });
+
+    return { recommendations: sortedRecommendations, coverageGaps };
+  }
+
   // Evaluate which rules apply based on answers from a given list
   private evaluateRulesFromList(answers: QuestionnaireAnswers, rules: Rule[]): Rule[] {
     const applicableRules: Rule[] = [];
@@ -361,7 +438,7 @@ export class QuestionnaireService {
     return this.evaluateRulesFromList(answers, coverageRules);
   }
 
-  // Apply a rule action to recommendations
+  // Apply a rule action to recommendations (legacy format)
   private applyAction(
     recommendations: Map<string, CoverageRecommendation>,
     action: RuleAction,
@@ -370,14 +447,16 @@ export class QuestionnaireService {
     const policyType = action.policyType;
     if (!policyType) return;
 
-    let rec = recommendations.get(policyType);
+    // Resolve old policy codes to new product codes
+    const resolvedCode = knowledgeBaseService.resolveProductCode(policyType);
+    let rec = recommendations.get(resolvedCode) || recommendations.get(policyType);
 
     switch (action.type) {
       case 'addPolicy':
         if (!rec) {
-          recommendations.set(policyType, {
-            policyType,
-            policyTypeHe: policyType, // Should be translated
+          recommendations.set(resolvedCode, {
+            policyType: resolvedCode,
+            policyTypeHe: resolvedCode,
             recommendedLimit: action.amount || 5000000,
             isMandatory: action.mandatory || false,
             endorsements: [],
@@ -387,6 +466,7 @@ export class QuestionnaireService {
         break;
 
       case 'removePolicy':
+        recommendations.delete(resolvedCode);
         recommendations.delete(policyType);
         break;
 
@@ -410,7 +490,175 @@ export class QuestionnaireService {
           rec.isMandatory = action.mandatory ?? true;
         }
         break;
+
+      case 'addExtension':
+      case 'removeExtension':
+      case 'flagCoverageGap':
+        // These are handled in applyEnrichedAction; no-op for legacy format
+        break;
     }
+  }
+
+  // Apply a rule action to enriched recommendations
+  private applyEnrichedAction(
+    recommendations: Map<string, EnrichedCoverageRecommendation>,
+    action: RuleAction,
+    ruleName: string,
+    coverageGaps: CoverageGap[]
+  ) {
+    const policyType = action.policyType;
+
+    if (action.type === 'flagCoverageGap') {
+      if (action.gapType) {
+        coverageGaps.push({
+          type: action.gapType,
+          nameHe: action.gapDescription || action.gapType,
+          nameEn: action.gapType,
+          description: action.gapDescription || '',
+          descriptionHe: action.gapDescription || '',
+          severity: 'advisory',
+        });
+      }
+      return;
+    }
+
+    if (!policyType) return;
+
+    const resolvedCode = knowledgeBaseService.resolveProductCode(policyType);
+    const rec = recommendations.get(resolvedCode) || recommendations.get(policyType);
+
+    switch (action.type) {
+      case 'addPolicy':
+        if (!rec) {
+          recommendations.set(resolvedCode, {
+            productCode: resolvedCode,
+            productNameHe: resolvedCode,
+            productNameEn: resolvedCode,
+            category: 'other',
+            coverageTrigger: 'occurrence',
+            recommendedLimit: action.amount || 5000000,
+            isMandatory: action.mandatory || false,
+            necessity: action.mandatory ? 'mandatory' : 'recommended',
+            endorsements: [],
+            extensions: [],
+            exclusionCount: 0,
+            relatedProducts: [],
+            adjustmentReason: ruleName,
+          });
+        }
+        break;
+
+      case 'removePolicy':
+        recommendations.delete(resolvedCode);
+        recommendations.delete(policyType);
+        break;
+
+      case 'adjustLimit':
+        if (rec && action.multiplier) {
+          rec.recommendedLimit = Math.round(rec.recommendedLimit * action.multiplier);
+          rec.adjustmentReason = (rec.adjustmentReason ? rec.adjustmentReason + ', ' : '') + ruleName;
+        }
+        break;
+
+      case 'addEndorsement':
+        if (rec && action.endorsement) {
+          if (!rec.endorsements.includes(action.endorsement)) {
+            rec.endorsements.push(action.endorsement);
+          }
+        }
+        break;
+
+      case 'setMandatory':
+        if (rec) {
+          rec.isMandatory = action.mandatory ?? true;
+          rec.necessity = (action.mandatory ?? true) ? 'mandatory' : rec.necessity;
+        }
+        break;
+
+      case 'addExtension':
+        if (rec && action.extensionCode) {
+          const alreadyHas = rec.extensions.some((e) => e.code === action.extensionCode);
+          if (!alreadyHas) {
+            rec.extensions.push({
+              code: action.extensionCode,
+              nameHe: action.extensionName || action.extensionCode,
+              nameEn: action.extensionName || action.extensionCode,
+              isFirstLoss: false,
+            });
+          }
+          rec.adjustmentReason = (rec.adjustmentReason ? rec.adjustmentReason + ', ' : '') + ruleName;
+        }
+        break;
+
+      case 'removeExtension':
+        if (rec && action.extensionCode) {
+          rec.extensions = rec.extensions.filter((e) => e.code !== action.extensionCode);
+        }
+        break;
+    }
+  }
+
+  // Determine applicable coverage gaps based on sector and answers
+  private getApplicableCoverageGaps(sector: string, answers: QuestionnaireAnswers): CoverageGap[] {
+    const gaps: CoverageGap[] = [];
+
+    // E&O is always relevant for consulting/technology
+    if (['CONSULTING', 'TECHNOLOGY', 'FINANCIAL_SERVICES'].includes(sector)) {
+      const eoGap = STANDARD_COVERAGE_GAPS.find((g) => g.type === 'PROFESSIONAL_LIABILITY');
+      if (eoGap) gaps.push({ ...eoGap, severity: 'warning' });
+    }
+
+    // D&O relevant for public companies or large companies
+    const legalStructure = answers.legalStructure;
+    if (legalStructure === 'public' || (answers.employeeCount && Number(answers.employeeCount) > 50)) {
+      const doGap = STANDARD_COVERAGE_GAPS.find((g) => g.type === 'DIRECTORS_OFFICERS');
+      if (doGap) gaps.push(doGap);
+    }
+
+    // Cyber relevant for tech, finance, healthcare
+    if (['TECHNOLOGY', 'FINANCIAL_SERVICES', 'HEALTHCARE'].includes(sector)) {
+      const cyberGap = STANDARD_COVERAGE_GAPS.find((g) => g.type === 'CYBER');
+      if (cyberGap) gaps.push({ ...cyberGap, severity: 'warning' });
+    }
+
+    // Environmental for manufacturing, construction
+    if (['MANUFACTURING', 'CONSTRUCTION', 'AGRICULTURE'].includes(sector)) {
+      const envGap = STANDARD_COVERAGE_GAPS.find((g) => g.type === 'ENVIRONMENTAL');
+      if (envGap) gaps.push(envGap);
+    }
+
+    // Marine for logistics with import/export
+    if (sector === 'LOGISTICS' || answers.hasImportExport === true) {
+      const marineGap = STANDARD_COVERAGE_GAPS.find((g) => g.type === 'MARINE');
+      if (marineGap) gaps.push(marineGap);
+    }
+
+    // Motor vehicle is almost always relevant
+    if (answers.vehicleCount && Number(answers.vehicleCount) > 0) {
+      const motorGap = STANDARD_COVERAGE_GAPS.find((g) => g.type === 'MOTOR_VEHICLE');
+      if (motorGap) gaps.push(motorGap);
+    }
+
+    return gaps;
+  }
+
+  // Default recommended limits per product type (in ILS)
+  private getDefaultLimit(productCode: string): number {
+    const defaults: Record<string, number> = {
+      FIRE_CONSEQUENTIAL_LOSS: 10000000,
+      MECHANICAL_BREAKDOWN: 5000000,
+      THIRD_PARTY_LIABILITY: 5000000,
+      EMPLOYERS_LIABILITY: 10000000,
+      PRODUCT_LIABILITY: 5000000,
+      CASH_MONEY: 500000,
+      FIDELITY_CRIME: 2000000,
+      CARGO_IN_TRANSIT: 2000000,
+      TERRORISM: 10000000,
+      ELECTRONIC_EQUIPMENT: 3000000,
+      HEAVY_ENGINEERING_EQUIPMENT: 5000000,
+      CONTRACTOR_WORKS_CAR: 10000000,
+    };
+    return defaults[productCode] || 5000000;
   }
 
   // Calculate risk score from answers - async version using database templates

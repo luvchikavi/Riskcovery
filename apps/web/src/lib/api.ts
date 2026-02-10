@@ -38,12 +38,18 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
+    const headers: Record<string, string> = {
+      ...options.headers as Record<string, string>,
+    };
+
+    // Only set Content-Type for requests with a body
+    if (options.body) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -158,6 +164,20 @@ export const rfqApi = {
   knowledgeBase: {
     getBySector: (sector: string) => api.get<InsuranceRequirement[]>(`/rfq/knowledge-base/sector/${sector}`),
     getAll: () => api.get<InsuranceRequirement[]>('/rfq/knowledge-base'),
+  },
+
+  // Products (Insurance Product Catalog)
+  products: {
+    list: () => api.get<InsuranceProduct[]>('/rfq/products'),
+    getByCode: (code: string) => api.get<InsuranceProduct>(`/rfq/products/${code}`),
+    getBySector: (sector: string) => api.get<InsuranceProduct[]>(`/rfq/products/sector/${sector}`),
+    getExtensions: (code: string) => api.get<PolicyExtension[]>(`/rfq/products/${code}/extensions`),
+    getExclusions: (code: string) => api.get<PolicyExclusion[]>(`/rfq/products/${code}/exclusions`),
+    getRelations: (code: string) => api.get<CrossPolicyRelation[]>(`/rfq/products/${code}/relations`),
+    getSectorMatrix: () => api.get<SectorMatrix>('/rfq/products/sector-matrix'),
+    getAllRelations: () => api.get<CrossPolicyRelation[]>('/rfq/products/relations'),
+    getEnrichedRecommendations: (sector: string, answers: QuestionnaireAnswers) =>
+      api.post<EnrichedRecommendationsResponse>(`/rfq/questionnaire/recommendations/${sector}/enriched`, answers),
   },
 };
 
@@ -324,12 +344,17 @@ export interface RuleCondition {
 }
 
 export interface RuleAction {
-  type: 'addPolicy' | 'removePolicy' | 'adjustLimit' | 'addEndorsement' | 'setMandatory';
+  type: 'addPolicy' | 'removePolicy' | 'adjustLimit' | 'addEndorsement' | 'setMandatory'
+    | 'addExtension' | 'removeExtension' | 'flagCoverageGap';
   policyType?: string;
   endorsement?: string;
   multiplier?: number;
   amount?: number;
   mandatory?: boolean;
+  extensionCode?: string;
+  extensionName?: string;
+  gapType?: string;
+  gapDescription?: string;
 }
 
 export interface CreateTemplateData {
@@ -550,6 +575,114 @@ export interface InsuranceRequirement {
   description?: string;
   descriptionHe?: string;
   commonEndorsements: string[];
+}
+
+// Insurance Product Catalog Types
+export interface InsuranceProduct {
+  id: string;
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  category: string;
+  coverageTrigger: string;
+  structure: Record<string, unknown>;
+  insurer?: string;
+  bitStandard?: string;
+  description?: string;
+  descriptionHe?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  extensions?: PolicyExtension[];
+  exclusions?: PolicyExclusion[];
+  necessity?: string; // when loaded via sector mapping
+}
+
+export interface PolicyExtension {
+  id: string;
+  productId: string;
+  chapterCode?: string;
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  description?: string;
+  defaultLimit?: number;
+  isFirstLoss: boolean;
+}
+
+export interface PolicyExclusion {
+  id: string;
+  productId: string;
+  chapterCode?: string;
+  nameHe: string;
+  nameEn: string;
+  description?: string;
+  isGeneral: boolean;
+}
+
+export interface CrossPolicyRelation {
+  product: InsuranceProduct;
+  relationType: string;
+  description?: string;
+  direction: 'outgoing' | 'incoming';
+}
+
+export interface SectorMatrix {
+  [sector: string]: Array<{
+    product: InsuranceProduct;
+    necessity: string;
+  }>;
+}
+
+export interface EnrichedCoverageRecommendation {
+  productCode: string;
+  productNameHe: string;
+  productNameEn: string;
+  category: string;
+  coverageTrigger: string;
+  recommendedLimit: number;
+  isMandatory: boolean;
+  necessity: string;
+  endorsements: string[];
+  extensions: RecommendedExtension[];
+  exclusionCount: number;
+  relatedProducts: RelatedProductInfo[];
+  adjustmentReason?: string;
+  description?: string;
+  descriptionHe?: string;
+}
+
+export interface RecommendedExtension {
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  chapterCode?: string;
+  defaultLimit?: number;
+  isFirstLoss: boolean;
+}
+
+export interface RelatedProductInfo {
+  productCode: string;
+  productNameHe: string;
+  productNameEn: string;
+  relationType: string;
+  description?: string;
+}
+
+export interface CoverageGap {
+  type: string;
+  nameHe: string;
+  nameEn: string;
+  description: string;
+  descriptionHe: string;
+  severity: 'advisory' | 'warning' | 'critical';
+}
+
+export interface EnrichedRecommendationsResponse {
+  recommendations: EnrichedCoverageRecommendation[];
+  coverageGaps: CoverageGap[];
+  riskScore: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
 // Comparison Module Types

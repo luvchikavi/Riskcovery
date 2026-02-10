@@ -154,6 +154,9 @@ export default function RulesPage() {
       adjustLimit: 'התאם גבול',
       addEndorsement: 'הוסף הרחבה',
       setMandatory: 'קבע כחובה',
+      addExtension: 'הוסף הרחבת מוצר',
+      removeExtension: 'הסר הרחבת מוצר',
+      flagCoverageGap: 'סמן פער כיסוי',
     };
     return types[type] || type;
   };

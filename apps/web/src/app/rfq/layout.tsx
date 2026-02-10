@@ -4,7 +4,7 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
-  Book as KnowledgeIcon,
+  Inventory as CatalogIcon,
   Home as HomeIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
@@ -40,7 +40,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/rfq', icon: <DashboardIcon /> },
   { label: 'Clients', labelHe: 'לקוחות', href: '/rfq/clients', icon: <PeopleIcon /> },
-  { label: 'Knowledge Base', labelHe: 'מאגר ידע', href: '/rfq/knowledge', icon: <KnowledgeIcon /> },
+  { label: 'Product Catalog', labelHe: 'קטלוג מוצרים', href: '/rfq/knowledge', icon: <CatalogIcon /> },
   { label: 'Templates Admin', labelHe: 'ניהול תבניות', href: '/rfq/admin/templates', icon: <SettingsIcon /> },
 ];
 

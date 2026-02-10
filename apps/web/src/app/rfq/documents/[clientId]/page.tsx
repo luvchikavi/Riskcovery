@@ -9,6 +9,8 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
+  Extension as ExtensionIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -30,7 +32,12 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Tooltip,
 } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -40,6 +47,7 @@ import {
   type Client,
   type QuestionnaireAnswers,
   type DocumentPreview,
+  type EnrichedRecommendationsResponse,
 } from '@/lib/api';
 
 type DocumentFormat = 'pdf' | 'docx' | 'xlsx';
@@ -63,6 +71,7 @@ export default function DocumentsPage() {
 
   const [client, setClient] = useState<Client | null>(null);
   const [preview, setPreview] = useState<DocumentPreview | null>(null);
+  const [enriched, setEnriched] = useState<EnrichedRecommendationsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,9 +104,16 @@ export default function DocumentsPage() {
 
         // Load preview if we have answers
         if (Object.keys(answers).length > 0) {
-          const previewResponse = await rfqApi.documents.preview(clientId, answers);
+          const [previewResponse, enrichedResponse] = await Promise.all([
+            rfqApi.documents.preview(clientId, answers),
+            rfqApi.products.getEnrichedRecommendations(clientResponse.data.sector, answers),
+          ]);
+
           if (previewResponse.success && previewResponse.data) {
             setPreview(previewResponse.data);
+          }
+          if (enrichedResponse.success && enrichedResponse.data) {
+            setEnriched(enrichedResponse.data);
           }
         }
       } catch (err) {
@@ -127,7 +143,7 @@ export default function DocumentsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err) {
+    } catch {
       setError('Failed to generate document');
     } finally {
       setGenerating(false);
@@ -245,124 +261,252 @@ export default function DocumentsPage() {
               </Card>
             </Grid>
 
-            {/* Recommendations Table */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    המלצות כיסוי ביטוחי
-                  </Typography>
-                  <Typography color="text.secondary" gutterBottom>
-                    Insurance Coverage Recommendations
-                  </Typography>
-                  <Divider sx={{ my: 2 }} />
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>סוג הביטוח</TableCell>
-                          <TableCell>גבול אחריות מומלץ</TableCell>
-                          <TableCell>חובה</TableCell>
-                          <TableCell>הרחבות נדרשות</TableCell>
-                          <TableCell>כללים שהופעלו</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {preview.recommendations.map((rec) => (
-                          <TableRow key={rec.policyType}>
-                            <TableCell>
-                              <Typography fontWeight="medium">
-                                {rec.policyTypeHe}
-                              </Typography>
+            {/* Enriched Recommendations */}
+            {enriched && enriched.recommendations.length > 0 && (
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      המלצות כיסוי ביטוחי מורחבות
+                    </Typography>
+                    <Typography color="text.secondary" gutterBottom>
+                      Enriched Insurance Coverage Recommendations
+                    </Typography>
+                    <Divider sx={{ my: 2 }} />
+
+                    {enriched.recommendations.map((rec) => (
+                      <Accordion key={rec.productCode} defaultExpanded={rec.isMandatory}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <Box display="flex" alignItems="center" gap={2} width="100%">
+                            <Box flexGrow={1}>
+                              <Typography fontWeight="bold">{rec.productNameHe}</Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {rec.policyType}
+                                {rec.productNameEn}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </Box>
+                            <Chip
+                              label={rec.isMandatory ? 'חובה' : rec.necessity === 'recommended' ? 'מומלץ' : 'אופציונלי'}
+                              size="small"
+                              color={rec.isMandatory ? 'error' : 'warning'}
+                            />
+                            <Chip label={rec.coverageTrigger} size="small" variant="outlined" />
+                            <Typography fontWeight="bold">
                               ₪{rec.recommendedLimit.toLocaleString()}
-                            </TableCell>
-                            <TableCell>
-                              {rec.isMandatory ? (
-                                <Chip label="חובה" color="error" size="small" />
-                              ) : (
-                                <Chip label="מומלץ" variant="outlined" size="small" />
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Box display="flex" flexWrap="wrap" gap={0.5}>
-                                {rec.endorsements.length > 0 ? (
-                                  rec.endorsements.map((end, idx) => (
+                            </Typography>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Grid container spacing={2}>
+                            {/* Extensions */}
+                            {rec.extensions.length > 0 && (
+                              <Grid item xs={12} md={6}>
+                                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                                  <ExtensionIcon fontSize="small" color="primary" />
+                                  <Typography variant="subtitle2">
+                                    הרחבות ({rec.extensions.length})
+                                  </Typography>
+                                </Box>
+                                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                  {rec.extensions.slice(0, 8).map((ext) => (
+                                    <Tooltip key={ext.code} title={ext.nameEn}>
+                                      <Chip
+                                        label={`${ext.code} ${ext.nameHe}`}
+                                        size="small"
+                                        variant="outlined"
+                                      />
+                                    </Tooltip>
+                                  ))}
+                                  {rec.extensions.length > 8 && (
                                     <Chip
-                                      key={idx}
-                                      label={end}
+                                      label={`+${rec.extensions.length - 8} נוספים`}
                                       size="small"
                                       variant="outlined"
+                                      color="info"
                                     />
-                                  ))
-                                ) : (
-                                  <Typography color="text.secondary">-</Typography>
-                                )}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              {rec.adjustmentReason ? (
+                                  )}
+                                </Box>
+                              </Grid>
+                            )}
+
+                            {/* Related Products */}
+                            {rec.relatedProducts.length > 0 && (
+                              <Grid item xs={12} md={6}>
+                                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                                  <LinkIcon fontSize="small" color="info" />
+                                  <Typography variant="subtitle2">
+                                    קשרים בין-פוליסתיים
+                                  </Typography>
+                                </Box>
                                 <Box display="flex" flexWrap="wrap" gap={0.5}>
-                                  {rec.adjustmentReason.split(', ').map((rule, idx) => (
+                                  {rec.relatedProducts.map((rel) => (
                                     <Chip
-                                      key={idx}
-                                      label={rule}
+                                      key={rel.productCode}
+                                      label={`${rel.productNameHe} (${rel.relationType})`}
                                       size="small"
                                       color="info"
                                       variant="outlined"
                                     />
                                   ))}
                                 </Box>
-                              ) : (
-                                <Typography variant="caption" color="text.secondary">
-                                  ברירת מחדל
-                                </Typography>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                              </Grid>
+                            )}
 
-                  {/* Summary */}
-                  <Box mt={3} p={2} bgcolor="grey.50" borderRadius={1}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          סה&quot;כ פוליסות
-                        </Typography>
-                        <Typography variant="h6">
-                          {preview.recommendations.length}
-                        </Typography>
+                            {/* Adjustment reason */}
+                            {rec.adjustmentReason && (
+                              <Grid item xs={12}>
+                                <Typography variant="caption" color="text.secondary">
+                                  כללים שהופעלו: {rec.adjustmentReason}
+                                </Typography>
+                              </Grid>
+                            )}
+
+                            {/* Exclusion count */}
+                            {rec.exclusionCount > 0 && (
+                              <Grid item xs={12}>
+                                <Typography variant="caption" color="text.secondary">
+                                  {rec.exclusionCount} חריגים | צפה בפרטים מלאים ב
+                                  <Link href={`/rfq/knowledge/${rec.productCode}`} style={{ marginRight: 4 }}>
+                                    קטלוג המוצרים
+                                  </Link>
+                                </Typography>
+                              </Grid>
+                            )}
+                          </Grid>
+                        </AccordionDetails>
+                      </Accordion>
+                    ))}
+
+                    {/* Coverage Gaps */}
+                    {enriched.coverageGaps.length > 0 && (
+                      <Box mt={3}>
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                          <Typography fontWeight="bold" gutterBottom>
+                            פערי כיסוי ({enriched.coverageGaps.length})
+                          </Typography>
+                          {enriched.coverageGaps.map((gap) => (
+                            <Box key={gap.type} mb={1}>
+                              <Typography variant="body2" fontWeight="medium">
+                                {gap.nameHe}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {gap.descriptionHe}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Alert>
+                      </Box>
+                    )}
+
+                    {/* Summary */}
+                    <Box mt={3} p={2} bgcolor="grey.50" borderRadius={1}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={3}>
+                          <Typography variant="body2" color="text.secondary">
+                            סה&quot;כ מוצרים
+                          </Typography>
+                          <Typography variant="h6">
+                            {enriched.recommendations.length}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={3}>
+                          <Typography variant="body2" color="text.secondary">
+                            חובה
+                          </Typography>
+                          <Typography variant="h6">
+                            {enriched.recommendations.filter((r) => r.isMandatory).length}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={3}>
+                          <Typography variant="body2" color="text.secondary">
+                            סה&quot;כ גבולות
+                          </Typography>
+                          <Typography variant="h6">
+                            ₪{enriched.recommendations
+                              .reduce((sum, r) => sum + r.recommendedLimit, 0)
+                              .toLocaleString()}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={3}>
+                          <Typography variant="body2" color="text.secondary">
+                            פערי כיסוי
+                          </Typography>
+                          <Typography variant="h6" color="warning.main">
+                            {enriched.coverageGaps.length}
+                          </Typography>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          פוליסות חובה
-                        </Typography>
-                        <Typography variant="h6">
-                          {preview.recommendations.filter((r) => r.isMandatory).length}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          סה&quot;כ גבולות אחריות
-                        </Typography>
-                        <Typography variant="h6">
-                          ₪{preview.recommendations
-                            .reduce((sum, r) => sum + r.recommendedLimit, 0)
-                            .toLocaleString()}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Legacy Recommendations Table (fallback) */}
+            {(!enriched || enriched.recommendations.length === 0) && preview.recommendations.length > 0 && (
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      המלצות כיסוי ביטוחי
+                    </Typography>
+                    <Divider sx={{ my: 2 }} />
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>סוג הביטוח</TableCell>
+                            <TableCell>גבול אחריות מומלץ</TableCell>
+                            <TableCell>חובה</TableCell>
+                            <TableCell>הרחבות נדרשות</TableCell>
+                            <TableCell>כללים שהופעלו</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {preview.recommendations.map((rec) => (
+                            <TableRow key={rec.policyType}>
+                              <TableCell>
+                                <Typography fontWeight="medium">{rec.policyTypeHe}</Typography>
+                                <Typography variant="caption" color="text.secondary">{rec.policyType}</Typography>
+                              </TableCell>
+                              <TableCell>₪{rec.recommendedLimit.toLocaleString()}</TableCell>
+                              <TableCell>
+                                {rec.isMandatory ? (
+                                  <Chip label="חובה" color="error" size="small" />
+                                ) : (
+                                  <Chip label="מומלץ" variant="outlined" size="small" />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                  {rec.endorsements.length > 0 ? (
+                                    rec.endorsements.map((end, idx) => (
+                                      <Chip key={idx} label={end} size="small" variant="outlined" />
+                                    ))
+                                  ) : (
+                                    <Typography color="text.secondary">-</Typography>
+                                  )}
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                {rec.adjustmentReason ? (
+                                  <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                    {rec.adjustmentReason.split(', ').map((rule, idx) => (
+                                      <Chip key={idx} label={rule} size="small" color="info" variant="outlined" />
+                                    ))}
+                                  </Box>
+                                ) : (
+                                  <Typography variant="caption" color="text.secondary">ברירת מחדל</Typography>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
           </>
         )}
 

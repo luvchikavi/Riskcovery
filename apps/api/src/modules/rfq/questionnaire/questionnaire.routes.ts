@@ -81,7 +81,7 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true, data: questionnaires };
   });
 
-  // Generate coverage recommendations
+  // Generate coverage recommendations (legacy format)
   fastify.post<{ Params: { sector: string } }>('/recommendations/:sector', async (request) => {
     const answers = request.body as QuestionnaireAnswers;
     const [recommendations, riskScore] = await Promise.all([
@@ -93,6 +93,25 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
       success: true,
       data: {
         recommendations,
+        riskScore,
+        riskLevel: riskScore < 30 ? 'LOW' : riskScore < 60 ? 'MEDIUM' : 'HIGH',
+      },
+    };
+  });
+
+  // Generate enriched recommendations with product catalog data
+  fastify.post<{ Params: { sector: string } }>('/recommendations/:sector/enriched', async (request) => {
+    const answers = request.body as QuestionnaireAnswers;
+    const [enriched, riskScore] = await Promise.all([
+      questionnaireService.generateEnrichedRecommendations(request.params.sector, answers),
+      questionnaireService.calculateRiskScoreAsync(request.params.sector, answers),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        recommendations: enriched.recommendations,
+        coverageGaps: enriched.coverageGaps,
         riskScore,
         riskLevel: riskScore < 30 ? 'LOW' : riskScore < 60 ? 'MEDIUM' : 'HIGH',
       },
