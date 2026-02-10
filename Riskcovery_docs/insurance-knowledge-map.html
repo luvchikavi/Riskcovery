@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מפת מוצרי ביטוח - Riscovery | Drishti Consulting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #0ea5e9;
+            --accent: #8b5cf6;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gray-light: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #0ea5e9;
+            --gradient-2: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --gradient-3: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: var(--darker);
+            color: var(--light);
+            line-height: 1.8;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(14, 165, 233, 0.08) 0%, transparent 40%);
+            animation: bgMove 20s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-5%, 5%) rotate(5deg); }
+            50% { transform: translate(5%, -5%) rotate(-5deg); }
+            75% { transform: translate(-3%, -3%) rotate(3deg); }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .doc-meta {
+            text-align: left;
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .doc-meta strong {
+            color: var(--light);
+            display: block;
+            font-size: 14px;
+        }
+
+        /* Title */
+        .title-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .title-section h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-section .subtitle {
+            font-size: 18px;
+            color: var(--gray-light);
+            font-weight: 300;
+        }
+
+        .title-section .subtitle strong {
+            color: var(--light);
+            font-weight: 600;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray-light);
+            margin-top: 4px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            margin-top: 50px;
+        }
+
+        .section-header .icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .section-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .section-desc {
+            color: var(--gray-light);
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        /* Policy Table (kept for reference, no longer used) */
+        .policy-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .policy-table thead {
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .policy-table th {
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--light);
+            text-align: right;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .policy-table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--gray-light);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .policy-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .policy-table tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .policy-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--gradient-2);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .trigger-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .trigger-allrisk { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .trigger-named { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .trigger-occurrence { background: rgba(14, 165, 233, 0.15); color: #0ea5e9; }
+        .trigger-claims { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .trigger-discovery { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+
+        .ext-count {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Accordion */
+        .accordion-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .accordion-item {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .accordion-item:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .accordion-item.active {
+            border-color: var(--primary);
+        }
+
+        .accordion-header {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            cursor: pointer;
+            gap: 16px;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .accordion-header .policy-name {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .accordion-header .policy-name .he {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--light);
+        }
+
+        .accordion-header .policy-name .en {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .accordion-header .meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--gray-light);
+        }
+
+        .accordion-header .meta-item {
+            text-align: center;
+            min-width: 50px;
+        }
+
+        .accordion-header .meta-item .num {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .accordion-header .meta-item .label {
+            font-size: 10px;
+            color: var(--gray);
+        }
+
+        .accordion-chevron {
+            font-size: 18px;
+            color: var(--gray);
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .accordion-item.active .accordion-chevron {
+            transform: rotate(180deg);
+            color: var(--primary);
+        }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .accordion-body-inner {
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .accordion-summary {
+            padding: 16px 0;
+            font-size: 13px;
+            color: var(--gray-light);
+            line-height: 1.8;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .accordion-section {
+            margin-top: 16px;
+        }
+
+        .accordion-section h4 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .accordion-section h4 .ext-label {
+            color: var(--success);
+        }
+
+        .accordion-section h4 .exc-label {
+            color: #ef4444;
+        }
+
+        .accordion-section h4 .count-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+        }
+
+        .ext-list, .exc-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .ext-item, .exc-item {
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .ext-item {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+
+        .exc-item {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.1);
+        }
+
+        .ext-item .name, .exc-item .name {
+            font-weight: 600;
+            color: var(--light);
+            font-size: 12px;
+        }
+
+        .ext-item .desc, .exc-item .desc {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        /* Categories */
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .category-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .category-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-card .cat-icon {
+            font-size: 20px;
+        }
+
+        .category-card .cat-desc {
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 12px;
+        }
+
+        .category-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .category-card li {
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--gray-light);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-card li:last-child {
+            border-bottom: none;
+        }
+
+        .policy-name-he {
+            color: var(--light);
+            font-weight: 500;
+        }
+
+        /* Industry Matrix */
+        .matrix-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            font-size: 12px;
+        }
+
+        .matrix-table thead {
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .matrix-table th {
+            padding: 10px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--light);
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+            white-space: nowrap;
+        }
+
+        .matrix-table th:first-child {
+            text-align: right;
+            padding-right: 16px;
+            min-width: 120px;
+        }
+
+        .matrix-table td {
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 14px;
+        }
+
+        .matrix-table td:first-child {
+            text-align: right;
+            padding-right: 16px;
+            color: var(--light);
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .matrix-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .matrix-table tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .m-badge { color: #10b981; }
+        .r-badge { color: #f59e0b; }
+        .n-badge { color: rgba(255,255,255,0.15); }
+
+        /* Relations */
+        .relations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .relation-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .relation-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .relation-card p {
+            font-size: 12px;
+            color: var(--gray-light);
+            line-height: 1.6;
+        }
+
+        .relation-arrow {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Questionnaire Tiers */
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tier-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .tier-card .tier-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-2);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .tier-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .tier-card .tier-count {
+            font-size: 12px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .tier-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tier-card li {
+            padding: 4px 0;
+            font-size: 12px;
+            color: var(--gray-light);
+        }
+
+        .tier-card li::before {
+            content: '>';
+            color: var(--primary);
+            margin-left: 8px;
+            font-weight: 700;
+        }
+
+        /* Gaps */
+        .gaps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .gap-card {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .gap-card .gap-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .gap-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ef4444;
+            margin-bottom: 4px;
+        }
+
+        .gap-card p {
+            font-size: 11px;
+            color: var(--gray-light);
+        }
+
+        /* Data Model */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .model-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .model-card h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .model-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .model-card li {
+            font-size: 11px;
+            color: var(--gray-light);
+            padding: 2px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Flow */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-step {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .flow-step .step-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .flow-step h4 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .flow-step p {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .flow-arrow {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--gray-light);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-logo svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        @media print {
+            body { background: white; color: #1a1a1a; }
+            .bg-animation { display: none; }
+            .stat-card, .category-card, .tier-card, .relation-card, .model-card, .gap-card, .flow-step, .policy-table, .matrix-table {
+                background: #f8f9fa;
+                border-color: #e2e8f0;
+            }
+            .policy-table td, .matrix-table td, .category-card li, .tier-card li, .relation-card p, .section-desc {
+                color: #475569;
+            }
+            .stat-number, .logo-text, .title-section h1, .policy-num, .tier-card .tier-num {
+                background: none;
+                -webkit-text-fill-color: #6366f1;
+                color: #6366f1;
+            }
+            .accordion-body {
+                max-height: none !important;
+            }
+            .accordion-chevron {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .categories, .tier-grid { grid-template-columns: 1fr; }
+            .relations-grid, .gaps-grid { grid-template-columns: 1fr; }
+            .model-grid { grid-template-columns: repeat(2, 1fr); }
+            .matrix-table { font-size: 10px; }
+            .flow-container { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+            .ext-list, .exc-list {
+                grid-template-columns: 1fr;
+            }
+            .accordion-header {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .accordion-header .meta {
+                width: 100%;
+                justify-content: space-around;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="32" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="20" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="10" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+                    <circle cx="50" cy="50" r="4" fill="#6366f1"/>
+                </svg>
+                <div>
+                    <div class="logo-text">Drishti Consulting</div>
+                    <div class="logo-subtitle">Vision Into Reality</div>
+                </div>
+            </div>
+            <div class="doc-meta">
+                <strong>Riscovery - Knowledge Base</strong>
+                פברואר 2026 | מסמך פנימי
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="title-section">
+            <h1>מפת מוצרי ביטוח</h1>
+            <div class="subtitle">ניתוח מקיף של <strong>12 פוליסות ביטוח מאסטר</strong> בתקן ביט ישראלי</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number">12</div>
+                <div class="stat-label">סוגי פוליסות</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">~140</div>
+                <div class="stat-label">הרחבות מופו</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">~160</div>
+                <div class="stat-label">סייגים מופו</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">~250</div>
+                <div class="stat-label">שאלות ייעוץ</div>
+            </div>
+        </div>
+
+        <!-- Process Flow -->
+        <div class="section-header">
+            <div class="icon">&#9889;</div>
+            <h2>תהליך היעד</h2>
+        </div>
+        <div class="section-desc">המערכת תוביל את הלקוח מהשאלון ועד למסמך ה-RFQ המוגמר</div>
+
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="step-icon">&#128221;</div>
+                <h4>שאלון</h4>
+                <p>הלקוח עונה על שאלות</p>
+            </div>
+            <div class="flow-arrow">&larr;</div>
+            <div class="flow-step">
+                <div class="step-icon">&#9881;</div>
+                <h4>מנוע חוקים</h4>
+                <p>ניתוח צרכים אוטומטי</p>
+            </div>
+            <div class="flow-arrow">&larr;</div>
+            <div class="flow-step">
+                <div class="step-icon">&#128202;</div>
+                <h4>מפת כיסוי</h4>
+                <p>חובה / מומלץ / אופציונלי</p>
+            </div>
+            <div class="flow-arrow">&larr;</div>
+            <div class="flow-step">
+                <div class="step-icon">&#128196;</div>
+                <h4>מסמך RFQ</h4>
+                <p>מוכן להפצה למבטחים</p>
+            </div>
+        </div>
+
+        <!-- 12 Policies Accordion -->
+        <div class="section-header">
+            <div class="icon">&#128203;</div>
+            <h2>12 פוליסות מאסטר</h2>
+        </div>
+        <div class="section-desc">כל הפוליסות בתקן ביט של המפקח על הביטוח | מבטח: כלל ביטוח (11) + פניקס (1)</div>
+
+        <div class="accordion-container">
+
+            <!-- Policy 1 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">1</span>
+                    <div class="policy-name">
+                        <span class="he">אש מורחב ואבדן תוצאתי</span>
+                        <span class="en">Fire &amp; Consequential Loss</span>
+                    </div>
+                    <span class="trigger-badge trigger-named">סיכונים מוגדרים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">40</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">10</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי נזקי רכוש ממבנים, תכולה, מכונות ומלאי מפני סיכוני אש, ברק, עשן, פיצוץ, רעידת אדמה ועוד. חלק ב' מכסה אובדן רווח גולמי בתקופת השיקום.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">40</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">פריצה/גניבה</span><span class="desc">כיסוי לנזקי גניבה בפריצה לחצרים</span></div>
+                                <div class="ext-item"><span class="name">רכוש מחוץ לחצרים</span><span class="desc">כיסוי לרכוש הנמצא מחוץ לכתובת המבוטח</span></div>
+                                <div class="ext-item"><span class="name">רכוש בזמן בנייה</span><span class="desc">כיסוי לרכוש בזמן שיפוץ או בנייה</span></div>
+                                <div class="ext-item"><span class="name">רכוש בהעברה</span><span class="desc">כיסוי לרכוש בזמן שינוע</span></div>
+                                <div class="ext-item"><span class="name">חפצים אישיים של עובדים</span><span class="desc">כיסוי לחפצי עובדים בחצרים</span></div>
+                                <div class="ext-item"><span class="name">תוספות לרכוש</span><span class="desc">כיסוי אוטומטי לרכוש חדש שנרכש</span></div>
+                                <div class="ext-item"><span class="name">הוצאות לאחר אירוע</span><span class="desc">פינוי פסולת, שכ"ד חלופי</span></div>
+                                <div class="ext-item"><span class="name">שבר זכוכית</span><span class="desc">כיסוי לחלונות וויטרינות</span></div>
+                                <div class="ext-item"><span class="name">נזק ללוח חשמל</span><span class="desc">כיסוי לנזקי חשמל</span></div>
+                                <div class="ext-item"><span class="name">השלמה לכל הסיכונים</span><span class="desc">הרחבת הכיסוי מסיכונים מוגדרים לכל הסיכונים</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">10</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">נזק תוצאתי</span><span class="desc">אובדן רווחים (בחלק א' בלבד)</span></div>
+                                <div class="exc-item"><span class="name">נזקי חשמל מוגבלים</span><span class="desc">רק לרכיב הספציפי שנפגע</span></div>
+                                <div class="exc-item"><span class="name">סיכוני גרעין</span><span class="desc">קרינה וזיהום גרעיני</span></div>
+                                <div class="exc-item"><span class="name">מלחמה וטרור</span><span class="desc">אלא אם נרכשה הרחבה</span></div>
+                                <div class="exc-item"><span class="name">רעידת אדמה</span><span class="desc">אלא אם נרכשה הרחבה</span></div>
+                                <div class="exc-item"><span class="name">זיהום סביבתי</span><span class="desc">אלא אם נגרם מאירוע מבוטח</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 2 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">2</span>
+                    <div class="policy-name">
+                        <span class="he">שבר מכני</span>
+                        <span class="en">Mechanical Breakdown</span>
+                    </div>
+                    <span class="trigger-badge trigger-allrisk">כל הסיכונים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">11</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">16</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי כל הסיכונים לנזק פיזי פתאומי ובלתי צפוי למכונות וציוד. משלים את פוליסת האש - מכסה מה שאש לא מכסה.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">11</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">פיצוץ/נוזלים/פקיעת צנרת</span><span class="desc">השלמת כיסוי מול פוליסת אש</span></div>
+                                <div class="ext-item"><span class="name">נזק ללוח חשמל</span><span class="desc">כיסוי לנזקי חשמל בלוחות</span></div>
+                                <div class="ext-item"><span class="name">הוצאות נוספות הכרחיות</span><span class="desc">שעות נוספות, הובלה אווירית</span></div>
+                                <div class="ext-item"><span class="name">ביטוח יסודות</span><span class="desc">כיסוי ליסודות מכונות</span></div>
+                                <div class="ext-item"><span class="name">דליפת גז תאונתית</span><span class="desc">נזק מדליפת גז</span></div>
+                                <div class="ext-item"><span class="name">רכוש נוסף שנמצא בתיקון</span><span class="desc">נזק שנחשף בעת תיקון</span></div>
+                                <div class="ext-item"><span class="name">נזק לרכוש סמוך/מחובר</span><span class="desc">נזק לציוד צמוד למכונה שנפגעה</span></div>
+                                <div class="ext-item"><span class="name">חלקים שאינם זמינים</span><span class="desc">עלות חלפים שאינם בייצור</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">16</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">סיכוני אש</span><span class="desc">מכוסים בפוליסת אש (עיצוב משלים)</span></div>
+                                <div class="exc-item"><span class="name">נזק תוצאתי</span><span class="desc">אובדן רווחים</span></div>
+                                <div class="exc-item"><span class="name">עומס יתר/שימוש ניסיוני</span><span class="desc">שימוש מעבר למפרט</span></div>
+                                <div class="exc-item"><span class="name">בלאי טבעי</span><span class="desc">שחיקה, קורוזיה, חלודה</span></div>
+                                <div class="exc-item"><span class="name">חומרים מתכלים</span><span class="desc">רצועות, מסבים, סוללות</span></div>
+                                <div class="exc-item"><span class="name">המשך הפעלה לאחר נזק ידוע</span><span class="desc">הפעלה למרות תקלה ידועה</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 3 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">3</span>
+                    <div class="policy-name">
+                        <span class="he">אחריות כלפי צד שלישי</span>
+                        <span class="en">Third Party Liability</span>
+                    </div>
+                    <span class="trigger-badge trigger-occurrence">מקרה ביטוח</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">16</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">13</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי אחריות משפטית לפיצוי צדדים שלישיים בגין נזקי גוף ורכוש. כולל הוצאות הגנה משפטית. נדרש בכל חוזה שכירות ושירותים.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">16</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">שהות זמנית בחו"ל</span><span class="desc">כיסוי לאירועים בחו"ל</span></div>
+                                <div class="ext-item"><span class="name">אחריות צולבת</span><span class="desc">כיסוי הדדי בין מבוטחים משותפים</span></div>
+                                <div class="ext-item"><span class="name">רכוש עובדים</span><span class="desc">כיסוי לנזק לרכוש של עובדים</span></div>
+                                <div class="ext-item"><span class="name">פעילות קבלני משנה</span><span class="desc">כיסוי לנזקי קבלני משנה</span></div>
+                                <div class="ext-item"><span class="name">אחריות בנייה/שיפוץ</span><span class="desc">כיסוי בזמן עבודות בנייה</span></div>
+                                <div class="ext-item"><span class="name">אחריות אירועים</span><span class="desc">כיסוי לאירועים מיוחדים</span></div>
+                                <div class="ext-item"><span class="name">הרעלת מזון</span><span class="desc">כיסוי לנזקי הרעלת מזון</span></div>
+                                <div class="ext-item"><span class="name">כלי נשק</span><span class="desc">כיסוי לנזקי נשק שנישא ע"י עובדים</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">13</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">נזקי עובדים</span><span class="desc">מכוסים בפוליסת מעבידים</span></div>
+                                <div class="exc-item"><span class="name">אחריות רכב מנועי</span><span class="desc">דורש ביטוח רכב נפרד</span></div>
+                                <div class="exc-item"><span class="name">אחריות מוצר</span><span class="desc">דורש פוליסת מוצר נפרדת</span></div>
+                                <div class="exc-item"><span class="name">אחריות מקצועית</span><span class="desc">לא מכוסה</span></div>
+                                <div class="exc-item"><span class="name">זיהום סביבתי</span><span class="desc">אלא אם פתאומי ומקרי</span></div>
+                                <div class="exc-item"><span class="name">נזקים עונשיים</span><span class="desc">פיצויים עונשיים לא מכוסים</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 4 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">4</span>
+                    <div class="policy-name">
+                        <span class="he">אחריות מעבידים</span>
+                        <span class="en">Employers Liability</span>
+                    </div>
+                    <span class="trigger-badge trigger-occurrence">מקרה ביטוח</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">12</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">9</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי אחריות משפטית כלפי עובדים בגין תאונות עבודה ומחלות מקצוע. משלים את ביטוח לאומי - מכסה את הפער מעל הגמלאות.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">12</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">שהות זמנית בחו"ל</span><span class="desc">כיסוי לעובדים בשליחות</span></div>
+                                <div class="ext-item"><span class="name">עובדים בחוזים מיוחדים</span><span class="desc">עובדי כוח אדם, פרילנסרים</span></div>
+                                <div class="ext-item"><span class="name">פעילויות הקשורות לעבודה</span><span class="desc">ימי גיבוש, ספורט</span></div>
+                                <div class="ext-item"><span class="name">אחריות אישית של עובד</span><span class="desc">כיסוי לעובד שגרם נזק</span></div>
+                                <div class="ext-item"><span class="name">כלי נשק</span><span class="desc">כיסוי לנזקי נשק</span></div>
+                                <div class="ext-item"><span class="name">קבלנים/קבלני משנה ועובדיהם</span><span class="desc">כיסוי לעובדי קבלן</span></div>
+                                <div class="ext-item"><span class="name">עובדי שטחים מוחזקים</span><span class="desc">עובדים מהשטחים</span></div>
+                                <div class="ext-item"><span class="name">בעלי שליטה בשכר</span><span class="desc">כיסוי לבעלי מניות שכירים</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">9</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">אחריות חוזית</span><span class="desc">חבות שנובעת מחוזה בלבד</span></div>
+                                <div class="exc-item"><span class="name">תביעות ביטוח לאומי</span><span class="desc">עקב מחדל המעביד</span></div>
+                                <div class="exc-item"><span class="name">אסבסט</span><span class="desc">חשיפה לאסבסט</span></div>
+                                <div class="exc-item"><span class="name">מלחמה וטרור</span><span class="desc">אירועי מלחמה</span></div>
+                                <div class="exc-item"><span class="name">תאונות דרכים</span><span class="desc">מכוסות בביטוח רכב חובה</span></div>
+                                <div class="exc-item"><span class="name">נזקים עונשיים</span><span class="desc">פיצויים עונשיים</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 5 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">5</span>
+                    <div class="policy-name">
+                        <span class="he">אחריות המוצר</span>
+                        <span class="en">Product Liability</span>
+                    </div>
+                    <span class="trigger-badge trigger-claims">תביעה בתקופה</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">6</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">20+</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי אחריות משפטית בגין נזקי גוף ורכוש שנגרמו ממוצר פגום. פוליסה על בסיס "תביעות שהוגשו" עם תאריך רטרואקטיבי.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">6</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">הרחבת מפיצים</span><span class="desc">כיסוי למפיצים ומשווקים</span></div>
+                                <div class="ext-item"><span class="name">תקופת גילוי</span><span class="desc">12 חודשים לאחר ביטול הפוליסה</span></div>
+                                <div class="ext-item"><span class="name">אחריות צולבת</span><span class="desc">כיסוי הדדי בין מבוטחים</span></div>
+                                <div class="ext-item"><span class="name">הגנה פלילית/מנהלית</span><span class="desc">הוצאות הגנה בהליכים</span></div>
+                                <div class="ext-item"><span class="name">פגיעה אישית</span><span class="desc">כיסוי עד 200,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">עבודות שבוצעו</span><span class="desc">כיסוי לעבודות שהושלמו</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">20+</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">נזקי עובדים</span><span class="desc">מכוסים בפוליסת מעבידים</span></div>
+                                <div class="exc-item"><span class="name">ייצור בניגוד לחוק</span><span class="desc">מוצר שיוצר שלא כדין</span></div>
+                                <div class="exc-item"><span class="name">מוצר פגום ביודעין</span><span class="desc">ידיעה מוקדמת על פגם</span></div>
+                                <div class="exc-item"><span class="name">החזרת מוצרים</span><span class="desc">עלות ריקול לא מכוסה</span></div>
+                                <div class="exc-item"><span class="name">נזק למוצר עצמו</span><span class="desc">רק נזק לצד שלישי</span></div>
+                                <div class="exc-item"><span class="name">סיכוני גרעין</span><span class="desc">קרינה גרעינית</span></div>
+                                <div class="exc-item"><span class="name">אסבסט</span><span class="desc">מוצרי אסבסט</span></div>
+                                <div class="exc-item"><span class="name">רכיבי מטוסים</span><span class="desc">חלקים לתעופה</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 6 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">6</span>
+                    <div class="policy-name">
+                        <span class="he">כל הסיכונים - כספים</span>
+                        <span class="en">Cash / Money</span>
+                    </div>
+                    <span class="trigger-badge trigger-allrisk">כל הסיכונים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">4</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">10</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי כל הסיכונים לאובדן או נזק לכספים, שיקים, שטרות וניירות ערך - בחצרים ובהעברה.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">4</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">כספים בבית מנהלים</span><span class="desc">כיסוי לכספים המוחזקים בבתי עובדים</span></div>
+                                <div class="ext-item"><span class="name">כלי כתב רשומים בדואר/שליח</span><span class="desc">כיסוי למשלוח בדואר או שליח</span></div>
+                                <div class="ext-item"><span class="name">זיוף שיקים גנובים</span><span class="desc">כיסוי עד 50,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">נזק לכספת</span><span class="desc">כיסוי לנזק פיזי לכספת</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">10</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">חוסר בלתי מוסבר</span><span class="desc">חסר במזומנים ללא סיבה</span></div>
+                                <div class="exc-item"><span class="name">כסף ברכב ללא השגחה</span><span class="desc">רכב שנעזב ללא שמירה</span></div>
+                                <div class="exc-item"><span class="name">מעילת עובדים</span><span class="desc">מכוסה בפוליסת נאמנות</span></div>
+                                <div class="exc-item"><span class="name">גניבה רגילה</span><span class="desc">רק פריצה או שוד מכוסים</span></div>
+                                <div class="exc-item"><span class="name">אמצעי תשלום אלקטרוניים</span><span class="desc">כרטיסי אשראי וכו'</span></div>
+                                <div class="exc-item"><span class="name">שיקים מזויפים</span><span class="desc">זיוף שאינו קשור לגניבה</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 7 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">7</span>
+                    <div class="policy-name">
+                        <span class="he">נאמנות</span>
+                        <span class="en">Fidelity / Crime</span>
+                    </div>
+                    <span class="trigger-badge trigger-discovery">גילוי</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">1</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">7</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי הפסד כספי ישיר שנגרם ממעילה, הונאה או גניבה של עובדים. פוליסה על בסיס "גילוי" עם תאריך רטרואקטיבי.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">1</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">תקופת גילוי</span><span class="desc">6 חודשים נוספים לגילוי לאחר ביטול הפוליסה</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">7</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">נזק שהתגלה לפני תחילת הפוליסה</span><span class="desc">אירועים ידועים קודמים</span></div>
+                                <div class="exc-item"><span class="name">נזק לאחר גילוי</span><span class="desc">המשך נזק מאותו עובד</span></div>
+                                <div class="exc-item"><span class="name">נזק לפני תאריך רטרואקטיבי</span><span class="desc">אירועים ישנים מדי</span></div>
+                                <div class="exc-item"><span class="name">גילוי מאוחר</span><span class="desc">יותר מ-12 חודש לאחר עזיבת העובד</span></div>
+                                <div class="exc-item"><span class="name">נזק לאחר תום הפוליסה</span><span class="desc">אירועים שלא בתקופה</span></div>
+                                <div class="exc-item"><span class="name">נזק עקיף/תוצאתי</span><span class="desc">רק הפסד ישיר מכוסה</span></div>
+                                <div class="exc-item"><span class="name">מלחמה/טרור/גרעין</span><span class="desc">סיכונים חריגים</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 8 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">8</span>
+                    <div class="policy-name">
+                        <span class="he">רכוש בהעברה</span>
+                        <span class="en">Cargo in Transit</span>
+                    </div>
+                    <span class="trigger-badge trigger-allrisk">כל הסיכונים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">3</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">12</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי כל הסיכונים לנזק פיזי לסחורה בזמן הובלה ברכב בגבולות הטריטוריאליים - מרגע הטעינה ועד הפריקה.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">3</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">אובדן יחידה שלמה</span><span class="desc">כיסוי לאובדן כולל של משלוח</span></div>
+                                <div class="ext-item"><span class="name">משלוחי יצוא/יבוא</span><span class="desc">כיסוי FOB/C&amp;F למשלוחים בינלאומיים</span></div>
+                                <div class="ext-item"><span class="name">הגנת מותג/הצלה</span><span class="desc">כיסוי להשמדת סחורה פגומה</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">12</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">חומרים מסוכנים</span><span class="desc">אלא אם בבעלות המבוטח</span></div>
+                                <div class="exc-item"><span class="name">פגם טבעי/בלאי</span><span class="desc">התדרדרות טבעית</span></div>
+                                <div class="exc-item"><span class="name">שבר חרסינה/זכוכית</span><span class="desc">אלא אם חלק ממכונה</span></div>
+                                <div class="exc-item"><span class="name">דליפה ממכולה</span><span class="desc">נזילה מאריזה</span></div>
+                                <div class="exc-item"><span class="name">גניבה רגילה</span><span class="desc">רק פריצה או שוד</span></div>
+                                <div class="exc-item"><span class="name">רכב לא כשיר</span><span class="desc">רכב ללא טסט תקף</span></div>
+                                <div class="exc-item"><span class="name">נהג ללא רישיון</span><span class="desc">נהג בלתי מורשה</span></div>
+                                <div class="exc-item"><span class="name">חניית לילה עם מטען</span><span class="desc">סחורה ברכב ללא שמירה</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 9 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">9</span>
+                    <div class="policy-name">
+                        <span class="he">נזקי טרור</span>
+                        <span class="en">Terrorism</span>
+                    </div>
+                    <span class="trigger-badge trigger-named">סיכון מוגדר</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">2</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">8</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            פוליסת עודף המכסה את ההפרש בין הנזק הכולל לפיצוי מקרן מס רכוש. כוללת פרק רכוש ופרק אובדן רווחים (אופציונלי).
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">2</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">פרק 1 - רכוש</span><span class="desc">כיסוי נזק פיזי מטרור מעל פיצוי מס רכוש</span></div>
+                                <div class="ext-item"><span class="name">פרק 2 - אובדן רווחים</span><span class="desc">כיסוי הפסדים עסקיים בעקבות אירוע טרור</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">8</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">מלחמה/מלחמת אזרחים</span><span class="desc">עימות מזוין שאינו טרור</span></div>
+                                <div class="exc-item"><span class="name">נשק ביולוגי/כימי</span><span class="desc">אלא אם למחקר/רפואה</span></div>
+                                <div class="exc-item"><span class="name">פריצה/גניבה</span><span class="desc">אלא אם מיד לאחר פיגוע</span></div>
+                                <div class="exc-item"><span class="name">מתקנים צבאיים/ביטחוניים</span><span class="desc">רכוש במתקני צבא</span></div>
+                                <div class="exc-item"><span class="name">סיכוני גרעין</span><span class="desc">פיצוץ גרעיני</span></div>
+                                <div class="exc-item"><span class="name">מחוץ לגבולות</span><span class="desc">אירועים מחוץ לטריטוריה</span></div>
+                                <div class="exc-item"><span class="name">נזק תוצאתי (פרק 1)</span><span class="desc">רק נזק ישיר לרכוש</span></div>
+                                <div class="exc-item"><span class="name">רכוש מבוטח ימי</span><span class="desc">רכוש בכיסוי ימי</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 10 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">10</span>
+                    <div class="policy-name">
+                        <span class="he">ציוד אלקטרוני</span>
+                        <span class="en">Electronic Equipment</span>
+                    </div>
+                    <span class="trigger-badge trigger-allrisk">כל הסיכונים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">16</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">27</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי כל הסיכונים לציוד אלקטרוני ב-4 פרקים: רכוש, שחזור נתונים, הוצאות תפעול נוספות, ואובדן רווחים. כולל שרתים, מחשבים, רשתות, UPS ועוד.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">16</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">תקלת מיזוג אוויר</span><span class="desc">כיסוי לנזק מכשל מערכת קירור</span></div>
+                                <div class="ext-item"><span class="name">פינוי פסולת</span><span class="desc">עד 10% מתגמולי התביעה</span></div>
+                                <div class="ext-item"><span class="name">הוצאות נוספות הכרחיות</span><span class="desc">עד 20% או 400,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">נזק נוסף בזמן תיקון</span><span class="desc">כיסוי לנזק שנגרם בתיקון</span></div>
+                                <div class="ext-item"><span class="name">נזק לרכוש סמוך</span><span class="desc">עד 60,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">הוצאות התאמת ציוד</span><span class="desc">עד 160,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">חלקים שאינם בייצור</span><span class="desc">עד 160,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">תוספות לרכוש מבוטח</span><span class="desc">דיווח תוך 60 יום</span></div>
+                                <div class="ext-item"><span class="name">הוצאות התאמת תוכנה</span><span class="desc">עד 80,000 ש"ח</span></div>
+                                <div class="ext-item"><span class="name">השבת סכום ביטוח</span><span class="desc">חידוש אוטומטי</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">27</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">פוליסה שיורית</span><span class="desc">ציוד המכוסה בפוליסת אש</span></div>
+                                <div class="exc-item"><span class="name">פגמים קיימים</span><span class="desc">פגמים ידועים מראש</span></div>
+                                <div class="exc-item"><span class="name">בלאי טבעי</span><span class="desc">שחיקה משימוש רגיל</span></div>
+                                <div class="exc-item"><span class="name">תיקון תקלות תפעוליות</span><span class="desc">תחזוקה שוטפת</span></div>
+                                <div class="exc-item"><span class="name">אחריות יצרן/ספק</span><span class="desc">נזק באחריות היצרן</span></div>
+                                <div class="exc-item"><span class="name">חומרים מתכלים</span><span class="desc">טונרים, סוללות וכו'</span></div>
+                                <div class="exc-item"><span class="name">פגמים אסתטיים</span><span class="desc">שריטות ללא פגיעה בתפקוד</span></div>
+                                <div class="exc-item"><span class="name">גניבה פשוטה</span><span class="desc">רק פריצה או שוד</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 11 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">11</span>
+                    <div class="policy-name">
+                        <span class="he">ציוד מכני הנדסי</span>
+                        <span class="en">Heavy / Engineering Equipment</span>
+                    </div>
+                    <span class="trigger-badge trigger-allrisk">כל הסיכונים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">4</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">16</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            כיסוי כל הסיכונים לציוד מכני כבד - באגרים, מחפרים, עגורנים, מלגזות. שיפוי לפי שווי ממשי (לא חדש תמורת ישן).
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">4</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">גניבה, פריצה ושוד</span><span class="desc">כיסוי לגניבת ציוד (מבטל חריג)</span></div>
+                                <div class="ext-item"><span class="name">חילוץ, גרירה והעברה</span><span class="desc">עד 20,000 ש"ח ליחידה</span></div>
+                                <div class="ext-item"><span class="name">השבה לקדמות</span><span class="desc">חידוש אוטומטי של סכום ביטוח</span></div>
+                                <div class="ext-item"><span class="name">הוצאות נוספות הכרחיות</span><span class="desc">שעות נוספות, הובלה אווירית</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">16</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">נזק תוצאתי/עקיף</span><span class="desc">אובדן רווחים</span></div>
+                                <div class="exc-item"><span class="name">מלחמה/טרור/גרעין</span><span class="desc">סיכונים חריגים</span></div>
+                                <div class="exc-item"><span class="name">עומס יתר/שימוש ניסיוני</span><span class="desc">מעבר למפרט</span></div>
+                                <div class="exc-item"><span class="name">גניבה</span><span class="desc">אלא אם נרכשה הרחבה 3.1</span></div>
+                                <div class="exc-item"><span class="name">בלאי טבעי</span><span class="desc">שחיקה, חלודה, קורוזיה</span></div>
+                                <div class="exc-item"><span class="name">המשך הפעלה לאחר נזק</span><span class="desc">שימוש למרות תקלה</span></div>
+                                <div class="exc-item"><span class="name">נזק צמיגים</span><span class="desc">עומק מדרך מתחת ל-60%</span></div>
+                                <div class="exc-item"><span class="name">נזק ליד מקור מים</span><span class="desc">ים, אגם, נהר</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy 12 -->
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span class="policy-num">12</span>
+                    <div class="policy-name">
+                        <span class="he">עבודות קבלניות</span>
+                        <span class="en">Contractor Works (CAR)</span>
+                    </div>
+                    <span class="trigger-badge trigger-allrisk">כל הסיכונים</span>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <div class="num">27</div>
+                            <div class="label">הרחבות</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="num">32</div>
+                            <div class="label">סייגים</div>
+                        </div>
+                    </div>
+                    <span class="accordion-chevron">&#9660;</span>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-body-inner">
+                        <div class="accordion-summary">
+                            פוליסה משולבת לפרויקטי בנייה הכוללת 3 פרקים: א' רכוש (עבודות ובניין), ב' צד שלישי, ג' מעבידים. חובה במכרזים ממשלתיים.
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="ext-label">הרחבות</span> <span class="count-badge">27</span></h4>
+                            <div class="ext-list">
+                                <div class="ext-item"><span class="name">גניבה/פריצה</span><span class="desc">כיסוי לגניבת חומרים מהאתר</span></div>
+                                <div class="ext-item"><span class="name">רכוש בעבודה</span><span class="desc">כיסוי לרכוש קיים שעליו עובדים</span></div>
+                                <div class="ext-item"><span class="name">רכוש סמוך/צמוד</span><span class="desc">כיסוי לנזק למבנים סמוכים</span></div>
+                                <div class="ext-item"><span class="name">רכוש בהעברה</span><span class="desc">כיסוי לחומרים בשינוע</span></div>
+                                <div class="ext-item"><span class="name">מבנים וציוד עזר</span><span class="desc">כיסוי עד 40,000 ש"ח ליחידה</span></div>
+                                <div class="ext-item"><span class="name">אחריות צולבת</span><span class="desc">כיסוי הדדי בין מבוטחים</span></div>
+                                <div class="ext-item"><span class="name">מתקנים תת-קרקעיים</span><span class="desc">כיסוי לצנרת וכבלים</span></div>
+                                <div class="ext-item"><span class="name">רעידות/היחלשות סמך</span><span class="desc">עד 20% מגבול או 4 מיליון ש"ח</span></div>
+                                <div class="ext-item"><span class="name">נזק רכוש מכלי רכב</span><span class="desc">עד 2 מיליון ש"ח באתר</span></div>
+                                <div class="ext-item"><span class="name">נזק גוף מציוד כבד</span><span class="desc">ציוד שאינו רכב כביש</span></div>
+                            </div>
+                        </div>
+                        <div class="accordion-section">
+                            <h4><span class="exc-label">סייגים</span> <span class="count-badge">32</span></h4>
+                            <div class="exc-list">
+                                <div class="exc-item"><span class="name">נזק תוצאתי/עקיף</span><span class="desc">אובדן רווחים</span></div>
+                                <div class="exc-item"><span class="name">תכנון/חומרים לקויים</span><span class="desc">אך נזק משני מכוסה</span></div>
+                                <div class="exc-item"><span class="name">בלאי טבעי</span><span class="desc">שחיקה רגילה</span></div>
+                                <div class="exc-item"><span class="name">שבר מכני</span><span class="desc">אלא אם בתקופת הרצה</span></div>
+                                <div class="exc-item"><span class="name">גניבה ללא נוכחות</span><span class="desc">כשאין עובדים באתר</span></div>
+                                <div class="exc-item"><span class="name">רכוש המבוטח (פרק ב')</span><span class="desc">נזק לרכוש עצמי</span></div>
+                                <div class="exc-item"><span class="name">אחריות חוזית</span><span class="desc">חבות חוזית בלבד</span></div>
+                                <div class="exc-item"><span class="name">הפסקת עבודה מעל 90 יום</span><span class="desc">עצירה ממושכת</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><span class="trigger-badge trigger-allrisk">כל הסיכונים</span> מכסה הכל אלא אם יש סייג</div>
+            <div class="legend-item"><span class="trigger-badge trigger-named">סיכונים מוגדרים</span> מכסה רק סיכונים רשומים</div>
+            <div class="legend-item"><span class="trigger-badge trigger-occurrence">מקרה ביטוח</span> אירוע בתקופת הפוליסה</div>
+            <div class="legend-item"><span class="trigger-badge trigger-claims">תביעה בתקופה</span> תביעה מוגשת בתקופה</div>
+            <div class="legend-item"><span class="trigger-badge trigger-discovery">גילוי</span> נזק שהתגלה בתקופה</div>
+        </div>
+
+        <!-- Categories -->
+        <div class="section-header">
+            <div class="icon">&#128194;</div>
+            <h2>קטגוריות כיסוי</h2>
+        </div>
+
+        <div class="categories">
+            <div class="category-card">
+                <h3><span class="cat-icon">&#127968;</span> הגנת רכוש</h3>
+                <div class="cat-desc">כיסוי לנכסים פיזיים ולאובדן הכנסה</div>
+                <ul>
+                    <li><span class="policy-name-he">1. אש מורחב ואבדן תוצאתי</span> <span>מבנים, תכולה, מלאי + אובדן רווח</span></li>
+                    <li><span class="policy-name-he">2. שבר מכני</span> <span>מכונות וציוד (משלים לאש)</span></li>
+                    <li><span class="policy-name-he">9. נזקי טרור</span> <span>עודף מעל פיצוי מס רכוש</span></li>
+                    <li><span class="policy-name-he">10. ציוד אלקטרוני</span> <span>IT, שרתים, נתונים + אובדן רווח</span></li>
+                    <li><span class="policy-name-he">11. ציוד מכני הנדסי</span> <span>ציוד כבד ומכונות באתרי עבודה</span></li>
+                </ul>
+            </div>
+            <div class="category-card">
+                <h3><span class="cat-icon">&#9878;</span> הגנת חבויות</h3>
+                <div class="cat-desc">אחריות משפטית כלפי צדדים שלישיים ועובדים</div>
+                <ul>
+                    <li><span class="policy-name-he">3. אחריות צד שלישי</span> <span>נזקי גוף ורכוש לציבור</span></li>
+                    <li><span class="policy-name-he">4. אחריות מעבידים</span> <span>תאונות עבודה ומחלות מקצוע</span></li>
+                    <li><span class="policy-name-he">5. אחריות המוצר</span> <span>נזק ממוצר פגום</span></li>
+                </ul>
+            </div>
+            <div class="category-card">
+                <h3><span class="cat-icon">&#128176;</span> הגנת נכסים פיננסיים</h3>
+                <div class="cat-desc">כספים, נאמנות עובדים ומשלוחים</div>
+                <ul>
+                    <li><span class="policy-name-he">6. כל הסיכונים - כספים</span> <span>מזומנים, שיקים, ני"ע</span></li>
+                    <li><span class="policy-name-he">7. נאמנות</span> <span>מעילת עובדים</span></li>
+                    <li><span class="policy-name-he">8. רכוש בהעברה</span> <span>סחורה במשלוח</span></li>
+                </ul>
+            </div>
+            <div class="category-card">
+                <h3><span class="cat-icon">&#127959;</span> ביטוח פרויקטלי</h3>
+                <div class="cat-desc">כיסוי משולב לפרויקטי בנייה והקמה</div>
+                <ul>
+                    <li><span class="policy-name-he">12. עבודות קבלניות (CAR)</span> <span>רכוש + צד ג' + מעבידים</span></li>
+                    <li><span style="color: var(--gray); font-size: 11px;">משלב 3 פרקים בפוליסה אחת</span></li>
+                    <li><span style="color: var(--gray); font-size: 11px;">חובה במכרזים ממשלתיים</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Industry Matrix -->
+        <div class="section-header">
+            <div class="icon">&#127981;</div>
+            <h2>מטריצת ענפים</h2>
+        </div>
+        <div class="section-desc">חובה (&#10004;) | מומלץ (&#9675;) | לא נדרש בד"כ (-)</div>
+
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th>ענף</th>
+                    <th>אש</th>
+                    <th>שבר</th>
+                    <th>צד ג'</th>
+                    <th>מעבידים</th>
+                    <th>מוצר</th>
+                    <th>כספים</th>
+                    <th>נאמנות</th>
+                    <th>העברה</th>
+                    <th>טרור</th>
+                    <th>אלקטרוני</th>
+                    <th>צמ"ה</th>
+                    <th>קבלני</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>תעשייה / ייצור</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>בנייה / תשתיות</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                </tr>
+                <tr>
+                    <td>טכנולוגיה / IT</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>קמעונאות / מסחר</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>לוגיסטיקה / הובלה</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>שירותים פיננסיים</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>בריאות / רפואה</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>חקלאות</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                </tr>
+                <tr>
+                    <td>נדל"ן / יזמות</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                </tr>
+                <tr>
+                    <td>שירותים מקצועיים</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="n-badge">-</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="m-badge">&#10004;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="r-badge">&#9675;</td>
+                    <td class="n-badge">-</td>
+                    <td class="n-badge">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Cross-Policy Relations -->
+        <div class="section-header">
+            <div class="icon">&#128279;</div>
+            <h2>קשרים בין פוליסות</h2>
+        </div>
+        <div class="section-desc">הפוליסות תוכננו לעבוד יחד - חשוב להבין את הקשרים כדי למנוע כפילויות וחורים בכיסוי</div>
+
+        <div class="relations-grid">
+            <div class="relation-card">
+                <h4>אש <span class="relation-arrow">&#8596;</span> שבר מכני</h4>
+                <p>משלימים זה את זה. שבר מכני מכסה מה שאש לא מכסה ולהפך. חובה לרכוש יחד.</p>
+            </div>
+            <div class="relation-card">
+                <h4>אש <span class="relation-arrow">&#8594;</span> טרור</h4>
+                <p>פוליסת טרור היא "עודף" מעל פיצוי קרן מס רכוש. מתייחסת לפוליסת אש.</p>
+            </div>
+            <div class="relation-card">
+                <h4>אש <span class="relation-arrow">&#8596;</span> ציוד אלקטרוני</h4>
+                <p>ציוד אלקטרוני יכולה להיות "פוליסה שיורית" - מכסה רק מה שאש לא מכסה.</p>
+            </div>
+            <div class="relation-card">
+                <h4>צד ג' <span class="relation-arrow">&#8594;</span> מעבידים</h4>
+                <p>צד שלישי מחריגה נזקי עובדים. אחריות מעבידים מכסה את הפער.</p>
+            </div>
+            <div class="relation-card">
+                <h4>צד ג' <span class="relation-arrow">&#8594;</span> אחריות מוצר</h4>
+                <p>צד שלישי מחריגה אחריות מוצר. דורש פוליסה נפרדת.</p>
+            </div>
+            <div class="relation-card">
+                <h4>CAR = רכוש + צד ג' + מעבידים</h4>
+                <p>עבודות קבלניות משלבת 3 פרקים בפוליסה אחת. לפרויקטי בנייה בלבד.</p>
+            </div>
+        </div>
+
+        <!-- Questionnaire Tiers -->
+        <div class="section-header">
+            <div class="icon">&#128221;</div>
+            <h2>מבנה השאלון - 4 שכבות</h2>
+        </div>
+
+        <div class="tier-grid">
+            <div class="tier-card">
+                <div class="tier-num">1</div>
+                <h3>שאלות אוניברסליות</h3>
+                <div class="tier-count">6 שאלות | כל הלקוחות</div>
+                <ul>
+                    <li>סוג עסק / ענף</li>
+                    <li>מספר עובדים</li>
+                    <li>מחזור שנתי</li>
+                    <li>סוג מבנה (שכירות/בעלות)</li>
+                    <li>שווי נכסים (מבנה, תכולה, מכונות, מלאי)</li>
+                    <li>מיקום גיאוגרפי</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-num">2</div>
+                <h3>שאלות לפי פעילות</h3>
+                <div class="tier-count">8 שאלות | מזהה צרכים</div>
+                <ul>
+                    <li>האם מייצרים/מייבאים/מפיצים מוצרים?</li>
+                    <li>האם מחזיקים מזומנים?</li>
+                    <li>האם יש מכונות כבדות?</li>
+                    <li>האם יש ציוד IT/אלקטרוני?</li>
+                    <li>האם מעורבים בבנייה/שיפוץ?</li>
+                    <li>האם מובילים סחורה?</li>
+                    <li>האם מייצאים/מייבאים?</li>
+                    <li>האם מפעילים ציוד מכני הנדסי?</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-num">3</div>
+                <h3>שאלות ממוקדות סיכון</h3>
+                <div class="tier-count">8 שאלות | מדייק כיסוי</div>
+                <ul>
+                    <li>עובדים שמנהלים כספים/נכסים?</li>
+                    <li>שימוש בקבלני משנה?</li>
+                    <li>קהל/מבקרים בחצרים?</li>
+                    <li>שליחת עובדים לחו"ל?</li>
+                    <li>נשיאת כלי נשק?</li>
+                    <li>קרבה למקורות מים?</li>
+                    <li>תשתיות תת-קרקעיות?</li>
+                    <li>אזור רעידות אדמה?</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-num">4</div>
+                <h3>שאלות עומק לכל פוליסה</h3>
+                <div class="tier-count">7-40 שאלות | לפי פוליסה</div>
+                <ul>
+                    <li>סכומי ביטוח וגבולות אחריות</li>
+                    <li>רמת השתתפות עצמית מועדפת</li>
+                    <li>הרחבות נדרשות</li>
+                    <li>גורמי סיכון ספציפיים</li>
+                    <li>חובות חוזיות קיימות</li>
+                    <li>ביטוחים קיימים</li>
+                    <li>היסטוריית תביעות</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Coverage Gaps -->
+        <div class="section-header">
+            <div class="icon">&#9888;</div>
+            <h2>פערי כיסוי</h2>
+        </div>
+        <div class="section-desc">6 סוגי ביטוח שאינם מכוסים באף אחת מ-12 הפוליסות ויש לרכוש בנפרד</div>
+
+        <div class="gaps-grid">
+            <div class="gap-card">
+                <div class="gap-icon">&#128188;</div>
+                <h4>אחריות מקצועית (E&O)</h4>
+                <p>טעויות ומחדלים בשירות מקצועי</p>
+            </div>
+            <div class="gap-card">
+                <div class="gap-icon">&#128101;</div>
+                <h4>נושאי משרה (D&O)</h4>
+                <p>אחריות אישית של דירקטורים</p>
+            </div>
+            <div class="gap-card">
+                <div class="gap-icon">&#128187;</div>
+                <h4>ביטוח סייבר</h4>
+                <p>דליפת מידע, כופר, אחריות דיגיטלית</p>
+            </div>
+            <div class="gap-card">
+                <div class="gap-icon">&#127793;</div>
+                <h4>אחריות סביבתית</h4>
+                <p>ניקוי זיהום ונזק סביבתי</p>
+            </div>
+            <div class="gap-card">
+                <div class="gap-icon">&#9973;</div>
+                <h4>ביטוח ימי</h4>
+                <p>סחורה בהובלה ימית</p>
+            </div>
+            <div class="gap-card">
+                <div class="gap-icon">&#128663;</div>
+                <h4>רכב מנועי</h4>
+                <p>חובה + מקיף לכלי רכב</p>
+            </div>
+        </div>
+
+        <!-- Data Model -->
+        <div class="section-header">
+            <div class="icon">&#128451;</div>
+            <h2>מודל נתונים מומלץ</h2>
+        </div>
+        <div class="section-desc">8 ישויות מרכזיות לבניית מערכת ייעוץ הביטוח</div>
+
+        <div class="model-grid">
+            <div class="model-card">
+                <h4>InsuranceProduct</h4>
+                <ul>
+                    <li>id, nameHe, nameEn</li>
+                    <li>code, category</li>
+                    <li>coverageTrigger</li>
+                    <li>structure, description</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>PolicyExtension</h4>
+                <ul>
+                    <li>id, productId</li>
+                    <li>code, nameHe, nameEn</li>
+                    <li>defaultLimit</li>
+                    <li>isFirstLoss</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>SectorProfile</h4>
+                <ul>
+                    <li>id, sectorName</li>
+                    <li>mandatoryProducts[]</li>
+                    <li>recommendedProducts[]</li>
+                    <li>optionalProducts[]</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>CoverageRule</h4>
+                <ul>
+                    <li>id, priority</li>
+                    <li>conditions (JSON)</li>
+                    <li>action, target</li>
+                    <li>extensionId</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>QuestionnaireQ</h4>
+                <ul>
+                    <li>id, tier (1-4)</li>
+                    <li>questionHe, questionEn</li>
+                    <li>policyAffinity[]</li>
+                    <li>showIf, riskWeight</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>ClientAssessment</h4>
+                <ul>
+                    <li>id, clientId</li>
+                    <li>answers (JSON)</li>
+                    <li>recommendedProducts[]</li>
+                    <li>riskScore</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>RfqDocument</h4>
+                <ul>
+                    <li>id, assessmentId</li>
+                    <li>products[], extensions[]</li>
+                    <li>limits, deductibles</li>
+                    <li>status, generatedAt</li>
+                </ul>
+            </div>
+            <div class="model-card">
+                <h4>PolicyExclusion</h4>
+                <ul>
+                    <li>id, productId</li>
+                    <li>code, nameHe, nameEn</li>
+                    <li>description</li>
+                    <li>isGeneral</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="32" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="20" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="10" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+                    <circle cx="50" cy="50" r="4" fill="#6366f1"/>
+                </svg>
+                <span>Drishti Consulting &copy; 2026</span>
+            </div>
+            <div>
+                Riscovery - Insurance Advisory Management | LHD Insurance Consulting
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    document.querySelectorAll('.accordion-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const item = header.parentElement;
+            const body = item.querySelector('.accordion-body');
+            const inner = body.querySelector('.accordion-body-inner');
+            const isActive = item.classList.contains('active');
+
+            // Close all
+            document.querySelectorAll('.accordion-item.active').forEach(active => {
+                active.classList.remove('active');
+                active.querySelector('.accordion-body').style.maxHeight = '0';
+            });
+
+            // Open clicked (if it wasn't already open)
+            if (!isActive) {
+                item.classList.add('active');
+                body.style.maxHeight = inner.scrollHeight + 'px';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

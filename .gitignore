@@ -43,6 +43,15 @@ coverage
 # Prisma
 prisma/migrations/*.sql.pending
 
+# Sensitive client documents
+Insurance_file/
+Archive_docs/
+Client_questioneer.docx
+PP-LHD-001-26*
+
+# Claude Code
+.claude/
+
 # Misc
 *.pem
 *.key

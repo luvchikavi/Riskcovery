@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מיפוי שאלות-כיסוי ביטוחי - Riscovery | Drishti Consulting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #0ea5e9;
+            --accent: #8b5cf6;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gray-light: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #0ea5e9;
+            --gradient-2: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --gradient-3: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: var(--darker);
+            color: var(--light);
+            line-height: 1.8;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(14, 165, 233, 0.08) 0%, transparent 40%);
+            animation: bgMove 20s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-5%, 5%) rotate(5deg); }
+            50% { transform: translate(5%, -5%) rotate(-5deg); }
+            75% { transform: translate(-3%, -3%) rotate(3deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .doc-meta {
+            text-align: left;
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .doc-meta strong {
+            color: var(--light);
+            display: block;
+            font-size: 14px;
+        }
+
+        /* Title */
+        .title-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .title-section h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-section .subtitle {
+            font-size: 18px;
+            color: var(--gray-light);
+            font-weight: 300;
+        }
+
+        .title-section .subtitle strong {
+            color: var(--light);
+            font-weight: 600;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray-light);
+            margin-top: 4px;
+        }
+
+        /* Product Section (details/summary) */
+        .product-section {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .product-section:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .product-section[open] {
+            border-color: var(--primary);
+        }
+
+        .product-section summary {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            cursor: pointer;
+            gap: 16px;
+            user-select: none;
+            transition: background 0.2s;
+            list-style: none;
+        }
+
+        .product-section summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .product-section summary::marker {
+            display: none;
+            content: '';
+        }
+
+        .product-section summary:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .cat-property { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .cat-liability { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
+        .cat-financial { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .cat-engineering { background: rgba(14, 165, 233, 0.15); color: #22d3ee; }
+
+        .product-name {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .product-name .he {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--light);
+        }
+
+        .product-name .en {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .question-count-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--gray-light);
+            border: 1px solid var(--glass-border);
+        }
+
+        .trigger-text {
+            font-size: 11px;
+            color: var(--gray);
+            margin-right: auto;
+        }
+
+        .chevron {
+            font-size: 18px;
+            color: var(--gray);
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .product-section[open] .chevron {
+            transform: rotate(180deg);
+            color: var(--primary);
+        }
+
+        .product-body {
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        /* Question Table */
+        .q-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 16px;
+        }
+
+        .q-table thead {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .q-table th {
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--light);
+            text-align: right;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .q-table td {
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--gray-light);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: top;
+        }
+
+        .q-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .q-table tr:hover td {
+            background: rgba(99, 102, 241, 0.04);
+        }
+
+        .q-label-he {
+            font-weight: 600;
+            color: var(--light);
+            display: block;
+        }
+
+        .q-label-id {
+            font-size: 10px;
+            color: var(--gray);
+            font-family: monospace;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid var(--glass-border);
+            color: var(--gray-light);
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* Rule Effect Badges */
+        .rule-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .rule-extension { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .rule-multiplier { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .rule-risk { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .rule-precondition { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+        .rule-default { background: rgba(255, 255, 255, 0.06); color: var(--gray-light); border: 1px solid var(--glass-border); }
+
+        /* Legend */
+        .legend-section {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 30px;
+        }
+
+        .legend-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding-top: 40px;
+            margin-top: 40px;
+            border-top: 1px solid var(--glass-border);
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Print */
+        @media print {
+            body { background: white; color: #1e293b; }
+            .bg-animation { display: none; }
+            .product-section { break-inside: avoid; border-color: #e2e8f0; }
+            .product-section[open] .product-body { display: block !important; }
+            .stat-card { border-color: #e2e8f0; }
+            .stat-number { color: #6366f1; -webkit-text-fill-color: #6366f1; }
+            .q-table th { background: #f1f5f9; }
+            .q-table td { color: #475569; }
+            .q-label-he { color: #1e293b; }
+            .product-name .he { color: #1e293b; }
+            .legend-section { border-color: #e2e8f0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1"/>
+                            <stop offset="50%" style="stop-color:#8b5cf6"/>
+                            <stop offset="100%" style="stop-color:#d946ef"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="50" height="50" rx="12" fill="url(#logoGrad)" opacity="0.15"/>
+                    <path d="M15 35V15h8c5 0 8 2 8 6 0 3-2 5-5 6l6 8h-5l-5-7h-3v7h-4zm4-11h4c3 0 4-1 4-3s-1-3-4-3h-4v6z" fill="url(#logoGrad)"/>
+                </svg>
+                <div>
+                    <div class="logo-text">Riscovery</div>
+                    <div class="logo-subtitle">Drishti Consulting</div>
+                </div>
+            </div>
+            <div class="doc-meta">
+                <strong>Question-Coverage Mapping</strong>
+                מסמך הפניה פנימי &bull; גרסה 1.0
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="title-section">
+            <h1>מיפוי שאלות שאלון ← השפעה על כיסוי ביטוחי</h1>
+            <div class="subtitle">
+                טבלה זו מציגה כיצד כל שאלה בשאלון הלקוח משפיעה על החלטות כיסוי:<br>
+                <strong>הרחבות</strong>, סייגים, <strong>מכפילי גבול</strong>, וסימוני סיכון
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number">12</div>
+                <div class="stat-label">מוצרי ביטוח</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">113</div>
+                <div class="stat-label">שאלות ספציפיות</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">סוגי תוצאת כלל</div>
+            </div>
+        </div>
+
+        <!-- Product Sections -->
+
+        <!-- 1. FIRE_CONSEQUENTIAL_LOSS -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-property">רכוש</span>
+                <div class="product-name">
+                    <span class="he">אש ואובדן רווחים</span>
+                    <span class="en">Fire &amp; Consequential Loss</span>
+                </div>
+                <span class="question-count-badge">8 שאלות</span>
+                <span class="trigger-text">מופיע כאשר לעסק יש נכס פיזי (בעלות או שכירות)</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">שווי רכוש כולל</span><span class="q-label-id">fire_totalPropertyValue</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את סכום הביטוח הכולל לפוליסת אש. חוסר ביטוח ייגרום להפעלת כלל יחסיות.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">רווח גולמי שנתי ועלות שכר</span><span class="q-label-id">fire_annualGrossProfit</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>בסיס לחישוב כיסוי אובדן רווחים (BI). מכפיל תקופת ההשבה קובע את הסכום הכולל.</td>
+                            <td><span class="rule-badge rule-default">חישוב סכום BI</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תקופת השבה מקסימלית</span><span class="q-label-id">fire_maxReinstatementPeriod</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>קובע את אורך תקופת השיפוי לאובדן רווחים. תקופה ארוכה = פרמיה גבוהה יותר.</td>
+                            <td><span class="rule-badge rule-default">x תקופת שיפוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש כיסוי רעידת אדמה?</span><span class="q-label-id">fire_needsEarthquake</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הוספת הרחבת רעידת אדמה לפוליסה. כרוך בפרמיה נוספת והשתתפות עצמית גבוהה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">רכוש מחוץ לחצרים העיקריים?</span><span class="q-label-id">fire_propertyOutsidePremises</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הוספת הרחבת רכוש מחוץ לחצרים. דורש הגדרת מיקומים ותת-גבולות.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש כיסוי גניבה/פריצה?</span><span class="q-label-id">fire_needsTheftCoverage</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הוספת הרחבת גניבה ופריצה. מותנה באמצעי מיגון מינימליים.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">רמת השתתפות עצמית</span><span class="q-label-id">fire_acceptableDeductible</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>השפעה ישירה על גובה הפרמיה. השתתפות גבוהה = פרמיה נמוכה יותר.</td>
+                            <td><span class="rule-badge rule-default">תמחור פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">רכוש בהעברה או בבנייה?</span><span class="q-label-id">fire_propertyInTransitOrConstruction</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>סימון סיכון: רכוש בהעברה/בנייה מוחרג בדרך כלל. דורש פוליסה נפרדת (מטען/קבלנים).</td>
+                            <td><span class="rule-badge rule-risk">סימון פער כיסוי</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 2. MECHANICAL_BREAKDOWN -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-property">רכוש</span>
+                <div class="product-name">
+                    <span class="he">שבר מכונות</span>
+                    <span class="en">Mechanical Breakdown</span>
+                </div>
+                <span class="question-count-badge">6 שאלות</span>
+                <span class="trigger-text">מופיע כאשר שווי ציוד ומכונות גדול מ-0</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">רשימת מכונות ושווי החלפה</span><span class="q-label-id">mech_machineryList</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>בסיס לרשימת הציוד המבוטח. כל פריט מכוסה לפי שווי ההחלפה שהוצהר.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">גיל ומצב הציוד</span><span class="q-label-id">mech_equipmentAge</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>ציוד ישן (מעל 10 שנים) מגדיל פרמיה ועלול לדרוש בדיקה הנדסית. משקל סיכון: 0.15.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">לוח תחזוקה</span><span class="q-label-id">mech_maintenanceSchedule</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>תחזוקה לא סדירה או ללא תחזוקה מגדילים סיכון משמעותית. משקל סיכון: 0.2.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">יש פוליסת אש קיימת?</span><span class="q-label-id">mech_hasFirePolicy</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תיאום כיסויים: שבר מכני מכסה נזק פנימי, אש מכסה נזק חיצוני. מונע כפל ביטוח.</td>
+                            <td><span class="rule-badge rule-default">תיאום פוליסות</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">ציוד מיוחד/מיובא עם חלפים קשים להשגה?</span><span class="q-label-id">mech_specializedImportedEquipment</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>ציוד מיובא דורש הרחבת הובלה אווירית לחלפים ותקופת תיקון ארוכה יותר.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">העדפת השתתפות עצמית</span><span class="q-label-id">mech_deductiblePreference</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>קובע את רמת ההשתתפות העצמית. השפעה ישירה על מחיר הפוליסה.</td>
+                            <td><span class="rule-badge rule-default">תמחור פרמיה</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 3. THIRD_PARTY_LIABILITY -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-liability">אחריות</span>
+                <div class="product-name">
+                    <span class="he">אחריות כלפי צד שלישי</span>
+                    <span class="en">Third Party Liability</span>
+                </div>
+                <span class="question-count-badge">7 שאלות</span>
+                <span class="trigger-text">מופיע תמיד - נדרש לכל עסק</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">אופי הפעילות העסקית</span><span class="q-label-id">tpl_businessNature</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>בסיס לסיווג סיכון ותמחור. פעילויות מסוכנות (כימיקלים, מזון) = פרמיה גבוהה.</td>
+                            <td><span class="rule-badge rule-default">סיווג סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מספר מבקרים/לקוחות בחצרים</span><span class="q-label-id">tpl_visitorsCustomers</span></td>
+                            <td><span class="type-badge">number</span></td>
+                            <td>מספר מבקרים גבוה מגדיל חשיפה לתביעות. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שימוש בקבלני משנה?</span><span class="q-label-id">tpl_usesSubcontractors</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>שימוש בקבלני משנה דורש הרחבת אחריות שילוחית והכללתם כמבוטחים נוספים.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מארגן אירועים / מגיש מזון?</span><span class="q-label-id">tpl_organizesEvents</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>אירועים ומזון מגדילים חשיפה לתביעות גוף ומזון. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">עובדים נושאים נשק?</span><span class="q-label-id">tpl_employeesCarryWeapons</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>נשיאת נשק דורשת הרחבת נשק חם ומגדילה סיכון משמעותית. משקל סיכון: 0.15.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">גבול אחריות נדרש (לאירוע ומצטבר)</span><span class="q-label-id">tpl_requiredLimits</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את גבול האחריות בפוליסה. גבול גבוה = פרמיה גבוהה יותר.</td>
+                            <td><span class="rule-badge rule-default">קביעת גבול אחריות</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">רמת השתתפות עצמית מקובלת</span><span class="q-label-id">tpl_acceptableDeductible</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>קובע את גובה ההשתתפות העצמית בתביעה. השפעה הפוכה על הפרמיה.</td>
+                            <td><span class="rule-badge rule-default">תמחור פרמיה</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 4. EMPLOYERS_LIABILITY -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-liability">אחריות</span>
+                <div class="product-name">
+                    <span class="he">חבות מעבידים</span>
+                    <span class="en">Employers Liability</span>
+                </div>
+                <span class="question-count-badge">8 שאלות</span>
+                <span class="trigger-text">מופיע כאשר מספר העובדים גדול מ-0</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">סך שכר שנתי</span><span class="q-label-id">el_totalPayroll</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>בסיס לחישוב פרמיה. שכר שנתי כולל הוא הבסיס העיקרי לתמחור חבות מעבידים.</td>
+                            <td><span class="rule-badge rule-default">בסיס פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מעסיק עובדי קבלן משנה?</span><span class="q-label-id">el_subcontractorWorkers</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>עובדי קבלן דורשים הרחבת כיסוי. ללא הרחבה - אחריות המעביד לא תכוסה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שולח עובדים לחו"ל?</span><span class="q-label-id">el_employeesAbroad</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>עובדים בחו"ל דורשים הרחבה טריטוריאלית. ללא הרחבה - אין כיסוי מחוץ לישראל.</td>
+                            <td><span class="rule-badge rule-extension">הרחבה טריטוריאלית</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">בעלי שליטה בשכר?</span><span class="q-label-id">el_controllingShareholderPayroll</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>בעלי שליטה מוחרגים בדרך כלל. הכללתם דורשת הרחבה מפורשת בפוליסה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">עובדים מהשטחים?</span><span class="q-label-id">el_heldTerritoriesWorkers</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>עובדים מהשטחים כפופים לחקיקה שונה ודורשים כיסוי ספציפי. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סוג סביבת עבודה</span><span class="q-label-id">el_workplaceHazardType</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>סביבה תעשייתית/בנייה מגדילה סיכון לתאונות עבודה. משקל סיכון: 0.15.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">גבול אחריות נדרש</span><span class="q-label-id">el_requiredLimits</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע גבול אחריות למקרה ומצטבר. מינימום מומלץ: 5M ש"ח.</td>
+                            <td><span class="rule-badge rule-default">קביעת גבול אחריות</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">עבודה במשמרות לילה?</span><span class="q-label-id">el_nightShiftWork</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>משמרות לילה מגדילות סיכון לתאונות (עייפות, תאורה). משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 5. PRODUCT_LIABILITY -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-liability">אחריות</span>
+                <div class="product-name">
+                    <span class="he">אחריות מוצר</span>
+                    <span class="en">Product Liability</span>
+                </div>
+                <span class="question-count-badge">8 שאלות</span>
+                <span class="trigger-text">מופיע כאשר העסק מייצר, מייבא או מפיץ מוצרים</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">תיאור המוצרים המיוצרים/מיובאים/מופצים</span><span class="q-label-id">prodLiab_productsDescription</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>בסיס לסיווג סיכון מוצר. מוצרי מזון/ילדים/רפואה = סיכון גבוה יותר.</td>
+                            <td><span class="rule-badge rule-default">סיווג סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מחזור שנתי ממוצרים</span><span class="q-label-id">prodLiab_annualProductTurnover</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>בסיס לחישוב פרמיה. מחזור גבוה = חשיפה גדולה יותר.</td>
+                            <td><span class="rule-badge rule-default">בסיס פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">פעילות יצוא?</span><span class="q-label-id">prodLiab_exportActivity</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>יצוא דורש הרחבה טריטוריאלית. חשיפה לחקיקה זרה (במיוחד USA).</td>
+                            <td><span class="rule-badge rule-extension">הרחבה טריטוריאלית</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אחוז יצוא</span><span class="q-label-id">prodLiab_exportPercentage</span></td>
+                            <td><span class="type-badge">number</span></td>
+                            <td>אחוז יצוא גבוה מגדיל את הפרמיה. יצוא ל-USA מעל 20% = פרמיה גבוהה משמעותית.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תביעות קודמות או פגמים ידועים?</span><span class="q-label-id">prodLiab_priorClaims</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תביעות קודמות מגדילות פרמיה ועלולות לגרום לסייגים ספציפיים. משקל סיכון: 0.2.</td>
+                            <td><span class="rule-badge rule-risk">סימון סיכון + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מפיצים הדורשים הרחבת ספק?</span><span class="q-label-id">prodLiab_downstreamDistributors</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הרחבת ספק מכסה את המפיצים תחת הפוליסה. נדרשת כאשר מפיצים דורשים אישור ביטוח.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מבצע התקנה/תיקון?</span><span class="q-label-id">prodLiab_installsOrRepairs</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>התקנה/תיקון מרחיב את החבות מעבר למוצר עצמו. דורש הרחבת שירותי לאחר מכירה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">גבול אחריות נדרש</span><span class="q-label-id">prodLiab_requiredLimits</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את גבול האחריות למקרה ומצטבר. מומלץ לא פחות מ-2M ש"ח.</td>
+                            <td><span class="rule-badge rule-default">קביעת גבול אחריות</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 6. CASH_MONEY -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-financial">פיננסי</span>
+                <div class="product-name">
+                    <span class="he">ביטוח כספים</span>
+                    <span class="en">Cash/Money Insurance</span>
+                </div>
+                <span class="question-count-badge">7 שאלות</span>
+                <span class="trigger-text">מופיע כאשר העסק מטפל במזומנים</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">מקסימום מזומן בחצרים</span><span class="q-label-id">cash_maxOnPremises</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את גבול הכיסוי למזומן בחצרים. חריגה מהסכום = חוסר ביטוח.</td>
+                            <td><span class="rule-badge rule-default">קביעת תת-גבול</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מקסימום מזומן בהעברה</span><span class="q-label-id">cash_maxInTransit</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את גבול הכיסוי למזומן בהעברה. תנאי מיגון משתנים לפי הסכום.</td>
+                            <td><span class="rule-badge rule-default">קביעת תת-גבול</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אופן העברת מזומן</span><span class="q-label-id">cash_transportMethod</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>רכב משוריין/חברת אבטחה מפחיתים פרמיה. העברה ע"י עובדים = פרמיה גבוהה יותר.</td>
+                            <td><span class="rule-badge rule-default">תמחור פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מזומן בבתי מנהלים?</span><span class="q-label-id">cash_keptAtManagerHomes</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>החזקת מזומן בבתי מנהלים דורשת הרחבת כיסוי מחוץ לחצרים. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שימוש בצ'קים/שטרות סחירים?</span><span class="q-label-id">cash_usesNegotiableInstruments</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>צ'קים ושטרות סחירים דורשים הרחבת כיסוי נפרדת עם תנאים ספציפיים.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אמצעי אבטחת כספות</span><span class="q-label-id">cash_safeSecurityMeasures</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>אמצעי מיגון הם תנאי מוקדם לכיסוי. כספת+אזעקה = מינימום. חסר מיגון = סירוב כיסוי.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סוג שעות עבודה</span><span class="q-label-id">cash_workingHoursType</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>שעות עבודה מורחבות (24/7) דורשות כיסוי מורחב ומיגון נוסף.</td>
+                            <td><span class="rule-badge rule-default">הרחבת כיסוי</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 7. FIDELITY_CRIME -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-financial">פיננסי</span>
+                <div class="product-name">
+                    <span class="he">ביטוח נאמנות עובדים</span>
+                    <span class="en">Fidelity/Crime Insurance</span>
+                </div>
+                <span class="question-count-badge">6 שאלות</span>
+                <span class="trigger-text">מופיע כאשר לעובדים יש גישה לכספים או נכסים</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">מספר עובדים עם גישה לכספים/נכסים</span><span class="q-label-id">fidelity_employeesWithAccess</span></td>
+                            <td><span class="type-badge">number</span></td>
+                            <td>מספר עובדים עם גישה קובע את רמת החשיפה. יותר עובדים = סיכון גבוה יותר.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סך נכסים בסיכון</span><span class="q-label-id">fidelity_totalAssetsAtRisk</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>בסיס לקביעת סכום הביטוח. גבול אחריות צריך לכסות את מקסימום החשיפה הסביר.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">בקרות פנימיות</span><span class="q-label-id">fidelity_internalControls</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>בקרות חזקות (הפרדת תפקידים + ביקורות + חתימות כפולות) מפחיתות פרמיה. ללא בקרות = סירוב/פרמיה גבוהה.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם + תמחור</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מקרי מעילה קודמים?</span><span class="q-label-id">fidelity_priorDishonesty</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>מעילות קודמות מגדילות פרמיה משמעותית ועלולות לגרום לסירוב. משקל סיכון: 0.25.</td>
+                            <td><span class="rule-badge rule-risk">סימון סיכון + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש תאריך רטרואקטיבי?</span><span class="q-label-id">fidelity_retroactiveDate</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תאריך רטרואקטיבי מרחיב את הכיסוי למעשים שנעשו לפני תחילת הפוליסה.</td>
+                            <td><span class="rule-badge rule-default">הרחבת כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">גבול אחריות נדרש</span><span class="q-label-id">fidelity_requiredLimits</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את גבול האחריות המקסימלי. מומלץ: 100%-150% מהנכסים בסיכון.</td>
+                            <td><span class="rule-badge rule-default">קביעת גבול אחריות</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 8. CARGO_IN_TRANSIT -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-property">רכוש</span>
+                <div class="product-name">
+                    <span class="he">ביטוח מטען בהעברה</span>
+                    <span class="en">Cargo in Transit</span>
+                </div>
+                <span class="question-count-badge">7 שאלות</span>
+                <span class="trigger-text">מופיע כאשר העסק מוביל סחורות</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">שווי מקסימלי למשלוח</span><span class="q-label-id">cargo_maxValuePerShipment</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את גבול הכיסוי למשלוח בודד. חריגה = חוסר ביטוח על עודף הערך.</td>
+                            <td><span class="rule-badge rule-default">קביעת תת-גבול</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שווי שנתי כולל של מטענים</span><span class="q-label-id">cargo_annualCargoValue</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>בסיס לחישוב פרמיה שנתית. פוליסה כללית (Open Policy) נקבעת לפי שווי שנתי.</td>
+                            <td><span class="rule-badge rule-default">בסיס פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סוגי סחורות</span><span class="q-label-id">cargo_goodsTypes</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>סחורות שבירות/מסוכנות/מתכלות דורשות תנאי כיסוי מיוחדים ופרמיה גבוהה יותר.</td>
+                            <td><span class="rule-badge rule-default">תמחור + תנאים מיוחדים</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">רכבים עצמיים או מובילים חיצוניים</span><span class="q-label-id">cargo_ownVehiclesOrThirdParty</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>הובלה ברכבים עצמיים דורשת תנאי כיסוי שונים ממובילים חיצוניים. משפיע על סוג הפוליסה.</td>
+                            <td><span class="rule-badge rule-default">סוג כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">פעילות יבוא/יצוא?</span><span class="q-label-id">cargo_importExportActivity</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>יבוא/יצוא דורש הרחבה ימית/אווירית ותנאי CIF/FOB. מרחיב את הכיסוי הטריטוריאלי.</td>
+                            <td><span class="rule-badge rule-extension">הרחבה טריטוריאלית</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אמצעי אבטחת רכבים</span><span class="q-label-id">cargo_vehicleSecurityMeasures</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>אמצעי אבטחה (GPS, אזעקה, חנייה שמורה) הם תנאי לכיסוי גניבה ומפחיתים פרמיה.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם + תמחור</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">כל הנהגים עם רישיון מתאים?</span><span class="q-label-id">cargo_driverCompliance</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>רישיון מתאים הוא תנאי מוקדם לכיסוי. נהג ללא רישיון = דחיית תביעה.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 9. TERRORISM -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-property">רכוש</span>
+                <div class="product-name">
+                    <span class="he">ביטוח טרור</span>
+                    <span class="en">Terrorism Insurance</span>
+                </div>
+                <span class="question-count-badge">7 שאלות</span>
+                <span class="trigger-text">מופיע כאשר לעסק יש נכס פיזי (בעלות או שכירות)</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">שווי רכוש לביטוח טרור</span><span class="q-label-id">terror_totalPropertyValue</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את סכום הביטוח. חשוב: קרן מס רכוש מכסה חלקית, הפוליסה מכסה את הפער.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">פיצוי צפוי מקרן מס רכוש</span><span class="q-label-id">terror_expectedCompensationFund</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>סכום הפיצוי הממשלתי. ביטוח טרור מכסה את הפער בין שווי הרכוש לפיצוי הממשלתי.</td>
+                            <td><span class="rule-badge rule-default">חישוב פער כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">פער כיסוי נדרש</span><span class="q-label-id">terror_coverageGap</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>הסכום שיש לבטח: שווי רכוש פחות פיצוי ממשלתי. זהו סכום הביטוח בפוליסה.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש כיסוי אבדן רווחים מטרור?</span><span class="q-label-id">terror_needsBI</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הרחבת אובדן רווחים מטרור מכסה הפסדים עסקיים בעקבות אירוע טרור.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תקופת שיפוי</span><span class="q-label-id">terror_indemnityPeriod</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>תקופת שיפוי ארוכה מגדילה את סכום הכיסוי לאובדן רווחים ואת הפרמיה.</td>
+                            <td><span class="rule-badge rule-default">x תקופת שיפוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">הערכת סיכון מיקום</span><span class="q-label-id">terror_locationRisk</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>מיקום בסיכון גבוה/קריטי מגדיל פרמיה משמעותית. משקל סיכון: 0.2.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">יש פוליסת אש קיימת?</span><span class="q-label-id">terror_hasFirePolicy</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תיאום עם פוליסת אש קיימת. אירוע טרור עם אש - חשוב לקבוע איזו פוליסה מכסה.</td>
+                            <td><span class="rule-badge rule-default">תיאום פוליסות</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 10. ELECTRONIC_EQUIPMENT -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-property">רכוש</span>
+                <div class="product-name">
+                    <span class="he">ביטוח ציוד אלקטרוני</span>
+                    <span class="en">Electronic Equipment</span>
+                </div>
+                <span class="question-count-badge">13 שאלות</span>
+                <span class="trigger-text">מופיע כאשר שווי ציוד אלקטרוני גדול מ-0</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">תיאור ציוד אלקטרוני (יצרן, דגם, שנה, שווי)</span><span class="q-label-id">elecEquip_inventoryDescription</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>בסיס לרשימת הציוד המבוטח. כל פריט מכוסה לפי שווי ההחלפה שהוצהר.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שווי החלפה כולל</span><span class="q-label-id">elecEquip_totalReplacementValue</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את סכום הביטוח הכולל לפוליסה. חוסר ביטוח = הפעלת כלל יחסיות.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">ציוד בליסינג/מימון?</span><span class="q-label-id">elecEquip_leasedOrFinanced</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>ציוד בליסינג דורש הכללת חברת הליסינג כמוטב ומבוטח נוסף.</td>
+                            <td><span class="rule-badge rule-default">הוספת מבוטח נוסף</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נייד מול קבוע</span><span class="q-label-id">elecEquip_portableVsFixed</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>ציוד נייד דורש הרחבת כיסוי מחוץ לחצרים. סיכון גבוה יותר לנזק/גניבה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סוג ונפח נתונים</span><span class="q-label-id">elecEquip_dataTypeAndVolume</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>נתונים קריטיים דורשים הרחבת שחזור נתונים ועלויות IT מוגדלות.</td>
+                            <td><span class="rule-badge rule-default">הרחבת כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש כיסוי תוכנה מקיף?</span><span class="q-label-id">elecEquip_needsSoftwareCover</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>כיסוי תוכנה מרחיב את הפוליסה לשחזור רישיונות והתקנה מחדש של תוכנה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">משטר גיבוי</span><span class="q-label-id">elecEquip_backupRegime</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>גיבוי לא סדיר/ללא גיבוי מגדיל סיכון ופרמיה. גיבוי יומי מפחית עלות שחזור. משקל סיכון: 0.15.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון + תנאי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אנטי-וירוס ועדכוני מערכת מעודכנים?</span><span class="q-label-id">elecEquip_antiVirusPatching</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תוכנת אבטחה מעודכנת היא תנאי מוקדם. חוסר עדכון עלול לגרום לדחיית תביעה.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מותקנות מערכות UPS?</span><span class="q-label-id">elecEquip_upsInstalled</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>UPS מגן מפני נזקי הפסקת חשמל. תנאי מומלץ לציוד רגיש.</td>
+                            <td><span class="rule-badge rule-default">תנאי מומלץ</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סבילות להשבתה</span><span class="q-label-id">elecEquip_downtimeTolerance</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>סבילות נמוכה (שעות) דורשת כיסוי הוצאות מוגברות לשחזור מהיר.</td>
+                            <td><span class="rule-badge rule-default">הרחבת כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">השפעה כספית יומית מהשבתה</span><span class="q-label-id">elecEquip_dailyFinancialImpact</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>בסיס לחישוב כיסוי אובדן רווחים מהשבתת ציוד אלקטרוני.</td>
+                            <td><span class="rule-badge rule-default">חישוב סכום BI</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">קנסות חוזיות על השבתה?</span><span class="q-label-id">elecEquip_contractualPenalties</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>קנסות חוזיות דורשות הרחבת כיסוי הוצאות נוספות כולל פיצויים חוזיים.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אבטחה פיזית</span><span class="q-label-id">elecEquip_physicalSecurity</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>אמצעי אבטחה פיזיים (מיזוג, כיבוי אש, בקרת גישה) הם תנאי מוקדם לכיסוי.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 11. HEAVY_ENGINEERING_EQUIPMENT -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-engineering">הנדסי</span>
+                <div class="product-name">
+                    <span class="he">ביטוח ציוד מכני הנדסי</span>
+                    <span class="en">Heavy/Engineering Equipment</span>
+                </div>
+                <span class="question-count-badge">14 שאלות</span>
+                <span class="trigger-text">מופיע כאשר העסק משתמש בציוד מכני כבד</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">רשימת ציוד (סוג, יצרן, דגם, שנה, מספר סידורי, שווי)</span><span class="q-label-id">heavyEquip_inventoryList</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>רשימת הציוד המבוטח. כל פריט מכוסה בנפרד לפי השווי שהוצהר.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שווי מזומן נוכחי כולל</span><span class="q-label-id">heavyEquip_totalValue</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>סכום הביטוח הכולל. ציוד כבד מבוטח על בסיס שווי מזומן (לא החלפה).</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סוג בעלות</span><span class="q-label-id">heavyEquip_ownershipType</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>ציוד שכור/בליסינג דורש הכללת הבעלים כמבוטח נוסף ומוטב.</td>
+                            <td><span class="rule-badge rule-default">הוספת מבוטח נוסף</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מיקומי הפעלה (גבולות טריטוריאליים)</span><span class="q-label-id">heavyEquip_operatingLocations</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>קובע את הגבולות הטריטוריאליים של הכיסוי. פעילות מחוץ לגבולות = ללא כיסוי.</td>
+                            <td><span class="rule-badge rule-default">הגדרת טריטוריה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סוגי פרויקטים</span><span class="q-label-id">heavyEquip_projectTypes</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>פרויקטים מסוכנים (הריסות, קידוח) מגדילים פרמיה ודורשים תנאים מיוחדים.</td>
+                            <td><span class="rule-badge rule-default">תמחור + תנאים</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">פעילות ליד מים?</span><span class="q-label-id">heavyEquip_operatesNearWater</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>פעילות ליד מים מגדילה סיכון טביעה/שקיעה. דורשת כיסוי מורחב. משקל סיכון: 0.15.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">כל המפעילים בעלי רישיון?</span><span class="q-label-id">heavyEquip_allOperatorsLicensed</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>רישיון מפעיל הוא תנאי מוקדם לכיסוי. מפעיל ללא רישיון = דחיית תביעה.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סידורי אחסון</span><span class="q-label-id">heavyEquip_storageArrangements</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>אחסון באתר פתוח מגדיל סיכון גניבה ונזק. מגרש שמור = פרמיה נמוכה יותר.</td>
+                            <td><span class="rule-badge rule-default">תמחור פרמיה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש כיסוי גניבה/שוד?</span><span class="q-label-id">heavyEquip_needsTheftCoverage</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>כיסוי גניבה הוא הרחבה אופציונלית. מותנה באמצעי מיגון מינימליים.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נדרש כיסוי חילוץ/גרירה?</span><span class="q-label-id">heavyEquip_needsSalvageTowing</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הרחבת חילוץ וגרירה מכסה עלויות העברת ציוד שניזוק. חשוב לאתרים מרוחקים.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">היסטוריית תביעות (3-5 שנים)?</span><span class="q-label-id">heavyEquip_claimsHistory</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>היסטוריית תביעות משפיעה על תמחור ותנאי קבלה. משקל סיכון: 0.15.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אמצעי אבטחה</span><span class="q-label-id">heavyEquip_securityMeasures</span></td>
+                            <td><span class="type-badge">multiselect</span></td>
+                            <td>אמצעי אבטחה (GPS, שומרים, גידור) הם תנאי לכיסוי גניבה ומפחיתים פרמיה.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם + תמחור</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תוכנית תחזוקה סדירה ותעודות בדיקה?</span><span class="q-label-id">heavyEquip_maintenanceProgram</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תחזוקה סדירה היא תנאי מוקדם. ללא תחזוקה = דחיית תביעה בגין רשלנות.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תעודות בדיקה בתוקף?</span><span class="q-label-id">heavyEquip_inspectionCertificates</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תעודות בדיקה (טסט, בדיקה שנתית) נדרשות על פי חוק ולכיסוי ביטוחי.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- 12. CONTRACTOR_WORKS_CAR -->
+        <details class="product-section">
+            <summary>
+                <span class="category-badge cat-engineering">הנדסי</span>
+                <div class="product-name">
+                    <span class="he">ביטוח עבודות קבלניות</span>
+                    <span class="en">Contractor All Risks (CAR)</span>
+                </div>
+                <span class="question-count-badge">22 שאלות</span>
+                <span class="trigger-text">מופיע כאשר העסק מבצע עבודות בנייה/קבלנות</span>
+                <span class="chevron">&#9660;</span>
+            </summary>
+            <div class="product-body">
+                <table class="q-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">שאלה</th>
+                            <th style="min-width:70px">סוג</th>
+                            <th style="min-width:280px">השפעה על כיסוי</th>
+                            <th style="min-width:130px">תוצאת כלל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="q-label-he">אופי הפרויקט</span><span class="q-label-id">car_projectNature</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>סוג הפרויקט קובע את סיווג הסיכון ותנאי הכיסוי. שיפוץ מסוכן יותר מבנייה חדשה.</td>
+                            <td><span class="rule-badge rule-default">סיווג סיכון</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תיאור מפורט של העבודות</span><span class="q-label-id">car_worksDescription</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>בסיס להגדרת היקף הכיסוי. עבודות שלא פורטו = לא מכוסות.</td>
+                            <td><span class="rule-badge rule-default">הגדרת היקף כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מיקום האתר (גבולות טריטוריאליים, אזור B/C)</span><span class="q-label-id">car_siteLocation</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>מיקום קובע תנאים ביטוחיים. אזורי B/C דורשים תנאים מיוחדים ופרמיה מוגדלת.</td>
+                            <td><span class="rule-badge rule-default">תמחור + תנאים</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שווי חוזה כולל כולל חומרים</span><span class="q-label-id">car_totalContractValue</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>קובע את סכום הביטוח. כולל חומרים, עבודה ורווח קבלני.</td>
+                            <td><span class="rule-badge rule-default">קביעת סכום ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">משך פרויקט צפוי</span><span class="q-label-id">car_expectedDuration</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>משך הפרויקט קובע את תקופת הביטוח. פרויקטים ארוכים (36+) = פרמיה גבוהה יותר.</td>
+                            <td><span class="rule-badge rule-default">תקופת ביטוח</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תקופת תחזוקה/אחריות</span><span class="q-label-id">car_maintenancePeriod</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>הרחבת כיסוי לתקופת האחריות לאחר מסירה. כיסוי מצומצם יותר מתקופת הבנייה.</td>
+                            <td><span class="rule-badge rule-default">הרחבת כיסוי</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מזמין העבודה</span><span class="q-label-id">car_projectOwner</span></td>
+                            <td><span class="type-badge">text</span></td>
+                            <td>מזמין העבודה מוכלל כמבוטח נוסף. גוף ציבורי עשוי לדרוש תנאים מיוחדים.</td>
+                            <td><span class="rule-badge rule-default">הוספת מבוטח נוסף</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">קבלני משנה מעורבים?</span><span class="q-label-id">car_hasSubContractors</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>קבלני משנה דורשים הכללה כמבוטחים נוספים ואישור ביטוח.</td>
+                            <td><span class="rule-badge rule-default">הוספת מבוטחים נוספים</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מספר קבלני משנה</span><span class="q-label-id">car_subContractorCount</span></td>
+                            <td><span class="type-badge">number</span></td>
+                            <td>מספר קבלני משנה רב מגדיל מורכבות ניהול סיכונים ודורש מעקב קפדני.</td>
+                            <td><span class="rule-badge rule-multiplier">מכפיל מורכבות</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">סה"כ עובדים (ישירים + קבלן)</span><span class="q-label-id">car_totalWorkerCount</span></td>
+                            <td><span class="type-badge">number</span></td>
+                            <td>מספר עובדים כולל קובע את גבול חבות מעבידים בפוליסת CAR.</td>
+                            <td><span class="rule-badge rule-default">קביעת גבול EL</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">עובדים מהשטחים?</span><span class="q-label-id">car_palestinianWorkers</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>עובדים מהשטחים דורשים כיסוי ספציפי וחקיקה שונה. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שעבודים של בנקים/מוסדות פיננסיים?</span><span class="q-label-id">car_financialLiens</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>בנקים עם שעבוד נדרשים כמוטבים בפוליסה. הבנק מקבל הודעה על ביטול.</td>
+                            <td><span class="rule-badge rule-default">הוספת מוטב</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">מבוטחים נוספים נדרשים? (מזמין, אדריכל)</span><span class="q-label-id">car_additionalInsureds</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>הכללת מזמין, אדריכל, מפקח כמבוטחים נוספים. נדרש בחוזי בנייה ציבוריים.</td>
+                            <td><span class="rule-badge rule-default">הוספת מבוטחים נוספים</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">ליד מבנים/תשתיות קיימים? (סיכון רטט)</span><span class="q-label-id">car_nearExistingBuildings</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>קרבה למבנים קיימים דורשת כיסוי רכוש סמוך (Cross Liability). משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">תשתיות תת-קרקעיות באתר?</span><span class="q-label-id">car_undergroundUtilities</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>תשתיות תת-קרקעיות מוחרגות בדרך כלל. דורשות הרחבת כיסוי מיוחדת. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">שימוש במנופים/הרמה כבדה?</span><span class="q-label-id">car_usesHeavyLifting</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>שימוש במנופים דורש כיסוי ציוד הרמה ואחריות מנופאי. דורש אישורי בטיחות.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אזור רעידות אדמה?</span><span class="q-label-id">car_earthquakeZone</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>אזור רעידות אדמה דורש הרחבה ספציפית עם השתתפות עצמית גבוהה.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">נשק באתר?</span><span class="q-label-id">car_weaponsOnSite</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>נשק באתר דורש הרחבת נשק חם ומגדיל חשיפה לאחריות צד שלישי. משקל סיכון: 0.1.</td>
+                            <td><span class="rule-badge rule-extension">הוספת הרחבה + מכפיל</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">עובדים/ציוד נוסעים לחו"ל?</span><span class="q-label-id">car_workersAbroadTravel</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>פעילות בחו"ל דורשת הרחבה טריטוריאלית וביטוח בהתאם לחקיקה המקומית.</td>
+                            <td><span class="rule-badge rule-extension">הרחבה טריטוריאלית</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">אבטחה כשאתר לא מאויש</span><span class="q-label-id">car_unoccupiedSecurity</span></td>
+                            <td><span class="type-badge">select</span></td>
+                            <td>אבטחה בזמן שהאתר ריק (שומרים/מצלמות/גידור). תנאי לכיסוי גניבה וונדליזם.</td>
+                            <td><span class="rule-badge rule-precondition">תנאי מוקדם</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">גבולות אחריות TPL ו-EL</span><span class="q-label-id">car_tplElLimits</span></td>
+                            <td><span class="type-badge">currency</span></td>
+                            <td>גבולות אחריות צד שלישי וחבות מעבידים בפוליסת CAR. מינימום נדרש בחוזים ציבוריים.</td>
+                            <td><span class="rule-badge rule-default">קביעת גבול אחריות</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="q-label-he">פרויקט טורנקי/BOT?</span><span class="q-label-id">car_turnkeyProject</span></td>
+                            <td><span class="type-badge">boolean</span></td>
+                            <td>פרויקט טורנקי דורש כיסוי מורחב הכולל תכנון, ביצוע ותפעול. פרמיה גבוהה יותר.</td>
+                            <td><span class="rule-badge rule-default">הרחבת כיסוי</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <!-- Legend -->
+        <div class="legend-section">
+            <h3>מקרא סוגי תוצאות כלל</h3>
+            <div class="legend-items">
+                <span class="rule-badge rule-extension">הוספת הרחבה</span>
+                <span class="rule-badge rule-multiplier">מכפיל סיכון / פרמיה</span>
+                <span class="rule-badge rule-risk">סימון סיכון</span>
+                <span class="rule-badge rule-precondition">תנאי מוקדם</span>
+                <span class="rule-badge rule-default">קביעת סכום / גבול / תמחור</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2025 Riscovery by Drishti Consulting. All rights reserved.</p>
+            <p>מסמך זה נוצר אוטומטית ומשקף את מיפוי השאלות-כיסוי העדכני.</p>
+        </div>
+    </div>
+</body>
+</html>
