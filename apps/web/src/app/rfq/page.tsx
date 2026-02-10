@@ -27,14 +27,6 @@ interface DashboardStats {
   recentClients: Client[];
 }
 
-const statCardSx = {
-  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.08)',
-  },
-};
-
 export default function RfqDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +59,7 @@ export default function RfqDashboardPage() {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-        <CircularProgress />
+        <CircularProgress sx={{ color: '#1D1D1F' }} />
       </Box>
     );
   }
@@ -80,10 +72,10 @@ export default function RfqDashboardPage() {
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            לוח בקרה - מחולל RFQ
+          <Typography variant="h4" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
+            לוח בקרה
           </Typography>
-          <Typography color="text.secondary">
+          <Typography variant="body2" sx={{ color: '#86868B' }}>
             RFQ Generator Dashboard
           </Typography>
         </Box>
@@ -92,58 +84,57 @@ export default function RfqDashboardPage() {
           href="/rfq/clients/new"
           variant="contained"
           startIcon={<AddIcon />}
-          size="large"
         >
           לקוח חדש
         </Button>
       </Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} mb={4}>
+      <Grid container spacing={2.5} mb={4}>
         <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'primary.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <PeopleIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats?.totalClients || 0}
-                  </Typography>
-                  <Typography color="text.secondary">לקוחות פעילים</Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <PeopleIcon sx={{ fontSize: 20, color: '#0071E3' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  לקוחות פעילים
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats?.totalClients || 0}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'success.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <DocumentIcon sx={{ fontSize: 32, color: 'success.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats?.totalDocuments || 0}
-                  </Typography>
-                  <Typography color="text.secondary">מסמכי RFQ</Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <DocumentIcon sx={{ fontSize: 20, color: '#34C759' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  מסמכי RFQ
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats?.totalDocuments || 0}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'warning.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <TrendingUpIcon sx={{ fontSize: 32, color: 'warning.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats?.recentClients?.filter((c) => c._count?.questionnaires).length || 0}
-                  </Typography>
-                  <Typography color="text.secondary">שאלונים ממולאים</Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <TrendingUpIcon sx={{ fontSize: 20, color: '#FF9500' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  שאלונים ממולאים
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats?.recentClients?.filter((c) => c._count?.questionnaires).length || 0}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -151,16 +142,16 @@ export default function RfqDashboardPage() {
 
       {/* Recent Clients */}
       <Card>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
             לקוחות אחרונים
           </Typography>
-          <Typography color="text.secondary" gutterBottom>
+          <Typography variant="body2" sx={{ color: '#86868B', mb: 2 }}>
             Recent Clients
           </Typography>
 
           {stats?.recentClients && stats.recentClients.length > 0 ? (
-            <Box mt={2}>
+            <Box>
               {stats.recentClients.map((client) => (
                 <Box
                   key={client.id}
@@ -170,36 +161,34 @@ export default function RfqDashboardPage() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    p: 2,
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
+                    py: 1.5,
+                    px: 1,
+                    borderRadius: '10px',
                     textDecoration: 'none',
                     color: 'inherit',
+                    transition: 'background-color 0.15s ease',
                     '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                    '&:last-child': {
-                      borderBottom: 'none',
+                      backgroundColor: '#F5F5F7',
                     },
                   }}
                 >
                   <Box>
-                    <Typography fontWeight="medium">{client.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography sx={{ fontWeight: 500, fontSize: '0.9375rem', color: '#1D1D1F' }}>
+                      {client.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#86868B' }}>
                       {client.sector} • {client.contactEmail || 'No email'}
                     </Typography>
                   </Box>
-                  <Box textAlign="left">
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(client.createdAt).toLocaleDateString('he-IL')}
-                    </Typography>
-                  </Box>
+                  <Typography variant="caption" sx={{ color: '#86868B' }}>
+                    {new Date(client.createdAt).toLocaleDateString('he-IL')}
+                  </Typography>
                 </Box>
               ))}
             </Box>
           ) : (
             <Box py={4} textAlign="center">
-              <Typography color="text.secondary" gutterBottom>
+              <Typography sx={{ color: '#86868B', mb: 2 }}>
                 אין לקוחות עדיין
               </Typography>
               <Button
@@ -207,7 +196,6 @@ export default function RfqDashboardPage() {
                 href="/rfq/clients/new"
                 variant="outlined"
                 startIcon={<AddIcon />}
-                sx={{ mt: 2 }}
               >
                 הוסף לקוח ראשון
               </Button>

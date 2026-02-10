@@ -28,14 +28,6 @@ interface DashboardStats {
   recentAnalyses: number;
 }
 
-const statCardSx = {
-  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.08)',
-  },
-};
-
 export default function ComparisonDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalDocuments: 0,
@@ -80,45 +72,45 @@ export default function ComparisonDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'processed':
-        return 'success.main';
+        return '#34C759';
       case 'processing':
-        return 'info.main';
+        return '#5856D6';
       case 'failed':
-        return 'error.main';
+        return '#FF3B30';
       default:
-        return 'text.secondary';
+        return '#86868B';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'processed':
-        return <CompliantIcon sx={{ color: 'success.main' }} />;
+        return <CompliantIcon sx={{ color: '#34C759', fontSize: 20 }} />;
       case 'processing':
-        return <WarningIcon sx={{ color: 'info.main' }} />;
+        return <WarningIcon sx={{ color: '#5856D6', fontSize: 20 }} />;
       case 'failed':
-        return <ErrorIcon sx={{ color: 'error.main' }} />;
+        return <ErrorIcon sx={{ color: '#FF3B30', fontSize: 20 }} />;
       default:
-        return <DocumentIcon sx={{ color: 'text.secondary' }} />;
+        return <DocumentIcon sx={{ color: '#86868B', fontSize: 20 }} />;
     }
   };
 
   if (loading) {
-    return <LinearProgress />;
+    return <LinearProgress sx={{ borderRadius: 4 }} />;
   }
 
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
+          <Typography variant="h4" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
             השוואת אישורי ביטוח
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="body2" sx={{ color: '#86868B' }}>
             Insurance Certificate Comparison Dashboard
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button variant="contained" component={Link} href="/comparison/documents">
             העלה מסמך
           </Button>
@@ -129,95 +121,87 @@ export default function ComparisonDashboard() {
       </Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'primary.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <DocumentIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.totalDocuments}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    מסמכים / Documents
-                  </Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <DocumentIcon sx={{ fontSize: 20, color: '#0071E3' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  מסמכים
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats.totalDocuments}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'success.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <CompliantIcon sx={{ fontSize: 32, color: 'success.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.processedDocuments}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    עובדו / Processed
-                  </Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <CompliantIcon sx={{ fontSize: 20, color: '#34C759' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  עובדו
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats.processedDocuments}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'info.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <TemplateIcon sx={{ fontSize: 32, color: 'info.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.totalTemplates}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    תבניות / Templates
-                  </Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <TemplateIcon sx={{ fontSize: 20, color: '#5856D6' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  תבניות
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats.totalTemplates}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'warning.main', ...statCardSx }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <WarningIcon sx={{ fontSize: 32, color: 'warning.main' }} />
-                <Box>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.recentAnalyses}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    ניתוחים / Analyses
-                  </Typography>
-                </Box>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <WarningIcon sx={{ fontSize: 20, color: '#FF9500' }} />
+                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                  ניתוחים
+                </Typography>
               </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+                {stats.recentAnalyses}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
       {/* Recent Documents and Templates */}
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight="bold">
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1D1D1F' }}>
                   מסמכים אחרונים
                 </Typography>
-                <Button size="small" component={Link} href="/comparison/documents">
+                <Button size="small" component={Link} href="/comparison/documents" sx={{ color: '#0071E3' }}>
                   הצג הכל
                 </Button>
               </Box>
               {recentDocuments.length === 0 ? (
-                <Typography color="text.secondary">אין מסמכים עדיין</Typography>
+                <Typography sx={{ color: '#86868B' }}>אין מסמכים עדיין</Typography>
               ) : (
                 recentDocuments.map((doc) => (
                   <Box
@@ -225,24 +209,26 @@ export default function ComparisonDashboard() {
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 2,
-                      py: 1,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
+                      gap: 1.5,
+                      py: 1.25,
+                      px: 1,
+                      borderRadius: '8px',
+                      transition: 'background-color 0.15s ease',
+                      '&:hover': { backgroundColor: '#F5F5F7' },
                     }}
                   >
                     {getStatusIcon(doc.status)}
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="body2" fontWeight="medium">
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#1D1D1F' }}>
                         {doc.originalName}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: '#86868B' }}>
                         {new Date(doc.uploadedAt).toLocaleDateString('he-IL')}
                       </Typography>
                     </Box>
                     <Typography
                       variant="caption"
-                      sx={{ color: getStatusColor(doc.status), fontWeight: 'bold' }}
+                      sx={{ color: getStatusColor(doc.status), fontWeight: 600, fontSize: '0.6875rem' }}
                     >
                       {doc.status}
                     </Typography>
@@ -255,17 +241,17 @@ export default function ComparisonDashboard() {
 
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight="bold">
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1D1D1F' }}>
                   תבניות דרישות
                 </Typography>
-                <Button size="small" component={Link} href="/comparison/templates">
+                <Button size="small" component={Link} href="/comparison/templates" sx={{ color: '#0071E3' }}>
                   הצג הכל
                 </Button>
               </Box>
               {templates.length === 0 ? (
-                <Typography color="text.secondary">אין תבניות עדיין</Typography>
+                <Typography sx={{ color: '#86868B' }}>אין תבניות עדיין</Typography>
               ) : (
                 templates.map((template) => (
                   <Box
@@ -273,23 +259,25 @@ export default function ComparisonDashboard() {
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 2,
-                      py: 1,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
+                      gap: 1.5,
+                      py: 1.25,
+                      px: 1,
+                      borderRadius: '8px',
+                      transition: 'background-color 0.15s ease',
+                      '&:hover': { backgroundColor: '#F5F5F7' },
                     }}
                   >
-                    <TemplateIcon color="primary" />
+                    <TemplateIcon sx={{ color: '#0071E3', fontSize: 20 }} />
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="body2" fontWeight="medium">
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#1D1D1F' }}>
                         {template.nameHe}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: '#86868B' }}>
                         {template.requirements?.length || 0} דרישות
                       </Typography>
                     </Box>
                     {template.sector && (
-                      <Typography variant="caption" color="primary">
+                      <Typography variant="caption" sx={{ color: '#0071E3', fontWeight: 500 }}>
                         {template.sector}
                       </Typography>
                     )}
