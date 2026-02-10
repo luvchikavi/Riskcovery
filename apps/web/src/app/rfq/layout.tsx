@@ -7,9 +7,11 @@ import {
   Inventory as CatalogIcon,
   Home as HomeIcon,
   Settings as SettingsIcon,
+  AccountCircle as AccountCircleIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
+  Avatar,
   Box,
   Drawer,
   IconButton,
@@ -20,7 +22,6 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Divider,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -28,7 +29,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 272;
 
 interface NavItem {
   label: string;
@@ -60,14 +61,33 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
   };
 
   const drawer = (
-    <Box>
-      <Toolbar sx={{ justifyContent: 'center' }}>
-        <Typography variant="h6" fontWeight="bold" color="primary">
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Gradient logo area */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #4F46E5 0%, #0D9488 100%)',
+          p: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 64,
+        }}
+      >
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          sx={{
+            color: '#FFFFFF',
+            fontFamily: 'var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif',
+            letterSpacing: '0.02em',
+          }}
+        >
           Riscovery RFQ
         </Typography>
-      </Toolbar>
-      <Divider />
-      <List>
+      </Box>
+
+      {/* Navigation */}
+      <List sx={{ flex: 1, pt: 2 }}>
         {navItems.map((item) => (
           <ListItem key={item.href} disablePadding>
             <ListItemButton
@@ -75,16 +95,8 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
               href={item.href}
               selected={isActive(item.href)}
               onClick={() => isMobile && setMobileOpen(false)}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.light',
-                  '&:hover': {
-                    backgroundColor: 'primary.light',
-                  },
-                },
-              }}
             >
-              <ListItemIcon sx={{ color: isActive(item.href) ? 'primary.main' : 'inherit' }}>
+              <ListItemIcon sx={{ color: isActive(item.href) ? 'primary.main' : 'text.secondary' }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText primary={item.labelHe} secondary={item.label} />
@@ -92,17 +104,29 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
           </ListItem>
         ))}
       </List>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton component={Link} href="/">
-            <ListItemIcon>
-              <HomeIcon />
-            </ListItemIcon>
-            <ListItemText primary="חזרה לדף הבית" secondary="Back to Home" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+
+      {/* Bottom section — back to home + user avatar */}
+      <Box sx={{ mt: 'auto', borderTop: '1px solid', borderColor: 'divider', pt: 1, pb: 1 }}>
+        <List disablePadding>
+          <ListItem disablePadding>
+            <ListItemButton component={Link} href="/">
+              <ListItemIcon>
+                <HomeIcon />
+              </ListItemIcon>
+              <ListItemText primary="חזרה לדף הבית" secondary="Back to Home" />
+            </ListItemButton>
+          </ListItem>
+        </List>
+        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.light', color: 'primary.main' }}>
+            <AccountCircleIcon fontSize="small" />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" fontWeight={600}>יועץ ביטוח</Typography>
+            <Typography variant="caption" color="text.secondary">Insurance Advisor</Typography>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 
@@ -127,7 +151,12 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div">
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ fontFamily: 'var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif' }}
+            >
               Riscovery RFQ
             </Typography>
           </Toolbar>
@@ -158,9 +187,6 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
               '& .MuiDrawer-paper': {
                 boxSizing: 'border-box',
                 width: DRAWER_WIDTH,
-                borderLeft: 'none',
-                borderRight: '1px solid',
-                borderColor: 'divider',
               },
             }}
             open

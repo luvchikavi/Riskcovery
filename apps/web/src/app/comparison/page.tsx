@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
 import { comparisonApi, type ComparisonDocument, type ComparisonTemplate } from '@/lib/api';
 
 interface DashboardStats {
@@ -26,6 +27,14 @@ interface DashboardStats {
   totalTemplates: number;
   recentAnalyses: number;
 }
+
+const statCardSx = {
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.08)',
+  },
+};
 
 export default function ComparisonDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -122,12 +131,12 @@ export default function ComparisonDashboard() {
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'primary.main', ...statCardSx }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <DocumentIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+              <Box display="flex" alignItems="center" gap={2}>
+                <DocumentIcon sx={{ fontSize: 32, color: 'primary.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats.totalDocuments}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -140,12 +149,12 @@ export default function ComparisonDashboard() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'success.main', ...statCardSx }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <CompliantIcon sx={{ fontSize: 40, color: 'success.main' }} />
+              <Box display="flex" alignItems="center" gap={2}>
+                <CompliantIcon sx={{ fontSize: 32, color: 'success.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats.processedDocuments}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -158,12 +167,12 @@ export default function ComparisonDashboard() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'info.main', ...statCardSx }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TemplateIcon sx={{ fontSize: 40, color: 'info.main' }} />
+              <Box display="flex" alignItems="center" gap={2}>
+                <TemplateIcon sx={{ fontSize: 32, color: 'info.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats.totalTemplates}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -176,12 +185,12 @@ export default function ComparisonDashboard() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'warning.main', ...statCardSx }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <WarningIcon sx={{ fontSize: 40, color: 'warning.main' }} />
+              <Box display="flex" alignItems="center" gap={2}>
+                <WarningIcon sx={{ fontSize: 32, color: 'warning.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats.recentAnalyses}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">

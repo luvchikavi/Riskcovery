@@ -27,6 +27,14 @@ interface DashboardStats {
   recentClients: Client[];
 }
 
+const statCardSx = {
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.08)',
+  },
+};
+
 export default function RfqDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,21 +101,12 @@ export default function RfqDashboardPage() {
       {/* Stats Cards */}
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={4}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'primary.main', ...statCardSx }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    backgroundColor: 'primary.light',
-                    color: 'primary.main',
-                  }}
-                >
-                  <PeopleIcon fontSize="large" />
-                </Box>
+                <PeopleIcon sx={{ fontSize: 32, color: 'primary.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats?.totalClients || 0}
                   </Typography>
                   <Typography color="text.secondary">לקוחות פעילים</Typography>
@@ -118,21 +117,12 @@ export default function RfqDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={4}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'success.main', ...statCardSx }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    backgroundColor: 'success.light',
-                    color: 'success.main',
-                  }}
-                >
-                  <DocumentIcon fontSize="large" />
-                </Box>
+                <DocumentIcon sx={{ fontSize: 32, color: 'success.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats?.totalDocuments || 0}
                   </Typography>
                   <Typography color="text.secondary">מסמכי RFQ</Typography>
@@ -143,21 +133,12 @@ export default function RfqDashboardPage() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={4}>
-          <Card>
+          <Card sx={{ borderInlineStart: '4px solid', borderColor: 'warning.main', ...statCardSx }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    backgroundColor: 'warning.light',
-                    color: 'warning.main',
-                  }}
-                >
-                  <TrendingUpIcon fontSize="large" />
-                </Box>
+                <TrendingUpIcon sx={{ fontSize: 32, color: 'warning.main' }} />
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h3" fontWeight="bold">
                     {stats?.recentClients?.filter((c) => c._count?.questionnaires).length || 0}
                   </Typography>
                   <Typography color="text.secondary">שאלונים ממולאים</Typography>
