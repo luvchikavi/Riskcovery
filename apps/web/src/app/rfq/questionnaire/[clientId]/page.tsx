@@ -42,6 +42,7 @@ import {
   type Questionnaire,
   type QuestionnaireAnswers,
   type Question,
+  type QuestionnaireSection,
 } from '@/lib/api';
 
 export default function QuestionnairePage() {
@@ -111,11 +112,9 @@ export default function QuestionnairePage() {
     }));
   }, []);
 
-  const shouldShowQuestion = useCallback(
-    (question: Question): boolean => {
-      if (!question.showIf || question.showIf.length === 0) return true;
-
-      return question.showIf.every((condition) => {
+  const evaluateConditions = useCallback(
+    (conditions: Array<{ questionId: string; operator: string; value: unknown }>): boolean => {
+      return conditions.every((condition) => {
         const value = answers[condition.questionId];
         if (value === undefined || value === null) return false;
 
@@ -140,6 +139,27 @@ export default function QuestionnairePage() {
     [answers]
   );
 
+  const shouldShowQuestion = useCallback(
+    (question: Question): boolean => {
+      if (!question.showIf || question.showIf.length === 0) return true;
+      return evaluateConditions(question.showIf);
+    },
+    [evaluateConditions]
+  );
+
+  const shouldShowSection = useCallback(
+    (section: QuestionnaireSection): boolean => {
+      if (!section.showIf || section.showIf.length === 0) return true;
+      return evaluateConditions(section.showIf);
+    },
+    [evaluateConditions]
+  );
+
+  // Compute visible sections
+  const visibleSections = questionnaire
+    ? questionnaire.sections.filter(shouldShowSection)
+    : [];
+
   // Calculate progress
   const calculateProgress = useCallback(() => {
     if (!questionnaire) return { answered: 0, total: 0, percentage: 0 };
@@ -147,7 +167,7 @@ export default function QuestionnairePage() {
     let answered = 0;
     let total = 0;
 
-    for (const section of questionnaire.sections) {
+    for (const section of questionnaire.sections.filter(shouldShowSection)) {
       for (const question of section.questions) {
         if (shouldShowQuestion(question)) {
           total++;
@@ -165,13 +185,13 @@ export default function QuestionnairePage() {
       total,
       percentage: total > 0 ? Math.round((answered / total) * 100) : 0,
     };
-  }, [questionnaire, answers, shouldShowQuestion]);
+  }, [questionnaire, answers, shouldShowQuestion, shouldShowSection]);
 
   // Validate required fields in current section
   const validateCurrentSection = useCallback(() => {
     if (!questionnaire) return { isValid: true, missingFields: [] };
 
-    const currentSection = questionnaire.sections[activeStep];
+    const currentSection = visibleSections[activeStep];
     if (!currentSection) return { isValid: true, missingFields: [] };
 
     const missingFields: string[] = [];
@@ -223,7 +243,7 @@ export default function QuestionnairePage() {
   };
 
   const handleNext = () => {
-    if (questionnaire && activeStep < questionnaire.sections.length - 1) {
+    if (activeStep < visibleSections.length - 1) {
       setActiveStep(activeStep + 1);
     }
   };
@@ -404,7 +424,7 @@ export default function QuestionnairePage() {
     );
   }
 
-  const currentSection = questionnaire.sections[activeStep];
+  const currentSection = visibleSections[activeStep];
   if (!currentSection) {
     return (
       <Box>
@@ -482,7 +502,7 @@ export default function QuestionnairePage() {
 
       {/* Stepper */}
       <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
-        {questionnaire.sections.map((section, index) => (
+        {visibleSections.map((section, index) => (
           <Step key={section.id}>
             <StepLabel
               onClick={() => setActiveStep(index)}
@@ -536,7 +556,7 @@ export default function QuestionnairePage() {
           >
             שמור טיוטה
           </Button>
-          {activeStep === questionnaire.sections.length - 1 ? (
+          {activeStep === visibleSections.length - 1 ? (
             <Button
               variant="contained"
               endIcon={<SendIcon />}

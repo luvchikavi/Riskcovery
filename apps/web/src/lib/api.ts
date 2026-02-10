@@ -503,6 +503,7 @@ export interface QuestionnaireSection {
   description?: string;
   descriptionHe?: string;
   questions: Question[];
+  showIf?: Array<{ questionId: string; operator: string; value: unknown }>;
 }
 
 export interface Question {
