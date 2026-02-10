@@ -18,7 +18,7 @@ const heebo = Heebo({
 export const metadata: Metadata = {
   title: 'Riscovery - Insurance Advisory Management',
   description: 'Insurance compliance tracking and RFQ generation system',
-  themeColor: '#4F46E5',
+  themeColor: '#1D1D1F',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

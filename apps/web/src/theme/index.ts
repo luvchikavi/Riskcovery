@@ -149,7 +149,7 @@ export const theme = createTheme({
           borderRadius: 20,
           border: '1px solid rgba(0, 0, 0, 0.06)',
           boxShadow: 'none',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          transition: 'box-shadow 0.2s ease',
           '&:hover': {
             boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
           },
