@@ -3,10 +3,9 @@
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  Inventory as CatalogIcon,
+  Business as BusinessIcon,
+  Compare as CompareIcon,
   Home as HomeIcon,
-  Settings as SettingsIcon,
   AccountCircle as AccountCircleIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
@@ -41,13 +40,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/rfq', icon: <DashboardIcon /> },
-  { label: 'Clients', labelHe: 'לקוחות', href: '/rfq/clients', icon: <PeopleIcon /> },
-  { label: 'Product Catalog', labelHe: 'קטלוג מוצרים', href: '/rfq/knowledge', icon: <CatalogIcon /> },
-  { label: 'Templates Admin', labelHe: 'ניהול תבניות', href: '/rfq/admin/templates', icon: <SettingsIcon /> },
+  { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/insurers', icon: <DashboardIcon /> },
+  { label: 'Browse Insurers', labelHe: 'חברות ביטוח', href: '/insurers/browse', icon: <BusinessIcon /> },
+  { label: 'Compare Policies', labelHe: 'השוואת פוליסות', href: '/insurers/compare', icon: <CompareIcon /> },
 ];
 
-export default function RfqLayout({ children }: { children: React.ReactNode }) {
+export default function InsurersLayout({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -59,13 +57,12 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
   };
 
   const isActive = (href: string) => {
-    if (href === '/rfq') return pathname === '/rfq';
+    if (href === '/insurers') return pathname === '/insurers';
     return pathname.startsWith(href);
   };
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Logo area */}
       <Box sx={{ px: 2.5, pt: 3, pb: 2 }}>
         <Typography
           variant="h6"
@@ -80,11 +77,10 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
           Riscovery
         </Typography>
         <Typography variant="caption" sx={{ color: '#86868B', fontSize: '0.75rem' }}>
-          RFQ Module
+          השוואת מבטחים
         </Typography>
       </Box>
 
-      {/* Navigation */}
       <List sx={{ flex: 1, pt: 1, px: 0.5 }}>
         {navItems.map((item) => (
           <ListItem key={item.href} disablePadding>
@@ -116,7 +112,6 @@ export default function RfqLayout({ children }: { children: React.ReactNode }) {
         ))}
       </List>
 
-      {/* Bottom section */}
       <Box sx={{ borderTop: '1px solid rgba(0,0,0,0.06)', pt: 1, pb: 1, px: 0.5 }}>
         <List disablePadding>
           <ListItem disablePadding>

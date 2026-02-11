@@ -9,6 +9,8 @@ import authPlugin from './plugins/auth.js';
 import { healthRoutes } from './routes/health.js';
 import { rfqRoutes } from './modules/rfq/rfq.routes.js';
 import { comparisonRoutes } from './modules/comparison/comparison.routes.js';
+import { insurerRoutes } from './modules/insurer/insurer.routes.js';
+import { disconnectPrisma } from './lib/prisma.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -52,6 +54,7 @@ export async function buildApp() {
   await app.register(healthRoutes, { prefix: '/api/v1' });
   await app.register(rfqRoutes, { prefix: '/api/v1/rfq' });
   await app.register(comparisonRoutes, { prefix: '/api/v1/comparison' });
+  await app.register(insurerRoutes, { prefix: '/api/v1/insurers' });
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
@@ -71,6 +74,12 @@ export async function buildApp() {
         timestamp: new Date().toISOString(),
       },
     });
+  });
+
+  // Clean shutdown hook
+  app.addHook('onClose', async () => {
+    app.log.info('Disconnecting from database...');
+    await disconnectPrisma();
   });
 
   return app;

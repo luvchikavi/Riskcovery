@@ -1,4 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { seedHarelPolicies } from './seed-harel-policies';
+import { seedMigdalPolicies } from './seed-migdal-policies';
+import { seedAyalonPolicies } from './seed-ayalon-policies';
+import { seedMenorahPolicies } from './seed-menorah-policies';
+import { seedShlomoPolicies } from './seed-shlomo-policies';
 
 const prisma = new PrismaClient();
 
@@ -1189,6 +1194,21 @@ async function seedInsurerPolicies() {
   // 3. Seed Phoenix policies
   console.log('\n3. Seeding Phoenix (פניקס) policies...');
   await seedInsurerPoliciesForCompany('PHOENIX', phoenixPolicies, false);
+
+  // 4. Seed Harel policies
+  await seedHarelPolicies(prisma);
+
+  // 5. Seed Migdal policies
+  await seedMigdalPolicies(prisma);
+
+  // 6. Seed Ayalon policies
+  await seedAyalonPolicies(prisma);
+
+  // 7. Seed Menorah policies
+  await seedMenorahPolicies(prisma);
+
+  // 8. Seed Shlomo policies
+  await seedShlomoPolicies(prisma);
 
   console.log('\n=== Insurer Policy seed complete! ===');
 }

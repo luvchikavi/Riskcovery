@@ -6,6 +6,7 @@
 import { prisma } from '../../../lib/prisma.js';
 import { knowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
 import { productService } from '../products/product.service.js';
+import { insurerService } from '../../insurer/insurer.service.js';
 import { questionnaireTemplates, coverageRules } from './questionnaire.templates.js';
 import type {
   QuestionnaireAnswers,
@@ -32,6 +33,17 @@ export interface CoverageRecommendation {
   description?: string;
   descriptionHe?: string;
   adjustmentReason?: string;
+}
+
+export interface InsurerSuggestion {
+  insurerCode: string;
+  insurerNameHe: string;
+  insurerNameEn: string;
+  bitStandard: string | null;
+  extensionCount: number;
+  strengths: string[];
+  weaknesses: string[];
+  score: number;
 }
 
 // Database template types
@@ -640,6 +652,64 @@ export class QuestionnaireService {
     }
 
     return gaps;
+  }
+
+  // Get insurer suggestions for a set of recommended product codes.
+  // For each product, queries all insurer policies, ranks by coverage breadth
+  // (extension count, fewer weaknesses), and returns top 3.
+  async getInsurerSuggestions(
+    productCodes: string[]
+  ): Promise<Record<string, InsurerSuggestion[]>> {
+    const result: Record<string, InsurerSuggestion[]> = {};
+
+    await Promise.all(
+      productCodes.map(async (productCode) => {
+        try {
+          const comparisons = await insurerService.compareByProduct(productCode);
+          if (comparisons.length === 0) {
+            result[productCode] = [];
+            return;
+          }
+
+          // Score each insurer: more extensions = better, fewer weaknesses = better
+          const scored = comparisons.map((c) => {
+            const extensionCount = c.extensions.length;
+            const weaknessCount = Array.isArray(c.policy.weaknesses)
+              ? (c.policy.weaknesses as string[]).length
+              : 0;
+            const strengthCount = Array.isArray(c.policy.strengths)
+              ? (c.policy.strengths as string[]).length
+              : 0;
+            // Simple scoring: extensions + strengths - weaknesses
+            const score = extensionCount + strengthCount * 2 - weaknessCount * 2;
+            return { comparison: c, score, extensionCount };
+          });
+
+          // Sort by score descending, take top 3
+          scored.sort((a, b) => b.score - a.score);
+          const top = scored.slice(0, 3);
+
+          result[productCode] = top.map((item) => ({
+            insurerCode: item.comparison.insurer.code,
+            insurerNameHe: item.comparison.insurer.nameHe,
+            insurerNameEn: item.comparison.insurer.nameEn,
+            bitStandard: item.comparison.policy.bitStandard,
+            extensionCount: item.extensionCount,
+            strengths: Array.isArray(item.comparison.policy.strengths)
+              ? (item.comparison.policy.strengths as string[]).slice(0, 2)
+              : [],
+            weaknesses: Array.isArray(item.comparison.policy.weaknesses)
+              ? (item.comparison.policy.weaknesses as string[]).slice(0, 2)
+              : [],
+            score: item.score,
+          }));
+        } catch {
+          result[productCode] = [];
+        }
+      })
+    );
+
+    return result;
   }
 
   // Default recommended limits per product type (in ILS)

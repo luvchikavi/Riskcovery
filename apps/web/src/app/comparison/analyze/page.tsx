@@ -35,6 +35,7 @@ import {
   type ComparisonAnalysis,
   type PolicyComparisonResult,
 } from '@/lib/api';
+import { useSnackbar } from '@/components/SnackbarProvider';
 
 export default function AnalyzePage() {
   const [documents, setDocuments] = useState<ComparisonDocument[]>([]);
@@ -45,6 +46,7 @@ export default function AnalyzePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<ComparisonAnalysis | null>(null);
+  const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
     loadData();
@@ -77,8 +79,9 @@ export default function AnalyzePage() {
     try {
       const response = await comparisonApi.analysis.run(selectedDocument, selectedTemplate);
       setAnalysisResult(response.data || null);
+      showSuccess('הניתוח הושלם בהצלחה');
     } catch (err) {
-      setError('Failed to run analysis');
+      showError('שגיאה בהרצת הניתוח');
       console.error(err);
     } finally {
       setAnalyzing(false);

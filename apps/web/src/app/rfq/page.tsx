@@ -13,13 +13,13 @@ import {
   Grid,
   Typography,
   Button,
-  CircularProgress,
   Alert,
 } from '@mui/material';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { rfqApi, type Client } from '@/lib/api';
+import { StatsSkeleton } from '@/components/LoadingSkeleton';
 
 interface DashboardStats {
   totalClients: number;
@@ -58,8 +58,18 @@ export default function RfqDashboardPage() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-        <CircularProgress sx={{ color: '#1D1D1F' }} />
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
+              לוח בקרה
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#86868B' }}>
+              RFQ Generator Dashboard
+            </Typography>
+          </Box>
+        </Box>
+        <StatsSkeleton count={3} />
       </Box>
     );
   }

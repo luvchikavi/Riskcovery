@@ -5,6 +5,7 @@ import {
   Search as SearchIcon,
   Visibility as ViewIcon,
   QuestionAnswer as QuestionnaireIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -23,7 +24,6 @@ import {
   TablePagination,
   Chip,
   IconButton,
-  CircularProgress,
   Alert,
   FormControl,
   InputLabel,
@@ -34,6 +34,9 @@ import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 
 import { rfqApi, type Client } from '@/lib/api';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useSnackbar } from '@/components/SnackbarProvider';
 
 const SECTORS = [
   { value: '', label: 'הכל', labelEn: 'All' },
@@ -55,6 +58,20 @@ export default function ClientsPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const { showSuccess, showError } = useSnackbar();
+
+  const handleDeleteClient = async () => {
+    if (!deleteTarget) return;
+    try {
+      await rfqApi.clients.delete(deleteTarget.id);
+      showSuccess(`הלקוח ${deleteTarget.name} נמחק בהצלחה`);
+      setDeleteTarget(null);
+      loadClients();
+    } catch {
+      showError('שגיאה במחיקת הלקוח');
+    }
+  };
 
   const loadClients = useCallback(async () => {
     setLoading(true);
@@ -187,8 +204,8 @@ export default function ClientsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                    <CircularProgress />
+                  <TableCell colSpan={7} sx={{ p: 0, border: 0 }}>
+                    <TableSkeleton rows={5} columns={7} />
                   </TableCell>
                 </TableRow>
               ) : clients.length === 0 ? (
@@ -250,6 +267,14 @@ export default function ClientsPage() {
                             <QuestionnaireIcon fontSize="small" />
                           </IconButton>
                         </Link>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          title="מחק"
+                          onClick={() => setDeleteTarget(client)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -272,6 +297,16 @@ export default function ClientsPage() {
           }
         />
       </Card>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="מחיקת לקוח"
+        message={`האם למחוק את הלקוח "${deleteTarget?.name}"? פעולה זו אינה הפיכה.`}
+        confirmLabel="מחק"
+        destructive
+        onConfirm={handleDeleteClient}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </Box>
   );
 }

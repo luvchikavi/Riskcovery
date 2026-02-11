@@ -1,4 +1,6 @@
+import { PDFParse } from 'pdf-parse';
 import type { ExtractedCertificateData, ExtractedPolicy } from '../comparison.types.js';
+import { certificateParser } from './certificate-parser.js';
 
 // OCR Service for extracting data from insurance certificates
 // Supports Israeli standardized certificate format (רשות שוק ההון)
@@ -134,36 +136,63 @@ const POLICY_TYPES = [
 ];
 
 export class OcrService {
-  // Extract data from a PDF buffer using AI/OCR
+  // Extract data from a PDF buffer using pdf-parse + structured extraction
   async extractFromPdf(pdfBuffer: Buffer, fileName: string): Promise<ExtractedCertificateData> {
     console.log(`Processing PDF: ${fileName}, size: ${pdfBuffer.length} bytes`);
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Extract raw text from the PDF using pdf-parse v2 class API
+      const parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
+      const textResult = await parser.getText();
+      const rawText = textResult.text;
+      await parser.destroy();
 
-    // TODO: Integrate with OpenAI Vision API or other OCR service
-    // For now, return mock data based on common Israeli certificate patterns
-    return this.createMockExtraction();
+      if (!rawText || rawText.trim().length === 0) {
+        console.log('PDF has no extractable text, falling back to mock extraction');
+        return this.createMockExtraction();
+      }
+
+      console.log(`Extracted ${rawText.length} chars of text from PDF (${textResult.pages.length} pages)`);
+
+      // Parse the raw text using the structured certificate parser
+      return this.parseOcrText(rawText);
+    } catch (err) {
+      console.error('Failed to extract text from PDF, falling back to mock:', err);
+      return this.createMockExtraction();
+    }
   }
 
   // Extract from base64 image
   async extractFromImage(base64Image: string, mimeType: string): Promise<ExtractedCertificateData> {
     console.log(`Processing image, type: ${mimeType}`);
 
-    // TODO: Integrate with OpenAI Vision API
+    // TODO: Integrate with OpenAI Vision API for image-based OCR
     return this.createMockExtraction();
   }
 
   // Parse raw OCR text into structured data (Israeli certificate format)
+  // Uses the certificate field map patterns for structured extraction
   parseOcrText(rawText: string): ExtractedCertificateData {
     const data: ExtractedCertificateData = {
       policies: [],
       rawText,
     };
 
-    // Extract certificate metadata
-    data.certificateNumber = this.extractCertificateNumber(rawText);
-    data.issueDate = this.extractIssueDate(rawText);
+    // Use certificate parser patterns for structured extraction
+    const patterns = certificateParser.getExtractionPatterns();
+    const patternResults: Record<string, string> = {};
+    for (const p of patterns) {
+      const match = rawText.match(p.pattern);
+      if (match?.[1]) {
+        patternResults[p.fieldName] = match[1].trim();
+      }
+    }
+
+    // Extract certificate metadata (pattern-assisted + fallback)
+    data.certificateNumber = patternResults.certificateNumber || this.extractCertificateNumber(rawText);
+    data.issueDate = patternResults.issueDate
+      ? this.normalizeDate(patternResults.issueDate)
+      : this.extractIssueDate(rawText);
     data.insurerName = this.extractInsurerName(rawText);
 
     // Extract certificate requester (מבקש האישור)

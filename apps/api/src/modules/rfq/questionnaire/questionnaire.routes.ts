@@ -118,6 +118,30 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
     };
   });
 
+  // Generate enriched recommendations WITH insurer suggestions
+  fastify.post<{ Params: { sector: string } }>('/recommendations/:sector/with-insurers', async (request) => {
+    const answers = request.body as QuestionnaireAnswers;
+    const [enriched, riskScore] = await Promise.all([
+      questionnaireService.generateEnrichedRecommendations(request.params.sector, answers),
+      questionnaireService.calculateRiskScoreAsync(request.params.sector, answers),
+    ]);
+
+    // Get insurer suggestions for each recommended product
+    const productCodes = enriched.recommendations.map((r) => r.productCode);
+    const insurerSuggestions = await questionnaireService.getInsurerSuggestions(productCodes);
+
+    return {
+      success: true,
+      data: {
+        recommendations: enriched.recommendations,
+        coverageGaps: enriched.coverageGaps,
+        insurerSuggestions,
+        riskScore,
+        riskLevel: riskScore < 30 ? 'LOW' : riskScore < 60 ? 'MEDIUM' : 'HIGH',
+      },
+    };
+  });
+
   // Calculate risk score
   fastify.post<{ Params: { sector: string } }>('/risk-score/:sector', async (request) => {
     const answers = request.body as QuestionnaireAnswers;

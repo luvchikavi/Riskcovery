@@ -54,10 +54,10 @@ export default function HomePage() {
       </Box>
 
       {/* Module cards */}
-      <Container maxWidth="md" sx={{ py: { xs: 5, md: 8 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 5, md: 8 } }}>
         <Grid container spacing={3}>
           {/* RFQ Module */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%' }}>
               <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                 <Box
@@ -98,7 +98,7 @@ export default function HomePage() {
           </Grid>
 
           {/* Comparison Module */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%' }}>
               <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                 <Box
@@ -130,6 +130,47 @@ export default function HomePage() {
                   href="/comparison"
                   fullWidth
                   size="large"
+                >
+                  כניסה למודול השוואה
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Insurer Comparison Module */}
+          <Grid item xs={12} md={4}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    backgroundColor: '#5856D6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 3,
+                  }}
+                >
+                  <Typography sx={{ color: '#FFFFFF', fontSize: '1.25rem', fontWeight: 700 }}>I</Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 600, fontSize: '1.25rem', mb: 1, color: '#1D1D1F' }}>
+                  השוואת מבטחים
+                </Typography>
+                <Typography sx={{ color: '#86868B', fontSize: '0.875rem', mb: 0.5 }}>
+                  Insurer Comparison
+                </Typography>
+                <Typography sx={{ color: '#86868B', fontSize: '0.875rem', mb: 4 }}>
+                  השוואת פוליסות בין חברות ביטוח לפי תקן BIT
+                </Typography>
+                <Button
+                  variant="contained"
+                  component={Link}
+                  href="/insurers"
+                  fullWidth
+                  size="large"
+                  sx={{ backgroundColor: '#5856D6', '&:hover': { backgroundColor: '#4845B0' } }}
                 >
                   כניסה למודול השוואה
                 </Button>

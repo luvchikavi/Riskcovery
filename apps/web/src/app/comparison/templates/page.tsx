@@ -26,6 +26,8 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { comparisonApi, type ComparisonTemplate, type ComparisonRequirement } from '@/lib/api';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useSnackbar } from '@/components/SnackbarProvider';
 
 interface NewRequirement {
   policyType: string;
@@ -66,6 +68,8 @@ export default function TemplatesPage() {
     requirements: [] as NewRequirement[],
   });
   const [newRequirement, setNewRequirement] = useState<NewRequirement>(initialRequirement);
+  const [deleteTarget, setDeleteTarget] = useState<ComparisonTemplate | null>(null);
+  const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
     loadTemplates();
@@ -104,20 +108,25 @@ export default function TemplatesPage() {
         contractType: '',
         requirements: [],
       });
+      showSuccess('התבנית נוצרה בהצלחה');
       loadTemplates();
     } catch (err) {
-      setError('Failed to create template');
+      showError('שגיאה ביצירת תבנית');
       console.error(err);
     }
   };
 
-  const handleDeleteTemplate = async (id: string) => {
+  const handleDeleteTemplate = async () => {
+    if (!deleteTarget) return;
     try {
-      await comparisonApi.templates.delete(id);
-      setTemplates(templates.filter((t) => t.id !== id));
+      await comparisonApi.templates.delete(deleteTarget.id);
+      setTemplates(templates.filter((t) => t.id !== deleteTarget.id));
+      showSuccess('התבנית נמחקה בהצלחה');
     } catch (err) {
-      setError('Failed to delete template');
+      showError('שגיאה במחיקת תבנית');
       console.error(err);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -200,7 +209,7 @@ export default function TemplatesPage() {
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleDeleteTemplate(template.id)}
+                        onClick={() => setDeleteTarget(template)}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -476,6 +485,16 @@ export default function TemplatesPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="מחיקת תבנית"
+        message={`האם למחוק את התבנית "${deleteTarget?.nameHe}"? פעולה זו אינה הפיכה.`}
+        confirmLabel="מחק"
+        destructive
+        onConfirm={handleDeleteTemplate}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </Box>
   );
 }

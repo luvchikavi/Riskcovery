@@ -8,6 +8,7 @@ import {
   Compare as CompareIcon,
   Home as HomeIcon,
   AccountCircle as AccountCircleIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -28,6 +29,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 const DRAWER_WIDTH = 264;
 
@@ -50,6 +52,7 @@ export default function ComparisonLayout({ children }: { children: React.ReactNo
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -131,17 +134,25 @@ export default function ComparisonLayout({ children }: { children: React.ReactNo
           </ListItem>
         </List>
         <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar sx={{ width: 32, height: 32, bgcolor: '#F5F5F7', color: '#86868B' }}>
-            <AccountCircleIcon sx={{ fontSize: 20 }} />
+          <Avatar
+            src={session?.user?.image || undefined}
+            sx={{ width: 32, height: 32, bgcolor: '#F5F5F7', color: '#86868B' }}
+          >
+            {!session?.user?.image && <AccountCircleIcon sx={{ fontSize: 20 }} />}
           </Avatar>
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8125rem', color: '#1D1D1F' }}>
-              יועץ ביטוח
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8125rem', color: '#1D1D1F' }} noWrap>
+              {session?.user?.name || 'Dev Mode'}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#86868B', fontSize: '0.6875rem' }}>
-              Insurance Advisor
+            <Typography variant="caption" sx={{ color: '#86868B', fontSize: '0.6875rem' }} noWrap>
+              {session?.user?.email || 'מצב פיתוח'}
             </Typography>
           </Box>
+          {session && (
+            <IconButton size="small" onClick={() => signOut({ callbackUrl: '/' })} title="התנתק">
+              <LogoutIcon sx={{ fontSize: 16, color: '#86868B' }} />
+            </IconButton>
+          )}
         </Box>
       </Box>
     </Box>

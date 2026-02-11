@@ -11,6 +11,8 @@ import {
   Error as ErrorIcon,
   Extension as ExtensionIcon,
   Link as LinkIcon,
+  Business as BusinessIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -48,6 +50,7 @@ import {
   type QuestionnaireAnswers,
   type DocumentPreview,
   type EnrichedRecommendationsResponse,
+  type InsurerSuggestion,
 } from '@/lib/api';
 
 type DocumentFormat = 'pdf' | 'docx' | 'xlsx';
@@ -369,6 +372,66 @@ export default function DocumentsPage() {
                                     קטלוג המוצרים
                                   </Link>
                                 </Typography>
+                              </Grid>
+                            )}
+
+                            {/* Insurer Suggestions */}
+                            {enriched.insurerSuggestions?.[rec.productCode] &&
+                              enriched.insurerSuggestions[rec.productCode]!.length > 0 && (
+                              <Grid item xs={12}>
+                                <Divider sx={{ my: 1 }} />
+                                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                                  <BusinessIcon fontSize="small" color="secondary" />
+                                  <Typography variant="subtitle2">
+                                    מבטחים מומלצים
+                                  </Typography>
+                                </Box>
+                                <Box display="flex" gap={1.5} flexWrap="wrap">
+                                  {enriched.insurerSuggestions[rec.productCode]!.map((ins, idx) => (
+                                    <Card
+                                      key={ins.insurerCode}
+                                      variant="outlined"
+                                      sx={{ minWidth: 180, flex: '1 1 180px', maxWidth: 280 }}
+                                    >
+                                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                        <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
+                                          {idx === 0 && <StarIcon sx={{ fontSize: 14, color: '#FFB800' }} />}
+                                          <Typography variant="body2" fontWeight={600}>
+                                            {ins.insurerNameHe}
+                                          </Typography>
+                                        </Box>
+                                        <Box display="flex" gap={0.5} mb={0.5} flexWrap="wrap">
+                                          <Chip
+                                            label={ins.bitStandard || 'N/A'}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ height: 20, fontSize: '0.65rem' }}
+                                          />
+                                          <Chip
+                                            label={`${ins.extensionCount} הרחבות`}
+                                            size="small"
+                                            color="success"
+                                            variant="outlined"
+                                            sx={{ height: 20, fontSize: '0.65rem' }}
+                                          />
+                                        </Box>
+                                        {ins.strengths.slice(0, 1).map((s, i) => (
+                                          <Typography key={i} variant="caption" sx={{ color: '#34C759', display: 'block', lineHeight: 1.3 }}>
+                                            + {s}
+                                          </Typography>
+                                        ))}
+                                        <Box mt={0.5}>
+                                          <Link
+                                            href={`/insurers/${ins.insurerCode}`}
+                                            style={{ fontSize: '0.7rem' }}
+                                          >
+                                            פרטים מלאים
+                                          </Link>
+                                        </Box>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </Box>
                               </Grid>
                             )}
                           </Grid>

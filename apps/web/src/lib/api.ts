@@ -191,7 +191,7 @@ export const rfqApi = {
     getSectorMatrix: () => api.get<SectorMatrix>('/rfq/products/sector-matrix'),
     getAllRelations: () => api.get<CrossPolicyRelation[]>('/rfq/products/relations'),
     getEnrichedRecommendations: (sector: string, answers: QuestionnaireAnswers) =>
-      api.post<EnrichedRecommendationsResponse>(`/rfq/questionnaire/recommendations/${sector}/enriched`, answers),
+      api.post<EnrichedRecommendationsResponse>(`/rfq/questionnaire/recommendations/${sector}/with-insurers`, answers),
   },
 };
 
@@ -693,9 +693,21 @@ export interface CoverageGap {
   severity: 'advisory' | 'warning' | 'critical';
 }
 
+export interface InsurerSuggestion {
+  insurerCode: string;
+  insurerNameHe: string;
+  insurerNameEn: string;
+  bitStandard: string | null;
+  extensionCount: number;
+  strengths: string[];
+  weaknesses: string[];
+  score: number;
+}
+
 export interface EnrichedRecommendationsResponse {
   recommendations: EnrichedCoverageRecommendation[];
   coverageGaps: CoverageGap[];
+  insurerSuggestions?: Record<string, InsurerSuggestion[]>;
   riskScore: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
@@ -820,6 +832,105 @@ export interface ComplianceGap {
   recommendation: string;
   recommendationHe: string;
 }
+
+// ==================== INSURER COMPARISON TYPES ====================
+
+export interface InsurerSummary {
+  id: string;
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  website?: string;
+  phone?: string;
+  isActive: boolean;
+  policyCount: number;
+}
+
+export interface InsurerPolicySummary {
+  id: string;
+  productCode: string;
+  policyFormCode?: string;
+  bitStandard?: string;
+  editionYear?: number;
+  isMaster: boolean;
+  strengths: unknown[];
+  weaknesses: unknown[];
+  notableTerms: unknown[];
+}
+
+export interface InsurerPolicyExtensionDetail {
+  id: string;
+  insurerPolicyId: string;
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  description?: string;
+  descriptionHe?: string;
+  defaultLimit?: number;
+  limitNotes?: string;
+  isStandard: boolean;
+}
+
+export interface InsurerPolicyExclusionDetail {
+  id: string;
+  insurerPolicyId: string;
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  description?: string;
+  descriptionHe?: string;
+  isStandard: boolean;
+}
+
+export interface InsurerPolicyDetail extends InsurerPolicySummary {
+  extensions: InsurerPolicyExtensionDetail[];
+  exclusions: InsurerPolicyExclusionDetail[];
+}
+
+export interface InsurerComparison {
+  insurer: InsurerSummary;
+  policy: InsurerPolicySummary;
+  extensions: InsurerPolicyExtensionDetail[];
+  exclusions: InsurerPolicyExclusionDetail[];
+}
+
+export interface ExtensionMatrixRow {
+  code: string;
+  nameHe: string;
+  nameEn: string;
+  insurers: Record<string, { has: boolean; limit?: number; limitNotes?: string }>;
+}
+
+// Insurer Comparison API functions
+export const insurerApi = {
+  /** List all active insurers with policy counts. */
+  list: () => api.get<InsurerSummary[]>('/insurers'),
+
+  /** Get a single insurer by code (e.g. "CLAL", "PHOENIX"). */
+  get: (code: string) => api.get<InsurerSummary>(`/insurers/${code}`),
+
+  /** Get all policies for a given insurer. */
+  getPolicies: (code: string) =>
+    api.get<{ insurer: InsurerSummary; policies: InsurerPolicySummary[] }>(
+      `/insurers/${code}/policies`,
+    ),
+
+  /** Get a specific policy with extensions and exclusions. */
+  getPolicy: (code: string, productCode: string) =>
+    api.get<{ insurer: InsurerSummary; policy: InsurerPolicyDetail }>(
+      `/insurers/${code}/policies/${productCode}`,
+    ),
+
+  /** Compare all insurers for a product type. */
+  compareByProduct: (productCode: string) =>
+    api.get<InsurerComparison[]>(`/insurers/compare/${productCode}`),
+
+  /** Side-by-side extension comparison matrix for a product type. */
+  getExtensionMatrix: (productCode: string) =>
+    api.get<ExtensionMatrixRow[]>(
+      `/insurers/compare/${productCode}/extensions`,
+    ),
+};
 
 // Comparison API functions
 export const comparisonApi = {

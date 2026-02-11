@@ -32,6 +32,8 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { comparisonApi, type ComparisonDocument } from '@/lib/api';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useSnackbar } from '@/components/SnackbarProvider';
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<ComparisonDocument[]>([]);
@@ -39,6 +41,8 @@ export default function DocumentsPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ComparisonDocument | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ComparisonDocument | null>(null);
+  const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
     loadDocuments();
@@ -77,7 +81,9 @@ export default function DocumentsPage() {
     }
 
     setUploading(false);
+    showSuccess('הקבצים הועלו בהצלחה');
     loadDocuments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -112,13 +118,17 @@ export default function DocumentsPage() {
     }
   };
 
-  const handleDelete = async (docId: string) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await comparisonApi.documents.delete(docId);
-      setDocuments(documents.filter((d) => d.id !== docId));
+      await comparisonApi.documents.delete(deleteTarget.id);
+      setDocuments(documents.filter((d) => d.id !== deleteTarget.id));
+      showSuccess('המסמך נמחק בהצלחה');
     } catch (err) {
-      setError('Failed to delete document');
+      showError('שגיאה במחיקת המסמך');
       console.error(err);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -284,7 +294,7 @@ export default function DocumentsPage() {
                           color="error"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(doc.id);
+                            setDeleteTarget(doc);
                           }}
                           title="Delete document"
                         >
@@ -384,6 +394,16 @@ export default function DocumentsPage() {
           )}
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="מחיקת מסמך"
+        message={`האם למחוק את "${deleteTarget?.originalName}"? פעולה זו אינה הפיכה.`}
+        confirmLabel="מחק"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </Box>
   );
 }

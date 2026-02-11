@@ -14,12 +14,13 @@ import {
   Grid,
   Typography,
   Button,
-  LinearProgress,
 } from '@mui/material';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { comparisonApi, type ComparisonDocument, type ComparisonTemplate } from '@/lib/api';
+import { StatsSkeleton } from '@/components/LoadingSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 interface DashboardStats {
   totalDocuments: number;
@@ -96,7 +97,19 @@ export default function ComparisonDashboard() {
   };
 
   if (loading) {
-    return <LinearProgress sx={{ borderRadius: 4 }} />;
+    return (
+      <Box>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
+            השוואת אישורי ביטוח
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#86868B' }}>
+            Insurance Certificate Comparison Dashboard
+          </Typography>
+        </Box>
+        <StatsSkeleton count={4} />
+      </Box>
+    );
   }
 
   return (
@@ -201,7 +214,7 @@ export default function ComparisonDashboard() {
                 </Button>
               </Box>
               {recentDocuments.length === 0 ? (
-                <Typography sx={{ color: '#86868B' }}>אין מסמכים עדיין</Typography>
+                <EmptyState title="אין מסמכים עדיין" description="Upload insurance certificates to get started" />
               ) : (
                 recentDocuments.map((doc) => (
                   <Box
@@ -251,7 +264,7 @@ export default function ComparisonDashboard() {
                 </Button>
               </Box>
               {templates.length === 0 ? (
-                <Typography sx={{ color: '#86868B' }}>אין תבניות עדיין</Typography>
+                <EmptyState title="אין תבניות עדיין" description="Create requirement templates to compare certificates" />
               ) : (
                 templates.map((template) => (
                   <Box

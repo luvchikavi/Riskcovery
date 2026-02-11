@@ -5,6 +5,7 @@ import { SessionProvider, useSession } from 'next-auth/react';
 import { type ReactNode, useEffect } from 'react';
 
 import { ThemeProvider } from './ThemeProvider';
+import { SnackbarProvider } from '@/components/SnackbarProvider';
 import { api } from '@/lib/api';
 
 const queryClient = new QueryClient({
@@ -35,7 +36,9 @@ export function AppProviders({ children }: AppProvidersProps) {
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
         <AuthSync>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <SnackbarProvider>{children}</SnackbarProvider>
+          </ThemeProvider>
         </AuthSync>
       </QueryClientProvider>
     </SessionProvider>
