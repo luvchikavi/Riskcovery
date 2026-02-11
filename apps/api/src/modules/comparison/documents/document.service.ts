@@ -14,6 +14,7 @@ export class ComparisonDocumentService {
       mimeType: string;
       size: number;
       s3Key: string;
+      content?: string;
       vendorId?: string;
       clientId?: string;
     }
@@ -25,6 +26,7 @@ export class ComparisonDocumentService {
         mimeType: data.mimeType,
         size: data.size,
         s3Key: data.s3Key,
+        fileContent: data.content,
         status: 'uploaded',
         vendorId: data.vendorId,
         clientId: data.clientId,
@@ -101,6 +103,7 @@ export class ComparisonDocumentService {
     s3Key: string;
     status: string;
     extractedData: unknown;
+    fileContent: string | null;
     uploadedAt: Date;
     processedAt: Date | null;
     vendorId: string | null;
@@ -115,6 +118,7 @@ export class ComparisonDocumentService {
       s3Key: doc.s3Key,
       status: doc.status as DocumentStatus,
       extractedData: doc.extractedData as ExtractedCertificateData | undefined,
+      fileContent: doc.fileContent || undefined,
       uploadedAt: doc.uploadedAt,
       processedAt: doc.processedAt || undefined,
       vendorId: doc.vendorId || undefined,

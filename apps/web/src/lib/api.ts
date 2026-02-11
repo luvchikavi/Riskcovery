@@ -980,6 +980,8 @@ export const comparisonApi = {
     update: (id: string, data: Partial<ComparisonTemplate>) =>
       api.patch<ComparisonTemplate>(`/comparison/templates/${id}`, data),
     delete: (id: string) => api.delete(`/comparison/templates/${id}`),
+    importDocx: (fileName: string, content: string) =>
+      api.post<ComparisonTemplate>('/comparison/templates/import-docx', { fileName, content }),
   },
 
   // Analysis

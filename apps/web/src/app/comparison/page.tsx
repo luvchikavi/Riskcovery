@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { comparisonApi, type ComparisonDocument, type ComparisonTemplate } from '@/lib/api';
 import { StatsSkeleton } from '@/components/LoadingSkeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { colors } from '@/theme';
 
 interface DashboardStats {
   totalDocuments: number;
@@ -73,26 +74,26 @@ export default function ComparisonDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'processed':
-        return '#34C759';
+        return colors.emerald;
       case 'processing':
-        return '#5856D6';
+        return colors.violet;
       case 'failed':
-        return '#FF3B30';
+        return colors.rose;
       default:
-        return '#86868B';
+        return colors.slate400;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'processed':
-        return <CompliantIcon sx={{ color: '#34C759', fontSize: 20 }} />;
+        return <CompliantIcon sx={{ color: colors.emerald, fontSize: 20 }} />;
       case 'processing':
-        return <WarningIcon sx={{ color: '#5856D6', fontSize: 20 }} />;
+        return <WarningIcon sx={{ color: colors.violet, fontSize: 20 }} />;
       case 'failed':
-        return <ErrorIcon sx={{ color: '#FF3B30', fontSize: 20 }} />;
+        return <ErrorIcon sx={{ color: colors.rose, fontSize: 20 }} />;
       default:
-        return <DocumentIcon sx={{ color: '#86868B', fontSize: 20 }} />;
+        return <DocumentIcon sx={{ color: colors.slate400, fontSize: 20 }} />;
     }
   };
 
@@ -100,10 +101,10 @@ export default function ComparisonDashboard() {
     return (
       <Box>
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 600, mb: 0.5 }}>
             השוואת אישורי ביטוח
           </Typography>
-          <Typography variant="body2" sx={{ color: '#86868B' }}>
+          <Typography variant="body2" color="text.secondary">
             Insurance Certificate Comparison Dashboard
           </Typography>
         </Box>
@@ -116,10 +117,10 @@ export default function ComparisonDashboard() {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600, color: '#1D1D1F', mb: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 600, mb: 0.5 }}>
             השוואת אישורי ביטוח
           </Typography>
-          <Typography variant="body2" sx={{ color: '#86868B' }}>
+          <Typography variant="body2" color="text.secondary">
             Insurance Certificate Comparison Dashboard
           </Typography>
         </Box>
@@ -139,12 +140,12 @@ export default function ComparisonDashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <DocumentIcon sx={{ fontSize: 20, color: '#0071E3' }} />
-                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                <DocumentIcon sx={{ fontSize: 20, color: colors.blue }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                   מסמכים
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
                 {stats.totalDocuments}
               </Typography>
             </CardContent>
@@ -155,12 +156,12 @@ export default function ComparisonDashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <CompliantIcon sx={{ fontSize: 20, color: '#34C759' }} />
-                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                <CompliantIcon sx={{ fontSize: 20, color: colors.emerald }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                   עובדו
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
                 {stats.processedDocuments}
               </Typography>
             </CardContent>
@@ -171,12 +172,12 @@ export default function ComparisonDashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <TemplateIcon sx={{ fontSize: 20, color: '#5856D6' }} />
-                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                <TemplateIcon sx={{ fontSize: 20, color: colors.violet }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                   תבניות
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
                 {stats.totalTemplates}
               </Typography>
             </CardContent>
@@ -187,12 +188,12 @@ export default function ComparisonDashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <WarningIcon sx={{ fontSize: 20, color: '#FF9500' }} />
-                <Typography variant="body2" sx={{ color: '#86868B', fontWeight: 500 }}>
+                <WarningIcon sx={{ fontSize: 20, color: colors.amber }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                   ניתוחים
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1D1D1F' }}>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
                 {stats.recentAnalyses}
               </Typography>
             </CardContent>
@@ -206,10 +207,10 @@ export default function ComparisonDashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1D1D1F' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   מסמכים אחרונים
                 </Typography>
-                <Button size="small" component={Link} href="/comparison/documents" sx={{ color: '#0071E3' }}>
+                <Button size="small" component={Link} href="/comparison/documents" sx={{ color: colors.blue }}>
                   הצג הכל
                 </Button>
               </Box>
@@ -227,15 +228,15 @@ export default function ComparisonDashboard() {
                       px: 1,
                       borderRadius: '8px',
                       transition: 'background-color 0.15s ease',
-                      '&:hover': { backgroundColor: '#F5F5F7' },
+                      '&:hover': { backgroundColor: colors.slate50 },
                     }}
                   >
                     {getStatusIcon(doc.status)}
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#1D1D1F' }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
                         {doc.originalName}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#86868B' }}>
+                      <Typography variant="caption" color="text.secondary">
                         {new Date(doc.uploadedAt).toLocaleDateString('he-IL')}
                       </Typography>
                     </Box>
@@ -256,10 +257,10 @@ export default function ComparisonDashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1D1D1F' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   תבניות דרישות
                 </Typography>
-                <Button size="small" component={Link} href="/comparison/templates" sx={{ color: '#0071E3' }}>
+                <Button size="small" component={Link} href="/comparison/templates" sx={{ color: colors.blue }}>
                   הצג הכל
                 </Button>
               </Box>
@@ -277,20 +278,20 @@ export default function ComparisonDashboard() {
                       px: 1,
                       borderRadius: '8px',
                       transition: 'background-color 0.15s ease',
-                      '&:hover': { backgroundColor: '#F5F5F7' },
+                      '&:hover': { backgroundColor: colors.slate50 },
                     }}
                   >
-                    <TemplateIcon sx={{ color: '#0071E3', fontSize: 20 }} />
+                    <TemplateIcon sx={{ color: colors.blue, fontSize: 20 }} />
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem', color: '#1D1D1F' }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
                         {template.nameHe}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#86868B' }}>
+                      <Typography variant="caption" color="text.secondary">
                         {template.requirements?.length || 0} דרישות
                       </Typography>
                     </Box>
                     {template.sector && (
-                      <Typography variant="caption" sx={{ color: '#0071E3', fontWeight: 500 }}>
+                      <Typography variant="caption" sx={{ color: colors.blue, fontWeight: 500 }}>
                         {template.sector}
                       </Typography>
                     )}

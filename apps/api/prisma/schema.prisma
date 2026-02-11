@@ -394,6 +394,7 @@ model ComparisonDocument {
   s3Key         String    @map("s3_key")
   status        String    @default("uploaded")
   extractedData Json?     @map("extracted_data")
+  fileContent   String?   @map("file_content")
   uploadedAt    DateTime  @default(now()) @map("uploaded_at")
   processedAt   DateTime? @map("processed_at")
   vendorId      String?   @map("vendor_id")

@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import mammoth from 'mammoth';
 import { comparisonDocumentService } from './documents/document.service.js';
-import { ocrService } from './documents/ocr.service.js';
+import { ocrService, ENDORSEMENT_CODES } from './documents/ocr.service.js';
 import { requirementsService } from './requirements/requirements.service.js';
 import { analysisService } from './analysis/analysis.service.js';
 
@@ -40,6 +41,11 @@ const createTemplateSchema = z.object({
   ),
 });
 
+const importDocxSchema = z.object({
+  fileName: z.string(),
+  content: z.string(), // base64 encoded .docx
+});
+
 const analyzeSchema = z.object({
   documentId: z.string().uuid(),
   templateId: z.string().uuid(),
@@ -55,13 +61,14 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
     // Generate S3 key (would upload to S3 in production)
     const s3Key = `comparison-documents/${Date.now()}-${data.fileName}`;
 
-    // Create document record
+    // Create document record (store base64 content for OCR processing)
     const document = await comparisonDocumentService.uploadDocument({
       fileName: data.fileName,
       originalName: data.originalName,
       mimeType: data.mimeType,
       size: data.size,
       s3Key,
+      content: data.content,
       vendorId: data.vendorId,
       clientId: data.clientId,
     });
@@ -115,10 +122,13 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
     await comparisonDocumentService.updateStatus(document.id, 'processing');
 
     try {
-      // In production, fetch from S3 and process
-      // For now, use mock extraction
+      // Use stored file content if available, otherwise fall back to mock
+      const pdfBuffer = document.fileContent
+        ? Buffer.from(document.fileContent, 'base64')
+        : Buffer.from('mock');
+
       const extractedData = await ocrService.extractFromPdf(
-        Buffer.from('mock'),
+        pdfBuffer,
         document.originalName
       );
 
@@ -215,6 +225,145 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     return { success: true, data: { deleted: true } };
+  });
+
+  // Import template from DOCX file
+  fastify.post('/templates/import-docx', async (request, reply) => {
+    const data = importDocxSchema.parse(request.body);
+
+    try {
+      const buffer = Buffer.from(data.content, 'base64');
+      const result = await mammoth.extractRawText({ buffer });
+      const text = result.value;
+
+      // Extract service type from filename
+      const serviceType = data.fileName
+        .replace(/\.docx$/i, '')
+        .replace(/\s*-\s*(ל?מועצ(?:ות|ה))$/, '')
+        .trim();
+
+      // Policy type detection
+      const POLICY_TYPE_MAP = [
+        { en: 'GENERAL_LIABILITY', he: 'צד שלישי', aliases: ['צד ג\'', 'צד ג', 'אחריות כלפי צד שלישי'] },
+        { en: 'EMPLOYER_LIABILITY', he: 'חבות מעבידים', aliases: ['אחריות מעבידים'] },
+        { en: 'PROFESSIONAL_INDEMNITY', he: 'אחריות מקצועית', aliases: ['ביטוח מקצועי'] },
+        { en: 'CONTRACTOR_ALL_RISKS', he: 'כל הסיכונים עבודות קבלניות', aliases: ['עבודות קבלניות', 'ביטוח קבלנים', 'כל הסיכונים'] },
+        { en: 'PRODUCT_LIABILITY', he: 'חבות מוצר', aliases: ['אחריות מוצר'] },
+        { en: 'PROPERTY', he: 'ביטוח רכוש', aliases: ['רכוש'] },
+        { en: 'CAR_THIRD_PARTY', he: 'ביטוח רכב צד ג\'', aliases: ['רכב צד שלישי'] },
+        { en: 'CAR_COMPULSORY', he: 'ביטוח חובה', aliases: ['חובה רכב'] },
+        { en: 'MOTOR_VEHICLE', he: 'ביטוח רכב', aliases: ['רכב'] },
+      ];
+
+      // Extract endorsement codes
+      const endorsementCodes: string[] = [];
+      const codePattern = /\b(3\d{2}|4[0-3]\d|440)\b/g;
+      const codeMatches = text.match(codePattern);
+      if (codeMatches) {
+        for (const match of codeMatches) {
+          if (ENDORSEMENT_CODES[match] && !endorsementCodes.includes(match)) {
+            endorsementCodes.push(match);
+          }
+        }
+      }
+
+      // Find policy types in text
+      const requirements: Array<{
+        policyType: string;
+        policyTypeHe: string;
+        minimumLimit: number;
+        requiredEndorsements: string[];
+        requireAdditionalInsured: boolean;
+        requireWaiverSubrogation: boolean;
+        isMandatory: boolean;
+      }> = [];
+
+      for (const pt of POLICY_TYPE_MAP) {
+        const allPatterns = [pt.he, ...pt.aliases];
+        let found = false;
+        for (const pattern of allPatterns) {
+          const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp(escaped, 'i').test(text)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) continue;
+
+        // Parse coverage amount
+        const escaped = pt.he.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const sectionRegex = new RegExp(`${escaped}[\\s\\S]{0,500}`, 'i');
+        const sectionMatch = text.match(sectionRegex);
+        const sectionText = sectionMatch ? sectionMatch[0] : text;
+
+        let limit = 0;
+        const amountMatches = sectionText.match(/[\d,]+(?:\s*₪)?/g);
+        if (amountMatches) {
+          for (const m of amountMatches) {
+            const num = parseInt(m.replace(/[,₪\s]/g, ''), 10);
+            if (num >= 10000 && num > limit) limit = num;
+          }
+        }
+        const millionPattern = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
+        let mm;
+        while ((mm = millionPattern.exec(sectionText)) !== null) {
+          if (mm[1]) {
+            const val = parseFloat(mm[1]) * 1_000_000;
+            if (val > limit) limit = val;
+          }
+        }
+        if (limit === 0) limit = 1_000_000;
+
+        const hasAdditionalInsured = endorsementCodes.some((c) =>
+          ['317', '318', '319', '320', '321'].includes(c)
+        ) || /מבוטח נוסף/i.test(sectionText);
+
+        const hasWaiver = endorsementCodes.some((c) =>
+          ['308', '309'].includes(c)
+        ) || /ויתור\s+(?:על\s+)?(?:זכות\s+)?תחלוף/i.test(sectionText);
+
+        requirements.push({
+          policyType: pt.en,
+          policyTypeHe: pt.he,
+          minimumLimit: limit,
+          requiredEndorsements: endorsementCodes,
+          requireAdditionalInsured: hasAdditionalInsured,
+          requireWaiverSubrogation: hasWaiver,
+          isMandatory: true,
+        });
+      }
+
+      // Fallback if no policies detected
+      if (requirements.length === 0) {
+        requirements.push({
+          policyType: 'GENERAL_LIABILITY',
+          policyTypeHe: 'צד שלישי',
+          minimumLimit: 5_000_000,
+          requiredEndorsements: endorsementCodes,
+          requireAdditionalInsured: endorsementCodes.some((c) => ['317', '318', '319', '320', '321'].includes(c)),
+          requireWaiverSubrogation: endorsementCodes.some((c) => ['308', '309'].includes(c)),
+          isMandatory: true,
+        });
+      }
+
+      const template = await requirementsService.createTemplate({
+        name: `Imported - ${serviceType}`,
+        nameHe: `ייבוא - ${serviceType}`,
+        description: `Imported from ${data.fileName}`,
+        descriptionHe: `יובא מקובץ ${data.fileName}`,
+        sector: 'IMPORTED',
+        contractType: 'DOCX_IMPORT',
+        requirements,
+      });
+
+      return reply.status(201).send({ success: true, data: template });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Import failed';
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'IMPORT_FAILED', message },
+      });
+    }
   });
 
   // ==================== ANALYSIS ====================

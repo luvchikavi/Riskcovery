@@ -4,6 +4,7 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  UploadFile as UploadFileIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -24,7 +25,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { comparisonApi, type ComparisonTemplate, type ComparisonRequirement } from '@/lib/api';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/components/SnackbarProvider';
@@ -69,6 +70,8 @@ export default function TemplatesPage() {
   });
   const [newRequirement, setNewRequirement] = useState<NewRequirement>(initialRequirement);
   const [deleteTarget, setDeleteTarget] = useState<ComparisonTemplate | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
@@ -147,6 +150,32 @@ export default function TemplatesPage() {
     });
   };
 
+  const handleImportDocx = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+
+      await comparisonApi.templates.importDocx(file.name, base64);
+      showSuccess('התבנית יובאה בהצלחה');
+      loadTemplates();
+    } catch (err) {
+      showError('שגיאה בייבוא קובץ DOCX');
+      console.error(err);
+    } finally {
+      setImporting(false);
+      // Reset file input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   if (loading) {
     return <LinearProgress />;
   }
@@ -162,9 +191,26 @@ export default function TemplatesPage() {
             Manage requirement templates for certificate comparison
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-          תבנית חדשה
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <input
+            type="file"
+            accept=".docx"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleImportDocx}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+          >
+            {importing ? 'מייבא...' : 'ייבוא מ-DOCX'}
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+            תבנית חדשה
+          </Button>
+        </Box>
       </Box>
 
       {error && (

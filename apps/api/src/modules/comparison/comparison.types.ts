@@ -214,6 +214,9 @@ export interface UploadedDocument {
   // Extracted data (after OCR)
   extractedData?: ExtractedCertificateData;
 
+  // Stored file content (base64)
+  fileContent?: string;
+
   // Metadata
   uploadedAt: Date;
   processedAt?: Date;
