@@ -539,6 +539,88 @@ model SectorProductMapping {
   @@map("sector_product_mappings")
 }
 
+// ==================== INSURER POLICY COMPARISON ====================
+
+// Master list of insurance companies
+model Insurer {
+  id        String   @id @default(uuid())
+  code      String   @unique // e.g. "CLAL", "PHOENIX", "HAREL", "MIGDAL", "AYALON", "MENORAH", "SHLOMO"
+  nameHe    String   @map("name_he")
+  nameEn    String   @map("name_en")
+  website   String?
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  policies InsurerPolicy[]
+
+  @@map("insurers")
+}
+
+// A specific insurer's version of a product type
+model InsurerPolicy {
+  id              String   @id @default(uuid())
+  insurerId       String   @map("insurer_id")
+  productCode     String   @map("product_code") // links to InsuranceProduct.code
+  policyFormCode  String?  @map("policy_form_code") // insurer's own form number
+  bitStandard     String?  @map("bit_standard") // e.g. "BIT 2019", "BIT 2016"
+  editionYear     Int?     @map("edition_year") // e.g. 2019, 2018
+  structure       Json     @default("{}") // chapters/parts info
+  strengths       Json     @default("[]") // where this insurer is better than standard
+  weaknesses      Json     @default("[]") // where this insurer falls short
+  notableTerms    Json     @default("[]") @map("notable_terms") // unique conditions
+  isMaster        Boolean  @default(false) @map("is_master") // true for the BIT standard reference
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  insurer    Insurer                  @relation(fields: [insurerId], references: [id], onDelete: Cascade)
+  extensions InsurerPolicyExtension[]
+  exclusions InsurerPolicyExclusion[]
+
+  @@unique([insurerId, productCode])
+  @@map("insurer_policies")
+}
+
+// Extension specific to an insurer's policy version
+model InsurerPolicyExtension {
+  id              String   @id @default(uuid())
+  insurerPolicyId String   @map("insurer_policy_id")
+  code            String   // section number e.g. "4.1", "4.2"
+  nameHe          String   @map("name_he")
+  nameEn          String   @map("name_en")
+  description     String?
+  descriptionHe   String?  @map("description_he")
+  defaultLimit    Decimal? @map("default_limit")
+  limitNotes      String?  @map("limit_notes") // e.g. "200,000 per event"
+  isStandard      Boolean  @default(true) @map("is_standard") // exists in BIT standard?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  insurerPolicy InsurerPolicy @relation(fields: [insurerPolicyId], references: [id], onDelete: Cascade)
+
+  @@unique([insurerPolicyId, code])
+  @@map("insurer_policy_extensions")
+}
+
+// Exclusion specific to an insurer's policy version
+model InsurerPolicyExclusion {
+  id              String   @id @default(uuid())
+  insurerPolicyId String   @map("insurer_policy_id")
+  code            String   // section number e.g. "3.1", "3.2"
+  nameHe          String   @map("name_he")
+  nameEn          String   @map("name_en")
+  description     String?
+  descriptionHe   String?  @map("description_he")
+  isStandard      Boolean  @default(true) @map("is_standard") // exists in BIT standard?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  insurerPolicy InsurerPolicy @relation(fields: [insurerPolicyId], references: [id], onDelete: Cascade)
+
+  @@unique([insurerPolicyId, code])
+  @@map("insurer_policy_exclusions")
+}
+
 // ==================== DYNAMIC QUESTIONNAIRE ====================
 
 // Questionnaire template (one per sector)
