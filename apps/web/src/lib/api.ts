@@ -27,9 +27,14 @@ interface PaginatedResponse<T> {
 
 class ApiClient {
   private baseUrl: string;
+  private token: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  setToken(token: string | null) {
+    this.token = token;
   }
 
   private async request<T>(
@@ -45,6 +50,11 @@ class ApiClient {
     // Only set Content-Type for requests with a body
     if (options.body) {
       headers['Content-Type'] = 'application/json';
+    }
+
+    // Add auth token if available
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
     }
 
     const response = await fetch(url, {
@@ -101,9 +111,13 @@ class ApiClient {
 
   async downloadFile(endpoint: string, data: unknown): Promise<Blob> {
     const url = `${this.baseUrl}${endpoint}`;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(data),
     });
 

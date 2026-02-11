@@ -3,14 +3,12 @@ import type { FastifyPluginAsync } from 'fastify';
 import { clientService } from './client.service.js';
 import { createClientSchema, updateClientSchema, clientQuerySchema } from './client.schema.js';
 
-// TODO: Get organizationId from authenticated user
-const TEMP_ORG_ID = 'org-placeholder';
-
 export const clientRoutes: FastifyPluginAsync = async (fastify) => {
   // List clients
   fastify.get('/', async (request, reply) => {
     const query = clientQuerySchema.parse(request.query);
-    const result = await clientService.findAll(TEMP_ORG_ID, query);
+    const orgId = request.currentUser!.organizationId;
+    const result = await clientService.findAll(orgId, query);
 
     return {
       success: true,
@@ -20,7 +18,8 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Get client by ID
   fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const client = await clientService.findById(TEMP_ORG_ID, request.params.id);
+    const orgId = request.currentUser!.organizationId;
+    const client = await clientService.findById(orgId, request.params.id);
 
     if (!client) {
       return reply.status(404).send({
@@ -35,7 +34,8 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
   // Create client
   fastify.post('/', async (request, reply) => {
     const data = createClientSchema.parse(request.body);
-    const client = await clientService.create(TEMP_ORG_ID, data);
+    const orgId = request.currentUser!.organizationId;
+    const client = await clientService.create(orgId, data);
 
     return reply.status(201).send({ success: true, data: client });
   });
@@ -43,7 +43,8 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
   // Update client
   fastify.put<{ Params: { id: string } }>('/:id', async (request, reply) => {
     const data = updateClientSchema.parse(request.body);
-    const client = await clientService.update(TEMP_ORG_ID, request.params.id, data);
+    const orgId = request.currentUser!.organizationId;
+    const client = await clientService.update(orgId, request.params.id, data);
 
     if (!client) {
       return reply.status(404).send({
@@ -57,7 +58,8 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Delete client
   fastify.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const deleted = await clientService.delete(TEMP_ORG_ID, request.params.id);
+    const orgId = request.currentUser!.organizationId;
+    const deleted = await clientService.delete(orgId, request.params.id);
 
     if (!deleted) {
       return reply.status(404).send({
@@ -71,8 +73,9 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Update risk profile
   fastify.put<{ Params: { id: string } }>('/:id/risk-profile', async (request, reply) => {
+    const orgId = request.currentUser!.organizationId;
     const riskProfile = request.body as Record<string, unknown>;
-    const client = await clientService.updateRiskProfile(TEMP_ORG_ID, request.params.id, riskProfile);
+    const client = await clientService.updateRiskProfile(orgId, request.params.id, riskProfile);
 
     if (!client) {
       return reply.status(404).send({

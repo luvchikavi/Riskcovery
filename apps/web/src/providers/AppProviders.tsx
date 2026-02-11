@@ -1,9 +1,11 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { type ReactNode } from 'react';
+import { SessionProvider, useSession } from 'next-auth/react';
+import { type ReactNode, useEffect } from 'react';
 
 import { ThemeProvider } from './ThemeProvider';
+import { api } from '@/lib/api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,14 +16,28 @@ const queryClient = new QueryClient({
   },
 });
 
+function AuthSync({ children }: { children: ReactNode }) {
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    api.setToken(session?.apiToken ?? null);
+  }, [session?.apiToken]);
+
+  return <>{children}</>;
+}
+
 interface AppProvidersProps {
   children: ReactNode;
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>{children}</ThemeProvider>
-    </QueryClientProvider>
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthSync>
+          <ThemeProvider>{children}</ThemeProvider>
+        </AuthSync>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }

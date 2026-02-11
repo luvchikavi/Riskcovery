@@ -12,16 +12,14 @@ const generateDocumentSchema = z.object({
   format: z.enum(['pdf', 'docx', 'xlsx']).default('pdf'),
 });
 
-// TODO: Get organizationId from authenticated user
-const TEMP_ORG_ID = 'org-placeholder';
-
 export const documentRoutes: FastifyPluginAsync = async (fastify) => {
   // Generate RFQ document
   fastify.post('/generate', async (request, reply) => {
     const { clientId, answers, format } = generateDocumentSchema.parse(request.body);
+    const orgId = request.currentUser!.organizationId;
 
     // Get client details
-    const client = await clientService.findById(TEMP_ORG_ID, clientId);
+    const client = await clientService.findById(orgId, clientId);
     if (!client) {
       return reply.status(404).send({
         success: false,
@@ -85,7 +83,7 @@ export const documentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/preview', async (request, reply) => {
     const { clientId, answers } = generateDocumentSchema.parse(request.body);
 
-    const client = await clientService.findById(TEMP_ORG_ID, clientId);
+    const client = await clientService.findById(request.currentUser!.organizationId, clientId);
     if (!client) {
       return reply.status(404).send({
         success: false,

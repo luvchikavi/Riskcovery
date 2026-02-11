@@ -4,6 +4,8 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { env } from './config/env.js';
+import jwtPlugin from './plugins/jwt.js';
+import authPlugin from './plugins/auth.js';
 import { healthRoutes } from './routes/health.js';
 import { rfqRoutes } from './modules/rfq/rfq.routes.js';
 import { comparisonRoutes } from './modules/comparison/comparison.routes.js';
@@ -41,6 +43,10 @@ export async function buildApp() {
     max: env.RATE_LIMIT_MAX,
     timeWindow: '1 minute',
   });
+
+  // Auth plugins
+  await app.register(jwtPlugin);
+  await app.register(authPlugin);
 
   // Routes
   await app.register(healthRoutes, { prefix: '/api/v1' });
