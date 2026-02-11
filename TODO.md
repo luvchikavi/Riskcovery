@@ -59,3 +59,20 @@ Set up production OAuth client ID/secret in Google Cloud Console. Update Vercel 
 
 ### 10. Custom Domain
 Configure custom domain for both Vercel (frontend) and Railway (API).
+
+---
+
+## Future — Product Vision
+
+### 11. Client Analytics & Decision Support System (Design Phase)
+**Status:** Idea — needs design & architecture, not implementation yet.
+
+Design an analytics and decision-making support module based on client character profiling:
+- **Risk appetite profiling** — Classify clients on a spectrum (risk-averse ↔ risk-tolerant) based on their questionnaire answers, sector, business size, and coverage choices
+- **Common benchmarks** — Show how similar clients (same sector, size, region) typically insure: what coverage limits they choose, which endorsements are most common, average premiums
+- **Statistical dashboards** — Present industry statistics: claim frequency by sector, average claim size, loss ratios, common gaps found in certificate comparisons
+- **Decision support tools** — Help the advisor recommend coverage by surfacing: "80% of construction companies your size carry at least ₪10M general liability", "clients who skipped professional indemnity had 3x more uncovered claims"
+- **Visual risk maps** — Heat maps or scoring cards showing where a client is under/over-insured relative to peers
+- **Historical trends** — Track how a client's risk profile and coverage evolve over time
+
+This module would sit alongside the existing RFQ and Comparison tools, turning Riscovery from a document tool into an advisory intelligence platform.
