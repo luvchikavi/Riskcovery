@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedMockData } from './seed-mock-data';
 
 const prisma = new PrismaClient();
 
@@ -290,6 +291,9 @@ async function main() {
   }
 
   console.log('Seed completed!');
+
+  // Seed mock customer data (RFQ clients + questionnaires)
+  await seedMockData();
 }
 
 main()

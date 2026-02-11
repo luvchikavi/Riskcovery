@@ -1,30 +1,30 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Heebo } from 'next/font/google';
+import { Inter, Rubik } from 'next/font/google';
 
 import { AppProviders } from '@/providers/AppProviders';
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-plus-jakarta',
+  variable: '--font-inter',
   display: 'swap',
 });
 
-const heebo = Heebo({
+const rubik = Rubik({
   subsets: ['hebrew', 'latin'],
-  variable: '--font-heebo',
+  variable: '--font-rubik',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'Riscovery - Insurance Advisory Management',
   description: 'Insurance compliance tracking and RFQ generation system',
-  themeColor: '#1D1D1F',
+  themeColor: '#0f172a',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${plusJakartaSans.variable} ${heebo.variable}`}>
+      <body className={`${inter.variable} ${rubik.variable}`} style={{ margin: 0 }}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
