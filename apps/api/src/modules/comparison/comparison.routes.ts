@@ -122,15 +122,25 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
     await comparisonDocumentService.updateStatus(document.id, 'processing');
 
     try {
-      // Use stored file content if available, otherwise fall back to mock
-      const pdfBuffer = document.fileContent
-        ? Buffer.from(document.fileContent, 'base64')
-        : Buffer.from('mock');
+      let extractedData;
 
-      const extractedData = await ocrService.extractFromPdf(
-        pdfBuffer,
-        document.originalName
-      );
+      if (document.mimeType.startsWith('image/') && document.fileContent) {
+        // Image file — route directly to Vision OCR
+        extractedData = await ocrService.extractFromImage(
+          document.fileContent,
+          document.mimeType
+        );
+      } else {
+        // PDF or fallback — use pdf-parse with Vision fallback for scanned PDFs
+        const pdfBuffer = document.fileContent
+          ? Buffer.from(document.fileContent, 'base64')
+          : Buffer.from('mock');
+
+        extractedData = await ocrService.extractFromPdf(
+          pdfBuffer,
+          document.originalName
+        );
+      }
 
       // Update document with extracted data
       const updatedDocument = await comparisonDocumentService.updateStatus(

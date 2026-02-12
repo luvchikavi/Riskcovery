@@ -1,6 +1,13 @@
 import { PDFParse } from 'pdf-parse';
+import OpenAI from 'openai';
 import type { ExtractedCertificateData, ExtractedPolicy } from '../comparison.types.js';
 import { certificateParser } from './certificate-parser.js';
+
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_API_KEY environment variable is required for OCR');
+  return new OpenAI({ apiKey });
+}
 
 // OCR Service for extracting data from insurance certificates
 // Supports Israeli standardized certificate format (רשות שוק ההון)
@@ -148,8 +155,8 @@ export class OcrService {
       await parser.destroy();
 
       if (!rawText || rawText.trim().length === 0) {
-        console.log('PDF has no extractable text, falling back to mock extraction');
-        return this.createMockExtraction();
+        console.log('PDF has no extractable text, routing to Vision OCR');
+        return this.extractWithVision(pdfBuffer.toString('base64'), 'application/pdf');
       }
 
       console.log(`Extracted ${rawText.length} chars of text from PDF (${textResult.pages.length} pages)`);
@@ -162,12 +169,121 @@ export class OcrService {
     }
   }
 
-  // Extract from base64 image
+  // Extract from base64 image using OpenAI Vision
   async extractFromImage(base64Image: string, mimeType: string): Promise<ExtractedCertificateData> {
     console.log(`Processing image, type: ${mimeType}`);
+    return this.extractWithVision(base64Image, mimeType);
+  }
 
-    // TODO: Integrate with OpenAI Vision API for image-based OCR
-    return this.createMockExtraction();
+  // Extract certificate data from a document image/PDF using OpenAI Vision
+  private async extractWithVision(base64Data: string, mimeType: string): Promise<ExtractedCertificateData> {
+    try {
+      const client = getOpenAIClient();
+
+      const systemPrompt = `אתה מערכת OCR לחילוץ נתונים מאישורי ביטוח ישראליים (תעודות ביטוח בפורמט רשות שוק ההון).
+חלץ את כל הנתונים מהמסמך והחזר JSON בלבד בפורמט הבא:
+{
+  "certificateNumber": "מספר אסמכתא",
+  "issueDate": "YYYY-MM-DD",
+  "expiryDate": "YYYY-MM-DD",
+  "insurerName": "שם המבטח",
+  "insurerNameHe": "שם המבטח בעברית",
+  "insuredName": "שם המבוטח",
+  "insuredId": "ח.פ./ת.ז. של המבוטח",
+  "insuredAddress": "כתובת המבוטח",
+  "certificateRequester": { "name": "שם מבקש האישור", "id": "ח.פ. מבקש האישור" },
+  "serviceCodes": ["קודי שירות"],
+  "policies": [
+    {
+      "policyType": "GENERAL_LIABILITY | EMPLOYER_LIABILITY | PROFESSIONAL_INDEMNITY | CONTRACTOR_ALL_RISKS | PRODUCT_LIABILITY | PROPERTY | CAR_THIRD_PARTY | CAR_COMPULSORY | CYBER_LIABILITY | D_AND_O",
+      "policyTypeHe": "שם סוג הפוליסה בעברית",
+      "policyNumber": "מספר פוליסה",
+      "coverageLimit": 0,
+      "deductible": 0,
+      "effectiveDate": "YYYY-MM-DD",
+      "expirationDate": "YYYY-MM-DD",
+      "retroactiveDate": "YYYY-MM-DD או null",
+      "endorsementCodes": ["קודי הרחבות 3 ספרות"],
+      "endorsements": ["תיאורי הרחבות בעברית"]
+    }
+  ],
+  "additionalInsured": {
+    "name": "שם המבוטח הנוסף",
+    "isNamedAsAdditional": true/false,
+    "waiverOfSubrogation": true/false
+  }
+}
+אם שדה לא קיים במסמך, השמט אותו מה-JSON. החזר JSON בלבד, ללא טקסט נוסף.`;
+
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: { url: dataUrl },
+              },
+              {
+                type: 'text',
+                text: 'חלץ את כל נתוני אישור הביטוח מהמסמך הזה. החזר JSON בלבד.',
+              },
+            ],
+          },
+        ],
+        max_tokens: 4096,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        console.error('Vision API returned empty response, falling back to mock');
+        return this.createMockExtraction();
+      }
+
+      const parsed = JSON.parse(content);
+
+      // Map to ExtractedCertificateData
+      const data: ExtractedCertificateData = {
+        certificateNumber: parsed.certificateNumber,
+        issueDate: parsed.issueDate,
+        expiryDate: parsed.expiryDate,
+        insurerName: parsed.insurerName,
+        insurerNameHe: parsed.insurerNameHe,
+        insuredName: parsed.insuredName,
+        insuredId: parsed.insuredId,
+        insuredAddress: parsed.insuredAddress,
+        certificateRequester: parsed.certificateRequester,
+        serviceCodes: parsed.serviceCodes,
+        policies: (parsed.policies || []).map((p: Record<string, unknown>) => ({
+          policyType: p.policyType as string,
+          policyTypeHe: p.policyTypeHe as string,
+          policyNumber: p.policyNumber as string | undefined,
+          coverageLimit: typeof p.coverageLimit === 'number' ? p.coverageLimit : undefined,
+          deductible: typeof p.deductible === 'number' ? p.deductible : undefined,
+          effectiveDate: p.effectiveDate as string | undefined,
+          expirationDate: p.expirationDate as string | undefined,
+          retroactiveDate: p.retroactiveDate as string | undefined,
+          endorsementCodes: Array.isArray(p.endorsementCodes) ? p.endorsementCodes : [],
+          endorsements: Array.isArray(p.endorsements) ? p.endorsements : [],
+        })),
+        additionalInsured: parsed.additionalInsured,
+        rawText: `[Vision OCR] ${content.substring(0, 500)}`,
+      };
+
+      // Calculate confidence based on populated fields
+      data.confidence = this.calculateConfidence(data);
+
+      console.log(`Vision OCR extracted: ${data.policies.length} policies, confidence: ${data.confidence}`);
+      return data;
+    } catch (err) {
+      console.error('Vision OCR failed, falling back to mock:', err);
+      return this.createMockExtraction();
+    }
   }
 
   // Parse raw OCR text into structured data (Israeli certificate format)
