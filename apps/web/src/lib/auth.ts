@@ -1,18 +1,70 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import jwt from 'jsonwebtoken';
 
 import { prisma } from './prisma';
 
+const providers: NextAuthOptions['providers'] = [];
+
+// Google OAuth — only add if credentials are configured
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  );
+}
+
+// Dev credentials provider — only in development
+if (process.env.NODE_ENV !== 'production') {
+  providers.push(
+    CredentialsProvider({
+      id: 'dev-login',
+      name: 'Dev Login',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) return null;
+
+        // Find or create user
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+          include: { organization: true },
+        });
+
+        if (!user) {
+          const org = await prisma.organization.create({
+            data: { name: `Dev Organization` },
+          });
+          user = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.email.split('@')[0] || 'Dev User',
+              role: 'ADMIN',
+              organizationId: org.id,
+            },
+            include: { organization: true },
+          });
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
+      },
+    }),
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+  providers,
   session: {
     strategy: 'jwt',
   },

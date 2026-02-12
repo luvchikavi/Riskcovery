@@ -1,9 +1,19 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import { useState } from 'react';
+import { Box, Button, Card, CardContent, Divider, TextField, Typography } from '@mui/material';
 
 export default function SignInPage() {
+  const [email, setEmail] = useState('dev@riscovery.local');
+  const [loading, setLoading] = useState(false);
+
+  const handleDevLogin = async () => {
+    setLoading(true);
+    await signIn('dev-login', { email, callbackUrl: '/' });
+    setLoading(false);
+  };
+
   return (
     <Box
       sx={{
@@ -54,6 +64,42 @@ export default function SignInPage() {
           >
             Sign in with Google
           </Button>
+
+          {/* Dev login — only shown in development */}
+          {process.env.NODE_ENV !== 'production' && (
+            <>
+              <Divider sx={{ my: 3 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Dev Mode
+                </Typography>
+              </Divider>
+
+              <TextField
+                fullWidth
+                size="small"
+                label="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <Button
+                variant="outlined"
+                size="large"
+                fullWidth
+                disabled={loading || !email}
+                onClick={handleDevLogin}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                }}
+              >
+                {loading ? 'Signing in...' : 'Dev Login'}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     </Box>

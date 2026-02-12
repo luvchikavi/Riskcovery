@@ -25,7 +25,7 @@ const start = async () => {
   process.on('SIGINT', () => shutdown('SIGINT'));
 
   try {
-    await app.listen({ port: env.PORT, host: '0.0.0.0' });
+    await app.listen({ port: env.PORT, host: '::' });
     app.log.info(`Server running on http://localhost:${env.PORT}`);
   } catch (err) {
     app.log.error(err);
