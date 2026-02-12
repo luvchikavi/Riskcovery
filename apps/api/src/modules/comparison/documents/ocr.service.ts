@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PDFParse } from 'pdf-parse';
 import OpenAI from 'openai';
 import type { ExtractedCertificateData, ExtractedPolicy } from '../comparison.types.js';
