@@ -38,15 +38,17 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy built output and dependencies
+# Copy dependencies, built output, and prisma schema
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY apps/api/package.json ./apps/api/
 
 WORKDIR /app/apps/api
+
+# Generate Prisma client in runner context (avoids pnpm path issues)
+RUN npx prisma generate
 
 EXPOSE 3001
 
