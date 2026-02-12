@@ -7,7 +7,10 @@ import type {
   ComplianceGap,
   ComplianceStatus,
   GapType,
+  ComparisonRow,
+  ComparisonFieldStatus,
 } from '../comparison.types.js';
+import { ENDORSEMENT_CODES } from '../documents/ocr.service.js';
 
 export class AnalysisService {
   // Run comparison analysis
@@ -54,12 +57,16 @@ export class AnalysisService {
           policyType: string;
           policyTypeHe: string;
           minimumLimit: { toNumber(): number };
+          minimumLimitPerPeriod?: { toNumber(): number } | null;
+          minimumLimitPerOccurrence?: { toNumber(): number } | null;
           maximumDeductible: { toNumber(): number } | null;
           requiredEndorsements: unknown;
           requireAdditionalInsured: boolean;
           requireWaiverSubrogation: boolean;
           minimumValidityDays: number | null;
           isMandatory: boolean;
+          policyWording?: string | null;
+          currency?: string | null;
         },
         extractedData
       );
@@ -122,32 +129,48 @@ export class AnalysisService {
     };
   }
 
-  // Compare a single policy requirement
+  // Compare a single policy requirement — builds field-by-field ComparisonRow[]
   private comparePolicy(
     requirement: {
       id: string;
       policyType: string;
       policyTypeHe: string;
       minimumLimit: { toNumber(): number };
+      minimumLimitPerPeriod?: { toNumber(): number } | null;
+      minimumLimitPerOccurrence?: { toNumber(): number } | null;
       maximumDeductible: { toNumber(): number } | null;
       requiredEndorsements: unknown;
       requireAdditionalInsured: boolean;
       requireWaiverSubrogation: boolean;
       minimumValidityDays: number | null;
       isMandatory: boolean;
+      policyWording?: string | null;
+      currency?: string | null;
     },
     extractedData: ExtractedCertificateData
   ): PolicyComparisonResult {
+    const rows: ComparisonRow[] = [];
+    const gaps: ComplianceGap[] = [];
+
     // Find matching policy in extracted data
     const foundPolicy = extractedData.policies.find(
       (p) => p.policyType === requirement.policyType
     );
 
-    const gaps: ComplianceGap[] = [];
-    let status: ComplianceStatus = 'compliant';
+    // Row 1: Policy Type (found?)
+    const policyFound = !!foundPolicy;
+    rows.push({
+      fieldName: 'policyType',
+      fieldNameHe: 'סוג ביטוח',
+      policyType: requirement.policyType,
+      policyTypeHe: requirement.policyTypeHe,
+      required: requirement.policyTypeHe,
+      submitted: foundPolicy ? foundPolicy.policyTypeHe || foundPolicy.policyType : null,
+      status: policyFound ? 'PASS' : 'MISSING',
+      severity: requirement.isMandatory ? 'critical' : 'major',
+    });
 
-    if (!foundPolicy) {
-      // Policy not found
+    if (!policyFound) {
       gaps.push({
         type: 'missing_policy',
         severity: requirement.isMandatory ? 'critical' : 'major',
@@ -162,35 +185,139 @@ export class AnalysisService {
         policyType: requirement.policyType,
         policyTypeHe: requirement.policyTypeHe,
         status: 'missing',
+        rows,
         gaps,
         limitCompliant: false,
       };
     }
 
-    // Check coverage limit
-    const requiredLimit = requirement.minimumLimit.toNumber();
-    const limitCompliant = (foundPolicy.coverageLimit || 0) >= requiredLimit;
-
-    if (!limitCompliant) {
+    // Row 2: Limit Per Period
+    const reqLimitPerPeriod = requirement.minimumLimitPerPeriod?.toNumber() ?? requirement.minimumLimit.toNumber();
+    const subLimitPerPeriod = foundPolicy.coverageLimitPerPeriod ?? foundPolicy.coverageLimit ?? 0;
+    const limitPerPeriodOk = subLimitPerPeriod >= reqLimitPerPeriod;
+    rows.push({
+      fieldName: 'limitPerPeriod',
+      fieldNameHe: 'גבול אחריות לתקופה',
+      policyType: requirement.policyType,
+      policyTypeHe: requirement.policyTypeHe,
+      required: reqLimitPerPeriod,
+      submitted: subLimitPerPeriod || null,
+      status: subLimitPerPeriod === 0 ? 'MISSING' : limitPerPeriodOk ? 'PASS' : 'FAIL',
+      severity: 'critical',
+    });
+    if (!limitPerPeriodOk) {
       gaps.push({
-        type: 'insufficient_limit',
+        type: 'insufficient_limit_per_period',
         severity: 'critical',
-        description: `Coverage limit is insufficient`,
-        descriptionHe: `גבול הכיסוי אינו מספיק`,
-        required: requiredLimit,
-        found: foundPolicy.coverageLimit || 0,
-        recommendation: `Increase coverage to at least ₪${requiredLimit.toLocaleString()}`,
-        recommendationHe: `יש להגדיל את הכיסוי לפחות ל-₪${requiredLimit.toLocaleString()}`,
+        description: `Coverage limit per period is insufficient`,
+        descriptionHe: `גבול הכיסוי לתקופה אינו מספיק`,
+        required: reqLimitPerPeriod,
+        found: subLimitPerPeriod,
+        recommendation: `Increase per-period coverage to at least ₪${reqLimitPerPeriod.toLocaleString()}`,
+        recommendationHe: `יש להגדיל את גבול הכיסוי לתקופה לפחות ל-₪${reqLimitPerPeriod.toLocaleString()}`,
       });
-      status = 'non_compliant';
     }
 
-    // Check deductible
-    let deductibleCompliant = true;
-    if (requirement.maximumDeductible && foundPolicy.deductible) {
-      const maxDeductible = requirement.maximumDeductible.toNumber();
-      deductibleCompliant = foundPolicy.deductible <= maxDeductible;
+    // Row 3: Limit Per Occurrence
+    const reqLimitPerOccurrence = requirement.minimumLimitPerOccurrence?.toNumber() ?? requirement.minimumLimit.toNumber();
+    const subLimitPerOccurrence = foundPolicy.coverageLimitPerOccurrence ?? foundPolicy.coverageLimit ?? 0;
+    const limitPerOccurrenceOk = subLimitPerOccurrence >= reqLimitPerOccurrence;
+    rows.push({
+      fieldName: 'limitPerOccurrence',
+      fieldNameHe: 'גבול אחריות למקרה',
+      policyType: requirement.policyType,
+      policyTypeHe: requirement.policyTypeHe,
+      required: reqLimitPerOccurrence,
+      submitted: subLimitPerOccurrence || null,
+      status: subLimitPerOccurrence === 0 ? 'MISSING' : limitPerOccurrenceOk ? 'PASS' : 'FAIL',
+      severity: 'critical',
+    });
+    if (!limitPerOccurrenceOk) {
+      gaps.push({
+        type: 'insufficient_limit_per_occurrence',
+        severity: 'critical',
+        description: `Coverage limit per occurrence is insufficient`,
+        descriptionHe: `גבול הכיסוי למקרה אינו מספיק`,
+        required: reqLimitPerOccurrence,
+        found: subLimitPerOccurrence,
+        recommendation: `Increase per-occurrence coverage to at least ₪${reqLimitPerOccurrence.toLocaleString()}`,
+        recommendationHe: `יש להגדיל את גבול הכיסוי למקרה לפחות ל-₪${reqLimitPerOccurrence.toLocaleString()}`,
+      });
+    }
 
+    const limitCompliant = limitPerPeriodOk && limitPerOccurrenceOk;
+
+    // Row 4: Policy Wording
+    if (requirement.policyWording) {
+      const subWording = foundPolicy.policyWording || null;
+      const wordingOk = subWording ? subWording.includes(requirement.policyWording) || requirement.policyWording.includes(subWording) : false;
+      rows.push({
+        fieldName: 'policyWording',
+        fieldNameHe: 'נוסח ומהדורת פוליסה',
+        policyType: requirement.policyType,
+        policyTypeHe: requirement.policyTypeHe,
+        required: requirement.policyWording,
+        submitted: subWording,
+        status: !subWording ? 'MISSING' : wordingOk ? 'PASS' : 'FAIL',
+        severity: 'major',
+      });
+      if (!wordingOk) {
+        gaps.push({
+          type: 'wrong_policy_wording',
+          severity: 'major',
+          description: `Policy wording mismatch`,
+          descriptionHe: `אי התאמה בנוסח הפוליסה`,
+          required: requirement.policyWording,
+          found: subWording || '—',
+          recommendation: `Use "${requirement.policyWording}" policy wording`,
+          recommendationHe: `יש להשתמש בנוסח פוליסה "${requirement.policyWording}"`,
+        });
+      }
+    }
+
+    // Row 5: Currency
+    const reqCurrency = requirement.currency || 'ILS';
+    const subCurrency = foundPolicy.currency || 'ILS';
+    const currencyOk = reqCurrency === subCurrency;
+    rows.push({
+      fieldName: 'currency',
+      fieldNameHe: 'מטבע',
+      policyType: requirement.policyType,
+      policyTypeHe: requirement.policyTypeHe,
+      required: reqCurrency,
+      submitted: subCurrency,
+      status: currencyOk ? 'PASS' : 'FAIL',
+      severity: 'major',
+    });
+    if (!currencyOk) {
+      gaps.push({
+        type: 'wrong_currency',
+        severity: 'major',
+        description: `Currency mismatch`,
+        descriptionHe: `אי התאמה במטבע`,
+        required: reqCurrency,
+        found: subCurrency,
+        recommendation: `Policy must be in ${reqCurrency}`,
+        recommendationHe: `הפוליסה חייבת להיות במטבע ${reqCurrency}`,
+      });
+    }
+
+    // Row 6: Deductible
+    let deductibleCompliant = true;
+    if (requirement.maximumDeductible) {
+      const maxDeductible = requirement.maximumDeductible.toNumber();
+      const subDeductible = foundPolicy.deductible ?? 0;
+      deductibleCompliant = subDeductible <= maxDeductible;
+      rows.push({
+        fieldName: 'deductible',
+        fieldNameHe: 'השתתפות עצמית',
+        policyType: requirement.policyType,
+        policyTypeHe: requirement.policyTypeHe,
+        required: maxDeductible,
+        submitted: subDeductible,
+        status: deductibleCompliant ? 'PASS' : 'FAIL',
+        severity: 'major',
+      });
       if (!deductibleCompliant) {
         gaps.push({
           type: 'excessive_deductible',
@@ -198,76 +325,28 @@ export class AnalysisService {
           description: `Deductible exceeds maximum allowed`,
           descriptionHe: `ההשתתפות העצמית עולה על המותר`,
           required: maxDeductible,
-          found: foundPolicy.deductible,
+          found: subDeductible,
           recommendation: `Reduce deductible to maximum ₪${maxDeductible.toLocaleString()}`,
           recommendationHe: `יש להפחית את ההשתתפות העצמית למקסימום ₪${maxDeductible.toLocaleString()}`,
         });
-        if (status === 'compliant') status = 'partial';
       }
     }
 
-    // Check required endorsements
-    const requiredEndorsements = (requirement.requiredEndorsements as string[]) || [];
-    const foundEndorsements = foundPolicy.endorsements || [];
-    let endorsementsCompliant = true;
+    // Row 7: Effective Date
+    rows.push({
+      fieldName: 'effectiveDate',
+      fieldNameHe: 'תאריך תחילה',
+      policyType: requirement.policyType,
+      policyTypeHe: requirement.policyTypeHe,
+      required: null,
+      submitted: foundPolicy.effectiveDate || null,
+      status: foundPolicy.effectiveDate ? 'PASS' : 'MISSING',
+      severity: 'minor',
+    });
 
-    for (const reqEndorsement of requiredEndorsements) {
-      const hasEndorsement = foundEndorsements.some(
-        (e) => e.toLowerCase().includes(reqEndorsement.toLowerCase())
-      );
-
-      if (!hasEndorsement) {
-        endorsementsCompliant = false;
-        gaps.push({
-          type: 'missing_endorsement',
-          severity: 'major',
-          description: `Required endorsement "${reqEndorsement}" not found`,
-          descriptionHe: `הרחבה נדרשת "${reqEndorsement}" לא נמצאה`,
-          required: reqEndorsement,
-          recommendation: `Add "${reqEndorsement}" endorsement to policy`,
-          recommendationHe: `יש להוסיף את ההרחבה "${reqEndorsement}" לפוליסה`,
-        });
-        if (status === 'compliant') status = 'partial';
-      }
-    }
-
-    // Check additional insured
-    let additionalInsuredCompliant = true;
-    if (requirement.requireAdditionalInsured) {
-      additionalInsuredCompliant = extractedData.additionalInsured?.isNamedAsAdditional || false;
-
-      if (!additionalInsuredCompliant) {
-        gaps.push({
-          type: 'missing_additional_insured',
-          severity: 'major',
-          description: `Certificate holder not named as additional insured`,
-          descriptionHe: `מזמין העבודה לא רשום כמבוטח נוסף`,
-          recommendation: `Request to be added as additional insured`,
-          recommendationHe: `יש לבקש להירשם כמבוטח נוסף`,
-        });
-        if (status === 'compliant') status = 'partial';
-      }
-    }
-
-    // Check waiver of subrogation
-    if (requirement.requireWaiverSubrogation) {
-      const waiverCompliant = extractedData.additionalInsured?.waiverOfSubrogation || false;
-
-      if (!waiverCompliant) {
-        gaps.push({
-          type: 'missing_waiver_of_subrogation',
-          severity: 'major',
-          description: `Waiver of subrogation not included`,
-          descriptionHe: `ויתור על זכות התחלוף לא כלול`,
-          recommendation: `Request waiver of subrogation clause`,
-          recommendationHe: `יש לבקש סעיף ויתור על זכות התחלוף`,
-        });
-        if (status === 'compliant') status = 'partial';
-      }
-    }
-
-    // Check validity dates
+    // Row 8: Expiration Date
     let validityCompliant = true;
+    let expirationStatus: ComparisonFieldStatus = 'PASS';
     if (foundPolicy.expirationDate) {
       const expiry = new Date(foundPolicy.expirationDate);
       const now = new Date();
@@ -275,6 +354,7 @@ export class AnalysisService {
 
       if (daysUntilExpiry < 0) {
         validityCompliant = false;
+        expirationStatus = 'FAIL';
         gaps.push({
           type: 'expired',
           severity: 'critical',
@@ -284,11 +364,8 @@ export class AnalysisService {
           recommendation: `Renew policy immediately`,
           recommendationHe: `יש לחדש את הפוליסה באופן מיידי`,
         });
-        status = 'expired';
-      } else if (
-        requirement.minimumValidityDays &&
-        daysUntilExpiry < requirement.minimumValidityDays
-      ) {
+      } else if (requirement.minimumValidityDays && daysUntilExpiry < requirement.minimumValidityDays) {
+        expirationStatus = 'PARTIAL';
         gaps.push({
           type: 'expiring_soon',
           severity: 'minor',
@@ -299,8 +376,163 @@ export class AnalysisService {
           recommendation: `Renew policy before expiration`,
           recommendationHe: `יש לחדש את הפוליסה לפני פקיעתה`,
         });
-        if (status === 'compliant') status = 'partial';
       }
+    } else {
+      expirationStatus = 'MISSING';
+    }
+    rows.push({
+      fieldName: 'expirationDate',
+      fieldNameHe: 'תאריך סיום',
+      policyType: requirement.policyType,
+      policyTypeHe: requirement.policyTypeHe,
+      required: requirement.minimumValidityDays ? `${requirement.minimumValidityDays} ימים לפחות` : null,
+      submitted: foundPolicy.expirationDate || null,
+      status: expirationStatus,
+      severity: expirationStatus === 'FAIL' ? 'critical' : 'minor',
+    });
+
+    // Row 9: Retroactive Date (for claims-made policies like PROFESSIONAL_INDEMNITY)
+    const claimsMadePolicies = ['PROFESSIONAL_INDEMNITY', 'D_AND_O', 'CYBER_LIABILITY'];
+    if (claimsMadePolicies.includes(requirement.policyType)) {
+      const hasRetro = !!foundPolicy.retroactiveDate;
+      rows.push({
+        fieldName: 'retroactiveDate',
+        fieldNameHe: 'תאריך רטרואקטיבי',
+        policyType: requirement.policyType,
+        policyTypeHe: requirement.policyTypeHe,
+        required: 'נדרש',
+        submitted: foundPolicy.retroactiveDate || null,
+        status: hasRetro ? 'PASS' : 'MISSING',
+        severity: 'major',
+      });
+      if (!hasRetro) {
+        gaps.push({
+          type: 'missing_retroactive_date',
+          severity: 'major',
+          description: `Retroactive date missing for claims-made policy`,
+          descriptionHe: `תאריך רטרואקטיבי חסר לפוליסת תביעות`,
+          recommendation: `Add retroactive date to policy`,
+          recommendationHe: `יש להוסיף תאריך רטרואקטיבי לפוליסה`,
+        });
+      }
+    }
+
+    // Rows 10+: Required endorsements — compare by code
+    const requiredEndorsements = (requirement.requiredEndorsements as string[]) || [];
+    const foundCodes = foundPolicy.endorsementCodes || [];
+    let endorsementsCompliant = true;
+
+    for (const reqCode of requiredEndorsements) {
+      // Check if this is a 3-digit code or a text description
+      const isCode = /^\d{3}$/.test(reqCode);
+      let hasIt = false;
+
+      if (isCode) {
+        hasIt = foundCodes.includes(reqCode);
+      } else {
+        // Fall back to text matching on endorsements[]
+        const foundEndorsements = foundPolicy.endorsements || [];
+        hasIt = foundEndorsements.some((e) => e.toLowerCase().includes(reqCode.toLowerCase()));
+        // Also try code lookup
+        if (!hasIt) {
+          hasIt = foundCodes.includes(reqCode);
+        }
+      }
+
+      const desc = isCode ? (ENDORSEMENT_CODES[reqCode]?.he || reqCode) : reqCode;
+
+      rows.push({
+        fieldName: `endorsement_${reqCode}`,
+        fieldNameHe: `הרחבה ${reqCode} - ${desc}`,
+        policyType: requirement.policyType,
+        policyTypeHe: requirement.policyTypeHe,
+        required: desc,
+        submitted: hasIt ? desc : null,
+        status: hasIt ? 'PASS' : 'FAIL',
+        severity: 'major',
+      });
+
+      if (!hasIt) {
+        endorsementsCompliant = false;
+        gaps.push({
+          type: 'missing_endorsement',
+          severity: 'major',
+          description: `Required endorsement "${reqCode}" not found`,
+          descriptionHe: `הרחבה נדרשת "${desc}" לא נמצאה`,
+          required: reqCode,
+          recommendation: `Add endorsement "${desc}" to policy`,
+          recommendationHe: `יש להוסיף את ההרחבה "${desc}" לפוליסה`,
+        });
+      }
+    }
+
+    // Row N: Additional Insured
+    let additionalInsuredCompliant = true;
+    if (requirement.requireAdditionalInsured) {
+      additionalInsuredCompliant = extractedData.additionalInsured?.isNamedAsAdditional || false;
+      rows.push({
+        fieldName: 'additionalInsured',
+        fieldNameHe: 'מבוטח נוסף',
+        policyType: requirement.policyType,
+        policyTypeHe: requirement.policyTypeHe,
+        required: 'נדרש',
+        submitted: additionalInsuredCompliant ? 'קיים' : null,
+        status: additionalInsuredCompliant ? 'PASS' : 'FAIL',
+        severity: 'major',
+      });
+      if (!additionalInsuredCompliant) {
+        gaps.push({
+          type: 'missing_additional_insured',
+          severity: 'major',
+          description: `Certificate holder not named as additional insured`,
+          descriptionHe: `מזמין העבודה לא רשום כמבוטח נוסף`,
+          recommendation: `Request to be added as additional insured`,
+          recommendationHe: `יש לבקש להירשם כמבוטח נוסף`,
+        });
+      }
+    }
+
+    // Row N+1: Waiver of Subrogation
+    if (requirement.requireWaiverSubrogation) {
+      const waiverOk = extractedData.additionalInsured?.waiverOfSubrogation || false;
+      rows.push({
+        fieldName: 'waiverOfSubrogation',
+        fieldNameHe: 'ויתור על זכות תחלוף',
+        policyType: requirement.policyType,
+        policyTypeHe: requirement.policyTypeHe,
+        required: 'נדרש',
+        submitted: waiverOk ? 'קיים' : null,
+        status: waiverOk ? 'PASS' : 'FAIL',
+        severity: 'major',
+      });
+      if (!waiverOk) {
+        gaps.push({
+          type: 'missing_waiver_of_subrogation',
+          severity: 'major',
+          description: `Waiver of subrogation not included`,
+          descriptionHe: `ויתור על זכות התחלוף לא כלול`,
+          recommendation: `Request waiver of subrogation clause`,
+          recommendationHe: `יש לבקש סעיף ויתור על זכות התחלוף`,
+        });
+      }
+    }
+
+    // Derive overall status from rows
+    let status: ComplianceStatus = 'compliant';
+    const hasFail = rows.some((r) => r.status === 'FAIL' && r.severity === 'critical');
+    const hasNonCriticalFail = rows.some((r) => r.status === 'FAIL' && r.severity !== 'critical');
+    const hasPartial = rows.some((r) => r.status === 'PARTIAL');
+    const hasMissing = rows.some((r) => r.status === 'MISSING' && r.severity === 'critical');
+
+    if (hasFail || hasMissing) {
+      status = 'non_compliant';
+    } else if (hasNonCriticalFail || hasPartial) {
+      status = 'partial';
+    }
+
+    // Check if expired overrides
+    if (gaps.some((g) => g.type === 'expired')) {
+      status = 'expired';
     }
 
     return {
@@ -309,6 +541,7 @@ export class AnalysisService {
       policyTypeHe: requirement.policyTypeHe,
       status,
       foundPolicy,
+      rows,
       gaps,
       limitCompliant,
       deductibleCompliant,

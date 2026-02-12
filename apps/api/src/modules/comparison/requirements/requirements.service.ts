@@ -15,12 +15,18 @@ export interface CreateRequirementInput {
   policyType: string;
   policyTypeHe: string;
   minimumLimit: number;
+  minimumLimitPerPeriod?: number;
+  minimumLimitPerOccurrence?: number;
   maximumDeductible?: number;
   requiredEndorsements?: string[];
   requireAdditionalInsured?: boolean;
   requireWaiverSubrogation?: boolean;
   minimumValidityDays?: number;
   isMandatory?: boolean;
+  policyWording?: string;
+  currency?: string;
+  cancellationNoticeDays?: number;
+  serviceCodes?: string[];
   notes?: string;
   notesHe?: string;
 }
@@ -41,12 +47,18 @@ export class RequirementsService {
             policyType: req.policyType,
             policyTypeHe: req.policyTypeHe,
             minimumLimit: req.minimumLimit,
+            minimumLimitPerPeriod: req.minimumLimitPerPeriod ?? req.minimumLimit,
+            minimumLimitPerOccurrence: req.minimumLimitPerOccurrence ?? req.minimumLimit,
             maximumDeductible: req.maximumDeductible,
             requiredEndorsements: req.requiredEndorsements || [],
             requireAdditionalInsured: req.requireAdditionalInsured || false,
             requireWaiverSubrogation: req.requireWaiverSubrogation || false,
             minimumValidityDays: req.minimumValidityDays,
             isMandatory: req.isMandatory ?? true,
+            policyWording: req.policyWording,
+            currency: req.currency || 'ILS',
+            cancellationNoticeDays: req.cancellationNoticeDays,
+            serviceCodes: req.serviceCodes || [],
             notes: req.notes,
             notesHe: req.notesHe,
           })),
@@ -126,12 +138,18 @@ export class RequirementsService {
         policyType: requirement.policyType,
         policyTypeHe: requirement.policyTypeHe,
         minimumLimit: requirement.minimumLimit,
+        minimumLimitPerPeriod: requirement.minimumLimitPerPeriod ?? requirement.minimumLimit,
+        minimumLimitPerOccurrence: requirement.minimumLimitPerOccurrence ?? requirement.minimumLimit,
         maximumDeductible: requirement.maximumDeductible,
         requiredEndorsements: requirement.requiredEndorsements || [],
         requireAdditionalInsured: requirement.requireAdditionalInsured || false,
         requireWaiverSubrogation: requirement.requireWaiverSubrogation || false,
         minimumValidityDays: requirement.minimumValidityDays,
         isMandatory: requirement.isMandatory ?? true,
+        policyWording: requirement.policyWording,
+        currency: requirement.currency || 'ILS',
+        cancellationNoticeDays: requirement.cancellationNoticeDays,
+        serviceCodes: requirement.serviceCodes || [],
         notes: requirement.notes,
         notesHe: requirement.notesHe,
       },
@@ -146,12 +164,18 @@ export class RequirementsService {
         ...(data.policyType && { policyType: data.policyType }),
         ...(data.policyTypeHe && { policyTypeHe: data.policyTypeHe }),
         ...(data.minimumLimit !== undefined && { minimumLimit: data.minimumLimit }),
+        ...(data.minimumLimitPerPeriod !== undefined && { minimumLimitPerPeriod: data.minimumLimitPerPeriod }),
+        ...(data.minimumLimitPerOccurrence !== undefined && { minimumLimitPerOccurrence: data.minimumLimitPerOccurrence }),
         ...(data.maximumDeductible !== undefined && { maximumDeductible: data.maximumDeductible }),
         ...(data.requiredEndorsements && { requiredEndorsements: data.requiredEndorsements }),
         ...(data.requireAdditionalInsured !== undefined && { requireAdditionalInsured: data.requireAdditionalInsured }),
         ...(data.requireWaiverSubrogation !== undefined && { requireWaiverSubrogation: data.requireWaiverSubrogation }),
         ...(data.minimumValidityDays !== undefined && { minimumValidityDays: data.minimumValidityDays }),
         ...(data.isMandatory !== undefined && { isMandatory: data.isMandatory }),
+        ...(data.policyWording !== undefined && { policyWording: data.policyWording }),
+        ...(data.currency !== undefined && { currency: data.currency }),
+        ...(data.cancellationNoticeDays !== undefined && { cancellationNoticeDays: data.cancellationNoticeDays }),
+        ...(data.serviceCodes !== undefined && { serviceCodes: data.serviceCodes }),
         ...(data.notes !== undefined && { notes: data.notes }),
         ...(data.notesHe !== undefined && { notesHe: data.notesHe }),
       },

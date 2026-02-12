@@ -29,12 +29,18 @@ const createTemplateSchema = z.object({
       policyType: z.string(),
       policyTypeHe: z.string(),
       minimumLimit: z.number(),
+      minimumLimitPerPeriod: z.number().optional(),
+      minimumLimitPerOccurrence: z.number().optional(),
       maximumDeductible: z.number().optional(),
       requiredEndorsements: z.array(z.string()).optional(),
       requireAdditionalInsured: z.boolean().optional(),
       requireWaiverSubrogation: z.boolean().optional(),
       minimumValidityDays: z.number().optional(),
       isMandatory: z.boolean().optional(),
+      policyWording: z.string().optional(),
+      currency: z.string().optional(),
+      cancellationNoticeDays: z.number().optional(),
+      serviceCodes: z.array(z.string()).optional(),
       notes: z.string().optional(),
       notesHe: z.string().optional(),
     })
@@ -282,9 +288,13 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
         policyType: string;
         policyTypeHe: string;
         minimumLimit: number;
+        minimumLimitPerPeriod: number;
+        minimumLimitPerOccurrence: number;
         requiredEndorsements: string[];
         requireAdditionalInsured: boolean;
         requireWaiverSubrogation: boolean;
+        policyWording?: string;
+        currency: string;
         isMandatory: boolean;
       }> = [];
 
@@ -300,29 +310,39 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
         }
         if (!found) continue;
 
-        // Parse coverage amount
+        // Parse coverage amounts (dual)
         const escaped = pt.he.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const sectionRegex = new RegExp(`${escaped}[\\s\\S]{0,500}`, 'i');
         const sectionMatch = text.match(sectionRegex);
         const sectionText = sectionMatch ? sectionMatch[0] : text;
 
-        let limit = 0;
+        const amounts: number[] = [];
         const amountMatches = sectionText.match(/[\d,]+(?:\s*₪)?/g);
         if (amountMatches) {
           for (const m of amountMatches) {
             const num = parseInt(m.replace(/[,₪\s]/g, ''), 10);
-            if (num >= 10000 && num > limit) limit = num;
+            if (num >= 10000) amounts.push(num);
           }
         }
         const millionPattern = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
         let mm;
         while ((mm = millionPattern.exec(sectionText)) !== null) {
-          if (mm[1]) {
-            const val = parseFloat(mm[1]) * 1_000_000;
-            if (val > limit) limit = val;
-          }
+          if (mm[1]) amounts.push(parseFloat(mm[1]) * 1_000_000);
         }
-        if (limit === 0) limit = 1_000_000;
+
+        const limitPerPeriod = amounts.length > 0 ? amounts[0]! : 1_000_000;
+        const limitPerOccurrence = amounts.length > 1 ? amounts[1]! : limitPerPeriod;
+        const limit = Math.max(limitPerPeriod, limitPerOccurrence);
+
+        // Detect policy wording
+        const policyWording = /ביט/i.test(sectionText)
+          ? (sectionText.match(/ביט\s*\d{4}/i)?.[0] || 'ביט')
+          : undefined;
+
+        // Detect currency
+        let currency = 'ILS';
+        if (/\$|USD/i.test(sectionText)) currency = 'USD';
+        else if (/€|EUR/i.test(sectionText)) currency = 'EUR';
 
         const hasAdditionalInsured = endorsementCodes.some((c) =>
           ['317', '318', '319', '320', '321'].includes(c)
@@ -336,9 +356,13 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
           policyType: pt.en,
           policyTypeHe: pt.he,
           minimumLimit: limit,
+          minimumLimitPerPeriod: limitPerPeriod,
+          minimumLimitPerOccurrence: limitPerOccurrence,
           requiredEndorsements: endorsementCodes,
           requireAdditionalInsured: hasAdditionalInsured,
           requireWaiverSubrogation: hasWaiver,
+          policyWording,
+          currency,
           isMandatory: true,
         });
       }
@@ -349,9 +373,12 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
           policyType: 'GENERAL_LIABILITY',
           policyTypeHe: 'צד שלישי',
           minimumLimit: 5_000_000,
+          minimumLimitPerPeriod: 5_000_000,
+          minimumLimitPerOccurrence: 5_000_000,
           requiredEndorsements: endorsementCodes,
           requireAdditionalInsured: endorsementCodes.some((c) => ['317', '318', '319', '320', '321'].includes(c)),
           requireWaiverSubrogation: endorsementCodes.some((c) => ['308', '309'].includes(c)),
+          currency: 'ILS',
           isMandatory: true,
         });
       }

@@ -46,7 +46,13 @@ export interface ExtractedPolicy {
 
   // Coverage details
   coverageLimit?: number;
+  coverageLimitPerPeriod?: number;
+  coverageLimitPerOccurrence?: number;
   deductible?: number;
+
+  // Policy wording & currency
+  policyWording?: string;
+  currency?: string;
 
   // Dates
   effectiveDate?: string;
@@ -94,7 +100,19 @@ export interface PolicyRequirement {
 
   // Required coverage
   minimumLimit: number;
+  minimumLimitPerPeriod?: number;
+  minimumLimitPerOccurrence?: number;
   maximumDeductible?: number;
+
+  // Policy wording & currency
+  policyWording?: string;
+  currency?: string;
+
+  // Cancellation notice
+  cancellationNoticeDays?: number;
+
+  // Service codes
+  serviceCodes?: string[];
 
   // Required endorsement codes (Israeli standard 3-digit codes like 309, 318, 321)
   requiredEndorsementCodes?: string[];
@@ -115,6 +133,20 @@ export interface PolicyRequirement {
   // Notes
   notes?: string;
   notesHe?: string;
+}
+
+// Field-by-field comparison row
+export type ComparisonFieldStatus = 'PASS' | 'FAIL' | 'PARTIAL' | 'MISSING';
+
+export interface ComparisonRow {
+  fieldName: string;
+  fieldNameHe: string;
+  policyType?: string;
+  policyTypeHe?: string;
+  required: string | number | null;
+  submitted: string | number | null;
+  status: ComparisonFieldStatus;
+  severity?: 'critical' | 'major' | 'minor';
 }
 
 // Comparison Result types
@@ -151,6 +183,9 @@ export interface PolicyComparisonResult {
 
   // Found policy (if any)
   foundPolicy?: ExtractedPolicy;
+
+  // Field-by-field comparison rows
+  rows: ComparisonRow[];
 
   // Gaps identified
   gaps: ComplianceGap[];
@@ -191,10 +226,15 @@ export type ComplianceStatus =
 export type GapType =
   | 'missing_policy'
   | 'insufficient_limit'
+  | 'insufficient_limit_per_period'
+  | 'insufficient_limit_per_occurrence'
   | 'excessive_deductible'
   | 'missing_endorsement'
   | 'missing_additional_insured'
   | 'missing_waiver_of_subrogation'
+  | 'wrong_policy_wording'
+  | 'wrong_currency'
+  | 'missing_retroactive_date'
   | 'expired'
   | 'expiring_soon'
   | 'invalid_dates';

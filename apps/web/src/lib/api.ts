@@ -753,9 +753,15 @@ export interface ExtractedPolicy {
   policyTypeHe: string;
   policyNumber?: string;
   coverageLimit?: number;
+  coverageLimitPerPeriod?: number;
+  coverageLimitPerOccurrence?: number;
   deductible?: number;
+  policyWording?: string;
+  currency?: string;
   effectiveDate?: string;
   expirationDate?: string;
+  retroactiveDate?: string;
+  endorsementCodes?: string[];
   endorsements?: string[];
   confidence?: number;
 }
@@ -783,14 +789,33 @@ export interface ComparisonRequirement {
   policyType: string;
   policyTypeHe: string;
   minimumLimit: number;
+  minimumLimitPerPeriod?: number;
+  minimumLimitPerOccurrence?: number;
   maximumDeductible?: number;
   requiredEndorsements: string[];
   requireAdditionalInsured: boolean;
   requireWaiverSubrogation: boolean;
   minimumValidityDays?: number;
   isMandatory: boolean;
+  policyWording?: string;
+  currency?: string;
+  cancellationNoticeDays?: number;
+  serviceCodes?: string[];
   notes?: string;
   notesHe?: string;
+}
+
+export type ComparisonFieldStatus = 'PASS' | 'FAIL' | 'PARTIAL' | 'MISSING';
+
+export interface ComparisonRow {
+  fieldName: string;
+  fieldNameHe: string;
+  policyType?: string;
+  policyTypeHe?: string;
+  required: string | number | null;
+  submitted: string | number | null;
+  status: ComparisonFieldStatus;
+  severity?: 'critical' | 'major' | 'minor';
 }
 
 export interface ComparisonAnalysis {
@@ -814,6 +839,7 @@ export interface PolicyComparisonResult {
   policyTypeHe: string;
   status: 'compliant' | 'partial' | 'non_compliant' | 'missing' | 'expired';
   foundPolicy?: ExtractedPolicy;
+  rows?: ComparisonRow[];
   gaps: ComplianceGap[];
   limitCompliant: boolean;
   deductibleCompliant?: boolean;
@@ -829,8 +855,8 @@ export interface ComplianceGap {
   descriptionHe: string;
   required?: string | number;
   found?: string | number;
-  recommendation: string;
-  recommendationHe: string;
+  recommendation?: string;
+  recommendationHe?: string;
 }
 
 // ==================== INSURER COMPARISON TYPES ====================

@@ -134,10 +134,16 @@ interface ParsedRequirement {
   policyType: string;
   policyTypeHe: string;
   minimumLimit: number;
+  minimumLimitPerPeriod: number;
+  minimumLimitPerOccurrence: number;
   requiredEndorsements: string[];
   requireAdditionalInsured: boolean;
   requireWaiverSubrogation: boolean;
   isMandatory: boolean;
+  policyWording?: string;
+  currency: string;
+  cancellationNoticeDays?: number;
+  serviceCodes: string[];
 }
 
 // ─── Parse service type from filename ─────────────────────────────────
@@ -167,19 +173,17 @@ function getPolicyTypeHe(en: string): string {
   return POLICY_TYPE_MAP.find((p) => p.en === en)?.he || en;
 }
 
-// ─── Parse coverage amount from Hebrew text ───────────────────────────
-function parseCoverageAmount(text: string): number {
-  // Match patterns like "2,000,000 ₪" or "2,000,000"
-  const directAmountMatches = text.match(/[\d,]+(?:\s*₪)?/g);
+// ─── Parse dual coverage amounts from Hebrew text ─────────────────────
+function parseDualCoverageAmounts(text: string): { perPeriod: number; perOccurrence: number } {
   const amounts: number[] = [];
 
+  // Match patterns like "2,000,000 ₪" or "2,000,000"
+  const directAmountMatches = text.match(/[\d,]+(?:\s*₪)?/g);
   if (directAmountMatches) {
     for (const match of directAmountMatches) {
       const cleaned = match.replace(/[,₪\s]/g, '');
       const num = parseInt(cleaned, 10);
-      if (num >= 10000) {
-        amounts.push(num);
-      }
+      if (num >= 10000) amounts.push(num);
     }
   }
 
@@ -187,13 +191,56 @@ function parseCoverageAmount(text: string): number {
   const millionPattern = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
   let millionMatch;
   while ((millionMatch = millionPattern.exec(text)) !== null) {
-    if (millionMatch[1]) {
-      amounts.push(parseFloat(millionMatch[1]) * 1_000_000);
-    }
+    if (millionMatch[1]) amounts.push(parseFloat(millionMatch[1]) * 1_000_000);
   }
 
-  // Return the largest amount found (usually the coverage limit)
-  return amounts.length > 0 ? Math.max(...amounts) : 0;
+  if (amounts.length >= 2) {
+    // First = per period, second = per occurrence
+    return { perPeriod: amounts[0]!, perOccurrence: amounts[1]! };
+  } else if (amounts.length === 1) {
+    return { perPeriod: amounts[0]!, perOccurrence: amounts[0]! };
+  }
+  return { perPeriod: 0, perOccurrence: 0 };
+}
+
+// ─── Parse policy wording from text ───────────────────────────────────
+function parsePolicyWording(text: string): string | undefined {
+  const match = text.match(/ביט\s*\d{4}/i);
+  if (match) return match[0];
+  if (/ביט/i.test(text)) return 'ביט';
+  return undefined;
+}
+
+// ─── Parse currency from text ─────────────────────────────────────────
+function parseCurrency(text: string): string {
+  if (/\$|USD/i.test(text)) return 'USD';
+  if (/€|EUR/i.test(text)) return 'EUR';
+  return 'ILS';
+}
+
+// ─── Parse cancellation notice days from text ─────────────────────────
+function parseCancellationNoticeDays(text: string): number | undefined {
+  const match = text.match(/(\d+)\s*(?:ימ[יו]ם|יום)/);
+  if (match?.[1]) {
+    const days = parseInt(match[1], 10);
+    if (days >= 7 && days <= 120) return days;
+  }
+  return undefined;
+}
+
+// ─── Parse service codes from text ────────────────────────────────────
+function parseServiceCodes(text: string): string[] {
+  const codes: string[] = [];
+  // Look for explicit service code references
+  const codePattern = /קוד(?:\s*ה)?שירות[:\s]*(\d{2,3})/gi;
+  let match;
+  while ((match = codePattern.exec(text)) !== null) {
+    if (match[1]) {
+      const code = match[1].padStart(3, '0');
+      if (!codes.includes(code)) codes.push(code);
+    }
+  }
+  return codes;
 }
 
 // ─── Extract endorsement codes from text ──────────────────────────────
@@ -281,16 +328,16 @@ async function parseDocxTemplate(filePath: string, fileName: string): Promise<{
     const sectionMatch = text.match(sectionRegex);
     const sectionText = sectionMatch ? sectionMatch[0] : text;
 
-    // Parse coverage amount from the section
-    let limit = parseCoverageAmount(sectionText);
+    // Parse dual coverage amounts from the section
+    let dualAmounts = parseDualCoverageAmounts(sectionText);
 
     // If no limit found in section, try the whole document
-    if (limit === 0) {
-      limit = parseCoverageAmount(text);
+    if (dualAmounts.perPeriod === 0) {
+      dualAmounts = parseDualCoverageAmounts(text);
     }
 
     // Apply default limits based on policy type if still 0
-    if (limit === 0) {
+    if (dualAmounts.perPeriod === 0) {
       const defaults: Record<string, number> = {
         'GENERAL_LIABILITY': 5_000_000,
         'EMPLOYER_LIABILITY': 10_000_000,
@@ -302,25 +349,40 @@ async function parseDocxTemplate(filePath: string, fileName: string): Promise<{
         'CAR_COMPULSORY': 0,
         'MOTOR_VEHICLE': 1_000_000,
       };
-      limit = defaults[policyType] || 1_000_000;
+      const def = defaults[policyType] || 1_000_000;
+      dualAmounts = { perPeriod: def, perOccurrence: def };
     }
+
+    const limit = Math.max(dualAmounts.perPeriod, dualAmounts.perOccurrence);
 
     // Extract endorsement codes relevant to this policy type section
     const sectionEndorsements = extractEndorsementCodes(sectionText);
     // Use section-specific ones if found, otherwise use all document codes
     const relevantEndorsements = sectionEndorsements.length > 0 ? sectionEndorsements : allEndorsementCodes;
 
+    // Parse new fields
+    const policyWording = parsePolicyWording(sectionText);
+    const currency = parseCurrency(sectionText);
+    const cancellationNoticeDays = parseCancellationNoticeDays(sectionText);
+    const serviceCodes = parseServiceCodes(text); // from whole doc
+
     const requirement: ParsedRequirement = {
       policyType,
       policyTypeHe,
       minimumLimit: limit,
+      minimumLimitPerPeriod: dualAmounts.perPeriod,
+      minimumLimitPerOccurrence: dualAmounts.perOccurrence,
       requiredEndorsements: relevantEndorsements,
       requireAdditionalInsured: hasAdditionalInsured(sectionText, relevantEndorsements),
       requireWaiverSubrogation: hasWaiverSubrogation(sectionText, relevantEndorsements),
       isMandatory: true,
+      policyWording,
+      currency,
+      cancellationNoticeDays,
+      serviceCodes,
     };
 
-    console.log(`   → ${policyTypeHe} (${policyType}): ₪${limit.toLocaleString()}, ${relevantEndorsements.length} endorsements`);
+    console.log(`   → ${policyTypeHe} (${policyType}): ₪${dualAmounts.perPeriod.toLocaleString()}/period, ₪${dualAmounts.perOccurrence.toLocaleString()}/occurrence, ${relevantEndorsements.length} endorsements`);
 
     requirements.push(requirement);
   }
@@ -332,10 +394,16 @@ async function parseDocxTemplate(filePath: string, fileName: string): Promise<{
       policyType: 'GENERAL_LIABILITY',
       policyTypeHe: 'צד שלישי',
       minimumLimit: 5_000_000,
+      minimumLimitPerPeriod: 5_000_000,
+      minimumLimitPerOccurrence: 5_000_000,
       requiredEndorsements: allEndorsementCodes,
       requireAdditionalInsured: hasAdditionalInsured(text, allEndorsementCodes),
       requireWaiverSubrogation: hasWaiverSubrogation(text, allEndorsementCodes),
       isMandatory: true,
+      policyWording: parsePolicyWording(text),
+      currency: parseCurrency(text),
+      cancellationNoticeDays: parseCancellationNoticeDays(text),
+      serviceCodes: parseServiceCodes(text),
     });
   }
 
@@ -401,10 +469,16 @@ async function main() {
                 policyType: req.policyType,
                 policyTypeHe: req.policyTypeHe,
                 minimumLimit: req.minimumLimit,
+                minimumLimitPerPeriod: req.minimumLimitPerPeriod,
+                minimumLimitPerOccurrence: req.minimumLimitPerOccurrence,
                 requiredEndorsements: req.requiredEndorsements,
                 requireAdditionalInsured: req.requireAdditionalInsured,
                 requireWaiverSubrogation: req.requireWaiverSubrogation,
                 isMandatory: req.isMandatory,
+                policyWording: req.policyWording,
+                currency: req.currency,
+                cancellationNoticeDays: req.cancellationNoticeDays,
+                serviceCodes: req.serviceCodes,
               })),
             },
           },
@@ -427,10 +501,16 @@ async function main() {
                 policyType: req.policyType,
                 policyTypeHe: req.policyTypeHe,
                 minimumLimit: req.minimumLimit,
+                minimumLimitPerPeriod: req.minimumLimitPerPeriod,
+                minimumLimitPerOccurrence: req.minimumLimitPerOccurrence,
                 requiredEndorsements: req.requiredEndorsements,
                 requireAdditionalInsured: req.requireAdditionalInsured,
                 requireWaiverSubrogation: req.requireWaiverSubrogation,
                 isMandatory: req.isMandatory,
+                policyWording: req.policyWording,
+                currency: req.currency,
+                cancellationNoticeDays: req.cancellationNoticeDays,
+                serviceCodes: req.serviceCodes,
               })),
             },
           },
@@ -460,7 +540,9 @@ async function main() {
   for (const t of templates) {
     console.log(`  ${t.nameHe} — ${t.requirements.length} requirements`);
     for (const r of t.requirements) {
-      console.log(`    • ${r.policyTypeHe}: ₪${Number(r.minimumLimit).toLocaleString()}, ${(r.requiredEndorsements as string[]).length} endorsements`);
+      const perPeriod = r.minimumLimitPerPeriod ? Number(r.minimumLimitPerPeriod).toLocaleString() : '—';
+      const perOccurrence = r.minimumLimitPerOccurrence ? Number(r.minimumLimitPerOccurrence).toLocaleString() : '—';
+      console.log(`    • ${r.policyTypeHe}: ₪${perPeriod}/period, ₪${perOccurrence}/occurrence, ${(r.requiredEndorsements as string[]).length} endorsements, ${r.currency || 'ILS'}`);
     }
   }
 }

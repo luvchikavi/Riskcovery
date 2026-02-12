@@ -25,6 +25,13 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from 'react';
@@ -34,8 +41,46 @@ import {
   type ComparisonTemplate,
   type ComparisonAnalysis,
   type PolicyComparisonResult,
+  type ComparisonRow,
+  type ComparisonFieldStatus,
 } from '@/lib/api';
 import { useSnackbar } from '@/components/SnackbarProvider';
+
+// ─── Helper: Status Chip ──────────────────────────────────────────────
+function StatusChip({ status }: { status: ComparisonFieldStatus }) {
+  const config: Record<ComparisonFieldStatus, { label: string; color: string; bg: string }> = {
+    PASS: { label: 'תואם', color: '#1B5E20', bg: '#E8F5E9' },
+    FAIL: { label: 'לא תואם', color: '#B71C1C', bg: '#FFEBEE' },
+    PARTIAL: { label: 'חלקי', color: '#E65100', bg: '#FFF3E0' },
+    MISSING: { label: 'חסר', color: '#616161', bg: '#F5F5F5' },
+  };
+  const c = config[status] || config.MISSING;
+  return (
+    <Chip
+      label={c.label}
+      size="small"
+      sx={{ fontWeight: 600, color: c.color, backgroundColor: c.bg, minWidth: 70 }}
+    />
+  );
+}
+
+// ─── Helper: Format value ─────────────────────────────────────────────
+function formatValue(v: string | number | null | undefined): string {
+  if (v == null) return '—';
+  if (typeof v === 'number') return `₪${v.toLocaleString()}`;
+  return v;
+}
+
+// ─── Helper: Row background color ─────────────────────────────────────
+function rowBgColor(status: ComparisonFieldStatus): string {
+  switch (status) {
+    case 'PASS': return '#F1F8E9';
+    case 'FAIL': return '#FFF8F8';
+    case 'PARTIAL': return '#FFF8E1';
+    case 'MISSING': return '#FAFAFA';
+    default: return 'transparent';
+  }
+}
 
 export default function AnalyzePage() {
   const [documents, setDocuments] = useState<ComparisonDocument[]>([]);
@@ -107,49 +152,38 @@ export default function AnalyzePage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'compliant':
-        return 'תואם';
-      case 'partial':
-        return 'תואם חלקית';
-      case 'non_compliant':
-        return 'לא תואם';
-      case 'missing':
-        return 'חסר';
-      case 'expired':
-        return 'פג תוקף';
-      default:
-        return status;
+      case 'compliant': return 'תואם';
+      case 'partial': return 'תואם חלקית';
+      case 'non_compliant': return 'לא תואם';
+      case 'missing': return 'חסר';
+      case 'expired': return 'פג תוקף';
+      default: return status;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'compliant':
-        return 'success';
-      case 'partial':
-        return 'warning';
-      case 'non_compliant':
-      case 'expired':
-        return 'error';
-      case 'missing':
-        return 'default';
-      default:
-        return 'default';
+      case 'compliant': return 'success';
+      case 'partial': return 'warning';
+      case 'non_compliant': case 'expired': return 'error';
+      default: return 'default';
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical':
-        return 'error.main';
-      case 'major':
-        return 'warning.main';
-      case 'minor':
-        return 'info.main';
-      default:
-        return 'text.secondary';
+      case 'critical': return 'error.main';
+      case 'major': return 'warning.main';
+      case 'minor': return 'info.main';
+      default: return 'text.secondary';
     }
   };
+
+  // Check if any policy result has rows (new format)
+  const hasRows = analysisResult?.policyResults?.some((pr) => pr.rows && pr.rows.length > 0) ?? false;
+
+  // Flatten all rows from all policies for summary table
+  const allRows: ComparisonRow[] = analysisResult?.policyResults?.flatMap((pr) => pr.rows || []) ?? [];
 
   if (loading) {
     return <LinearProgress />;
@@ -319,7 +353,44 @@ export default function AnalyzePage() {
             </CardContent>
           </Card>
 
-          {/* Detailed Results */}
+          {/* Section 1: Summary Flat Table (new format) */}
+          {hasRows && allRows.length > 0 && (
+            <Card sx={{ mb: 4 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  טבלת השוואה מפורטת
+                </Typography>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small" dir="rtl">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
+                        <TableCell sx={{ fontWeight: 700 }}>סוג ביטוח</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>שדה</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>נדרש</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>הוצג</TableCell>
+                        <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>סטטוס</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {allRows.map((row, idx) => (
+                        <TableRow key={idx} sx={{ backgroundColor: rowBgColor(row.status) }}>
+                          <TableCell sx={{ fontWeight: 500 }}>{row.policyTypeHe || '—'}</TableCell>
+                          <TableCell>{row.fieldNameHe}</TableCell>
+                          <TableCell>{formatValue(row.required)}</TableCell>
+                          <TableCell>{formatValue(row.submitted)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center' }}>
+                            <StatusChip status={row.status} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Section 2: Per-Policy Accordions */}
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             פירוט לפי פוליסה
           </Typography>
@@ -342,56 +413,76 @@ export default function AnalyzePage() {
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
-                {result.foundPolicy ? (
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      פרטי פוליסה שנמצאה:
-                    </Typography>
-                    <Grid container spacing={2} sx={{ mb: 2 }}>
-                      {result.foundPolicy.policyNumber && (
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">
-                            מספר פוליסה
-                          </Typography>
-                          <Typography variant="body2">{result.foundPolicy.policyNumber}</Typography>
-                        </Grid>
-                      )}
-                      {result.foundPolicy.coverageLimit && (
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">
-                            גבול אחריות
-                          </Typography>
-                          <Typography variant="body2">
-                            ₪{result.foundPolicy.coverageLimit.toLocaleString()}
-                          </Typography>
-                        </Grid>
-                      )}
-                      {result.foundPolicy.deductible && (
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">
-                            השתתפות עצמית
-                          </Typography>
-                          <Typography variant="body2">
-                            ₪{result.foundPolicy.deductible.toLocaleString()}
-                          </Typography>
-                        </Grid>
-                      )}
-                      {result.foundPolicy.expirationDate && (
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">
-                            תוקף עד
-                          </Typography>
-                          <Typography variant="body2">{result.foundPolicy.expirationDate}</Typography>
-                        </Grid>
-                      )}
-                    </Grid>
-                  </Box>
+                {/* New: Field-by-field table inside accordion */}
+                {result.rows && result.rows.length > 0 ? (
+                  <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                    <Table size="small" dir="rtl">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
+                          <TableCell sx={{ fontWeight: 700 }}>שדה</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>נדרש</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>הוצג</TableCell>
+                          <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>סטטוס</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {result.rows.map((row, idx) => (
+                          <TableRow key={idx} sx={{ backgroundColor: rowBgColor(row.status) }}>
+                            <TableCell>{row.fieldNameHe}</TableCell>
+                            <TableCell>{formatValue(row.required)}</TableCell>
+                            <TableCell>{formatValue(row.submitted)}</TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              <StatusChip status={row.status} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 ) : (
-                  <Alert severity="warning" sx={{ mb: 2 }}>
-                    פוליסה זו לא נמצאה באישור הביטוח
-                  </Alert>
+                  <>
+                    {/* Legacy: policy details + gap boxes fallback */}
+                    {result.foundPolicy ? (
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          פרטי פוליסה שנמצאה:
+                        </Typography>
+                        <Grid container spacing={2} sx={{ mb: 2 }}>
+                          {result.foundPolicy.policyNumber && (
+                            <Grid item xs={6} md={3}>
+                              <Typography variant="caption" color="text.secondary">מספר פוליסה</Typography>
+                              <Typography variant="body2">{result.foundPolicy.policyNumber}</Typography>
+                            </Grid>
+                          )}
+                          {result.foundPolicy.coverageLimit && (
+                            <Grid item xs={6} md={3}>
+                              <Typography variant="caption" color="text.secondary">גבול אחריות</Typography>
+                              <Typography variant="body2">₪{result.foundPolicy.coverageLimit.toLocaleString()}</Typography>
+                            </Grid>
+                          )}
+                          {result.foundPolicy.deductible && (
+                            <Grid item xs={6} md={3}>
+                              <Typography variant="caption" color="text.secondary">השתתפות עצמית</Typography>
+                              <Typography variant="body2">₪{result.foundPolicy.deductible.toLocaleString()}</Typography>
+                            </Grid>
+                          )}
+                          {result.foundPolicy.expirationDate && (
+                            <Grid item xs={6} md={3}>
+                              <Typography variant="caption" color="text.secondary">תוקף עד</Typography>
+                              <Typography variant="body2">{result.foundPolicy.expirationDate}</Typography>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </Box>
+                    ) : (
+                      <Alert severity="warning" sx={{ mb: 2 }}>
+                        פוליסה זו לא נמצאה באישור הביטוח
+                      </Alert>
+                    )}
+                  </>
                 )}
 
+                {/* Gaps section (shown for both old and new format) */}
                 {result.gaps && result.gaps.length > 0 && (
                   <Box>
                     <Divider sx={{ my: 2 }} />
@@ -423,15 +514,17 @@ export default function AnalyzePage() {
                             }}
                           />
                         </Box>
-                        {(gap.required || gap.found) && (
+                        {(gap.required != null || gap.found != null) && (
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                            נדרש: {typeof gap.required === 'number' ? `₪${gap.required.toLocaleString()}` : gap.required} |
-                            נמצא: {typeof gap.found === 'number' ? `₪${gap.found.toLocaleString()}` : gap.found}
+                            נדרש: {typeof gap.required === 'number' ? `₪${gap.required.toLocaleString()}` : gap.required || '—'} |
+                            נמצא: {typeof gap.found === 'number' ? `₪${gap.found.toLocaleString()}` : gap.found || '—'}
                           </Typography>
                         )}
-                        <Typography variant="body2" color="primary.main">
-                          המלצה: {gap.recommendationHe}
-                        </Typography>
+                        {gap.recommendationHe && (
+                          <Typography variant="body2" color="primary.main">
+                            המלצה: {gap.recommendationHe}
+                          </Typography>
+                        )}
                       </Box>
                     ))}
                   </Box>

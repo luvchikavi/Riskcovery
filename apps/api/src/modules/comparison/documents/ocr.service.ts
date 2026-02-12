@@ -198,8 +198,12 @@ export class OcrService {
       "policyType": "GENERAL_LIABILITY | EMPLOYER_LIABILITY | PROFESSIONAL_INDEMNITY | CONTRACTOR_ALL_RISKS | PRODUCT_LIABILITY | PROPERTY | CAR_THIRD_PARTY | CAR_COMPULSORY | CYBER_LIABILITY | D_AND_O",
       "policyTypeHe": "שם סוג הפוליסה בעברית",
       "policyNumber": "מספר פוליסה",
+      "coverageLimitPerPeriod": 0,
+      "coverageLimitPerOccurrence": 0,
       "coverageLimit": 0,
       "deductible": 0,
+      "policyWording": "ביט או אחר",
+      "currency": "ILS",
       "effectiveDate": "YYYY-MM-DD",
       "expirationDate": "YYYY-MM-DD",
       "retroactiveDate": "YYYY-MM-DD או null",
@@ -259,18 +263,27 @@ export class OcrService {
         insuredAddress: parsed.insuredAddress,
         certificateRequester: parsed.certificateRequester,
         serviceCodes: parsed.serviceCodes,
-        policies: (parsed.policies || []).map((p: Record<string, unknown>) => ({
-          policyType: p.policyType as string,
-          policyTypeHe: p.policyTypeHe as string,
-          policyNumber: p.policyNumber as string | undefined,
-          coverageLimit: typeof p.coverageLimit === 'number' ? p.coverageLimit : undefined,
-          deductible: typeof p.deductible === 'number' ? p.deductible : undefined,
-          effectiveDate: p.effectiveDate as string | undefined,
-          expirationDate: p.expirationDate as string | undefined,
-          retroactiveDate: p.retroactiveDate as string | undefined,
-          endorsementCodes: Array.isArray(p.endorsementCodes) ? p.endorsementCodes : [],
-          endorsements: Array.isArray(p.endorsements) ? p.endorsements : [],
-        })),
+        policies: (parsed.policies || []).map((p: Record<string, unknown>) => {
+          const perPeriod = typeof p.coverageLimitPerPeriod === 'number' ? p.coverageLimitPerPeriod : undefined;
+          const perOccurrence = typeof p.coverageLimitPerOccurrence === 'number' ? p.coverageLimitPerOccurrence : undefined;
+          const legacy = typeof p.coverageLimit === 'number' ? p.coverageLimit : undefined;
+          return {
+            policyType: p.policyType as string,
+            policyTypeHe: p.policyTypeHe as string,
+            policyNumber: p.policyNumber as string | undefined,
+            coverageLimitPerPeriod: perPeriod,
+            coverageLimitPerOccurrence: perOccurrence,
+            coverageLimit: legacy ?? perPeriod, // fallback for backward compat
+            deductible: typeof p.deductible === 'number' ? p.deductible : undefined,
+            policyWording: typeof p.policyWording === 'string' ? p.policyWording : undefined,
+            currency: typeof p.currency === 'string' ? p.currency : 'ILS',
+            effectiveDate: p.effectiveDate as string | undefined,
+            expirationDate: p.expirationDate as string | undefined,
+            retroactiveDate: p.retroactiveDate as string | undefined,
+            endorsementCodes: Array.isArray(p.endorsementCodes) ? p.endorsementCodes : [],
+            endorsements: Array.isArray(p.endorsements) ? p.endorsements : [],
+          };
+        }),
         additionalInsured: parsed.additionalInsured,
         rawText: `[Vision OCR] ${content.substring(0, 500)}`,
       };
@@ -472,23 +485,51 @@ export class OcrService {
         policy.policyNumber = policyNumMatch[1].trim();
       }
 
-      // Extract coverage limits - look for numbers in the millions format
-      const limitPatterns = [
-        new RegExp(`${policyType.he}[^]*?([\\d,]+)[\\s]*₪`, 'i'),
-        new RegExp(`${policyType.he}[^]*?גבול אחריות[^]*?([\\d,]+)`, 'i'),
-        new RegExp(`([\\d,]+)[\\s]*₪[^]*?${policyType.he}`, 'i'),
-      ];
+      // Extract section text for this policy type
+      const escapedHe = policyType.he.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const sectionRegex = new RegExp(`${escapedHe}[\\s\\S]{0,800}`, 'i');
+      const sectionMatch = text.match(sectionRegex);
+      const sectionText = sectionMatch ? sectionMatch[0] : '';
 
-      for (const limitPattern of limitPatterns) {
-        const limitMatch = text.match(limitPattern);
-        if (limitMatch?.[1]) {
-          const limitStr = limitMatch[1].replace(/,/g, '');
-          const limit = parseInt(limitStr, 10);
-          if (limit > 0) {
-            policy.coverageLimit = limit;
-            break;
-          }
-        }
+      // Extract dual coverage limits — find all amounts >= 10000 in the section
+      const amounts: number[] = [];
+      const amountPattern = /[\d,]+(?:\s*₪)?/g;
+      let amountMatch;
+      while ((amountMatch = amountPattern.exec(sectionText)) !== null) {
+        const num = parseInt(amountMatch[0].replace(/[,₪\s]/g, ''), 10);
+        if (num >= 10000) amounts.push(num);
+      }
+      // Also check for "X מיליון" patterns
+      const millionPat = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
+      let mm;
+      while ((mm = millionPat.exec(sectionText)) !== null) {
+        if (mm[1]) amounts.push(parseFloat(mm[1]) * 1_000_000);
+      }
+
+      if (amounts.length >= 2) {
+        // First = per period, second = per occurrence
+        policy.coverageLimitPerPeriod = amounts[0];
+        policy.coverageLimitPerOccurrence = amounts[1];
+      } else if (amounts.length === 1) {
+        policy.coverageLimitPerPeriod = amounts[0];
+        policy.coverageLimitPerOccurrence = amounts[0];
+      }
+      // Legacy fallback
+      policy.coverageLimit = policy.coverageLimitPerPeriod;
+
+      // Extract policy wording — look for "ביט"
+      if (/ביט/i.test(sectionText)) {
+        const wordingMatch = sectionText.match(/ביט\s*\d{4}/i);
+        policy.policyWording = wordingMatch ? wordingMatch[0] : 'ביט';
+      }
+
+      // Extract currency (default ILS)
+      if (/\$|USD/i.test(sectionText)) {
+        policy.currency = 'USD';
+      } else if (/€|EUR/i.test(sectionText)) {
+        policy.currency = 'EUR';
+      } else {
+        policy.currency = 'ILS';
       }
 
       // Extract dates
@@ -647,10 +688,12 @@ export class OcrService {
 
       // Check policy completeness
       for (const policy of data.policies) {
-        if (policy.coverageLimit) score += 0.5;
+        if (policy.coverageLimitPerPeriod) score += 0.3;
+        if (policy.coverageLimitPerOccurrence) score += 0.3;
+        if (!policy.coverageLimitPerPeriod && policy.coverageLimit) score += 0.5; // legacy fallback
         if (policy.effectiveDate) score += 0.3;
         if (policy.expirationDate) score += 0.3;
-        factors += 1.1;
+        factors += 1.2;
       }
     }
 
@@ -680,8 +723,12 @@ export class OcrService {
           policyType: 'GENERAL_LIABILITY',
           policyTypeHe: 'צד שלישי',
           policyNumber: '24-110-063-1071730',
-          coverageLimit: 2000000,
+          coverageLimit: 5000000,
+          coverageLimitPerPeriod: 5000000,
+          coverageLimitPerOccurrence: 2000000,
           deductible: 0,
+          policyWording: 'ביט 2019',
+          currency: 'ILS',
           effectiveDate: '2024-08-12',
           expirationDate: '2024-12-31',
           endorsements: [
@@ -703,7 +750,11 @@ export class OcrService {
           policyTypeHe: 'חבות מעבידים',
           policyNumber: '24-110-063-1071730',
           coverageLimit: 20000000,
+          coverageLimitPerPeriod: 20000000,
+          coverageLimitPerOccurrence: 10000000,
           deductible: 0,
+          policyWording: 'ביט 2019',
+          currency: 'ILS',
           effectiveDate: '2024-08-12',
           expirationDate: '2024-12-31',
           endorsements: [
@@ -719,7 +770,11 @@ export class OcrService {
           policyTypeHe: 'אחריות מקצועית',
           policyNumber: '24-110-073-1003952',
           coverageLimit: 2000000,
+          coverageLimitPerPeriod: 2000000,
+          coverageLimitPerOccurrence: 1000000,
           deductible: 0,
+          policyWording: 'ביט 2019',
+          currency: 'ILS',
           effectiveDate: '2024-08-12',
           expirationDate: '2025-05-31',
           retroactiveDate: '2024-08-12',
