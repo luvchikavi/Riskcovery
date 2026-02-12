@@ -6,6 +6,7 @@ import {
   Error as ErrorIcon,
   Help as MissingIcon,
   Schedule as ExpiredIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -32,9 +33,13 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Stepper,
+  Step,
+  StepLabel,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 import {
   comparisonApi,
   type ComparisonDocument,
@@ -45,6 +50,8 @@ import {
   type ComparisonFieldStatus,
 } from '@/lib/api';
 import { useSnackbar } from '@/components/SnackbarProvider';
+
+const STEPS = ['העלאת אישור', 'בחירת תבנית', 'הרצת בדיקה'];
 
 // ─── Helper: Status Chip ──────────────────────────────────────────────
 function StatusChip({ status }: { status: ComparisonFieldStatus }) {
@@ -83,11 +90,14 @@ function rowBgColor(status: ComparisonFieldStatus): string {
 }
 
 export default function AnalyzePage() {
+  const [activeStep, setActiveStep] = useState(0);
   const [documents, setDocuments] = useState<ComparisonDocument[]>([]);
   const [templates, setTemplates] = useState<ComparisonTemplate[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<ComparisonAnalysis | null>(null);
@@ -114,6 +124,94 @@ export default function AnalyzePage() {
     }
   };
 
+  // ─── Upload logic (from documents page) ─────────────────────────────
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1] || '';
+        resolve(base64);
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+    const file = acceptedFiles[0]!;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      // Upload
+      const base64 = await fileToBase64(file);
+      const uploadResponse = await comparisonApi.documents.upload({
+        fileName: file.name.replace(/[^a-zA-Z0-9.-]/g, '_'),
+        originalName: file.name,
+        mimeType: file.type,
+        size: file.size,
+        content: base64,
+      });
+
+      const uploadedDoc = uploadResponse.data;
+      if (!uploadedDoc) throw new Error('Upload failed');
+
+      setUploading(false);
+      setProcessing(true);
+
+      // Process (OCR)
+      const processResponse = await comparisonApi.documents.process(uploadedDoc.id);
+      const processedDoc = processResponse.data;
+
+      if (processedDoc) {
+        // Refresh documents list and auto-select the new one
+        const docsResponse = await comparisonApi.documents.list({ status: 'processed' });
+        setDocuments(docsResponse.data || []);
+        setSelectedDocument(processedDoc.id);
+        showSuccess('המסמך הועלה ועובד בהצלחה');
+        // Auto-advance to step 2
+        setActiveStep(1);
+      }
+    } catch (err) {
+      setError(`שגיאה בהעלאת ${file.name}`);
+      showError('שגיאה בהעלאת הקובץ');
+      console.error(err);
+    } finally {
+      setUploading(false);
+      setProcessing(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/*': ['.png', '.jpg', '.jpeg'],
+    },
+    multiple: false,
+  });
+
+  // ─── Select existing document ───────────────────────────────────────
+  const handleSelectExistingDocument = (docId: string) => {
+    setSelectedDocument(docId);
+    if (docId) {
+      setActiveStep(1);
+    }
+  };
+
+  // ─── Select template ───────────────────────────────────────────────
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    if (templateId) {
+      setActiveStep(2);
+    }
+  };
+
+  // ─── Run analysis ──────────────────────────────────────────────────
   const runAnalysis = async () => {
     if (!selectedDocument || !selectedTemplate) return;
 
@@ -124,9 +222,9 @@ export default function AnalyzePage() {
     try {
       const response = await comparisonApi.analysis.run(selectedDocument, selectedTemplate);
       setAnalysisResult(response.data || null);
-      showSuccess('הניתוח הושלם בהצלחה');
+      showSuccess('הבדיקה הושלמה בהצלחה');
     } catch (err) {
-      showError('שגיאה בהרצת הניתוח');
+      showError('שגיאה בהרצת הבדיקה');
       console.error(err);
     } finally {
       setAnalyzing(false);
@@ -189,14 +287,17 @@ export default function AnalyzePage() {
     return <LinearProgress />;
   }
 
+  // Find selected template for summary display
+  const selectedTemplateObj = templates.find((t) => t.id === selectedTemplate);
+
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          ניתוח השוואה
+          בדיקת תאימות
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
-          Compare insurance certificates against requirement templates
+          Upload a certificate, select requirements, and run a compliance check
         </Typography>
       </Box>
 
@@ -206,69 +307,205 @@ export default function AnalyzePage() {
         </Alert>
       )}
 
-      {/* Selection Form */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            בחר מסמך ותבנית
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={5}>
-              <FormControl fullWidth>
-                <InputLabel>מסמך</InputLabel>
-                <Select
-                  value={selectedDocument}
-                  label="מסמך"
-                  onChange={(e) => setSelectedDocument(e.target.value)}
-                >
-                  {documents.length === 0 ? (
-                    <MenuItem disabled>אין מסמכים מעובדים</MenuItem>
-                  ) : (
-                    documents.map((doc) => (
-                      <MenuItem key={doc.id} value={doc.id}>
-                        {doc.originalName}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              <FormControl fullWidth>
-                <InputLabel>תבנית דרישות</InputLabel>
-                <Select
-                  value={selectedTemplate}
-                  label="תבנית דרישות"
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                >
-                  {templates.length === 0 ? (
-                    <MenuItem disabled>אין תבניות</MenuItem>
-                  ) : (
-                    templates.map((template) => (
-                      <MenuItem key={template.id} value={template.id}>
-                        {template.nameHe} ({template.requirements?.length || 0} דרישות)
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button
-                variant="contained"
-                fullWidth
-                sx={{ height: '100%' }}
-                disabled={!selectedDocument || !selectedTemplate || analyzing}
-                onClick={runAnalysis}
-              >
-                {analyzing ? 'מנתח...' : 'הרץ ניתוח'}
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Stepper */}
+      <Stepper activeStep={activeStep} sx={{ mb: 4 }} alternativeLabel>
+        {STEPS.map((label, index) => (
+          <Step
+            key={label}
+            completed={index < activeStep || !!analysisResult}
+            sx={{ cursor: 'pointer' }}
+            onClick={() => {
+              if (!analysisResult) setActiveStep(index);
+            }}
+          >
+            <StepLabel>{label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
 
-      {analyzing && <LinearProgress sx={{ mb: 3 }} />}
+      {/* Step 1: Upload Certificate */}
+      {activeStep === 0 && (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              העלאת אישור ביטוח
+            </Typography>
+
+            {/* Drag-drop zone */}
+            <Box
+              {...getRootProps()}
+              sx={{
+                border: '2px dashed',
+                borderColor: isDragActive ? 'primary.main' : 'divider',
+                borderRadius: 2,
+                p: 4,
+                textAlign: 'center',
+                cursor: 'pointer',
+                backgroundColor: isDragActive ? 'primary.light' : 'transparent',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  backgroundColor: 'action.hover',
+                },
+                mb: 3,
+              }}
+            >
+              <input {...getInputProps()} />
+              <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+              {uploading ? (
+                <Box>
+                  <Typography>מעלה קובץ...</Typography>
+                  <LinearProgress sx={{ mt: 2 }} />
+                </Box>
+              ) : processing ? (
+                <Box>
+                  <Typography>מעבד מסמך (OCR)...</Typography>
+                  <LinearProgress sx={{ mt: 2 }} />
+                </Box>
+              ) : isDragActive ? (
+                <Typography>שחרר כאן להעלאה</Typography>
+              ) : (
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    גרור קובץ לכאן או לחץ לבחירה
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    PDF, PNG, JPG — העלה אישור ביטוח לבדיקה
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* OR: Select from existing */}
+            <Divider sx={{ my: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                או בחר מסמך קיים
+              </Typography>
+            </Divider>
+
+            <FormControl fullWidth>
+              <InputLabel>בחר מסמך מעובד</InputLabel>
+              <Select
+                value={selectedDocument}
+                label="בחר מסמך מעובד"
+                onChange={(e) => handleSelectExistingDocument(e.target.value)}
+              >
+                {documents.length === 0 ? (
+                  <MenuItem disabled>אין מסמכים מעובדים</MenuItem>
+                ) : (
+                  documents.map((doc) => (
+                    <MenuItem key={doc.id} value={doc.id}>
+                      {doc.originalName}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 2: Select Template */}
+      {activeStep === 1 && (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              בחירת תבנית דרישות
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              מסמך נבחר: {documents.find((d) => d.id === selectedDocument)?.originalName}
+            </Typography>
+
+            <FormControl fullWidth>
+              <InputLabel>תבנית דרישות</InputLabel>
+              <Select
+                value={selectedTemplate}
+                label="תבנית דרישות"
+                onChange={(e) => handleSelectTemplate(e.target.value)}
+              >
+                {templates.length === 0 ? (
+                  <MenuItem disabled>אין תבניות</MenuItem>
+                ) : (
+                  templates.map((template) => (
+                    <MenuItem key={template.id} value={template.id}>
+                      {template.nameHe} ({template.requirements?.length || 0} דרישות)
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+
+            {selectedTemplateObj && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  {selectedTemplateObj.nameHe}
+                </Typography>
+                {selectedTemplateObj.descriptionHe && (
+                  <Typography variant="caption" color="text.secondary">
+                    {selectedTemplateObj.descriptionHe}
+                  </Typography>
+                )}
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  {selectedTemplateObj.requirements?.length || 0} דרישות
+                  {selectedTemplateObj.sector && ` · ${selectedTemplateObj.sector}`}
+                </Typography>
+              </Box>
+            )}
+
+            <Button
+              variant="text"
+              size="small"
+              sx={{ mt: 1 }}
+              onClick={() => setActiveStep(0)}
+            >
+              חזור לשלב הקודם
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 3: Run Analysis */}
+      {activeStep === 2 && !analysisResult && (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              הרצת בדיקה
+            </Typography>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                מסמך: {documents.find((d) => d.id === selectedDocument)?.originalName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                תבנית: {templates.find((t) => t.id === selectedTemplate)?.nameHe}
+              </Typography>
+            </Box>
+
+            <Button
+              variant="contained"
+              size="large"
+              disabled={!selectedDocument || !selectedTemplate || analyzing}
+              onClick={runAnalysis}
+              sx={{ minWidth: 200 }}
+            >
+              {analyzing ? 'מריץ בדיקה...' : 'הרצת בדיקה'}
+            </Button>
+
+            {analyzing && <LinearProgress sx={{ mt: 2 }} />}
+
+            <Box sx={{ mt: 1 }}>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => setActiveStep(1)}
+                disabled={analyzing}
+              >
+                חזור לשלב הקודם
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Analysis Results */}
       {analysisResult && (
@@ -278,7 +515,7 @@ export default function AnalyzePage() {
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6" fontWeight="bold">
-                  תוצאות ניתוח
+                  תוצאות בדיקה
                 </Typography>
                 <Chip
                   icon={getStatusIcon(analysisResult.overallStatus)}
@@ -532,6 +769,21 @@ export default function AnalyzePage() {
               </AccordionDetails>
             </Accordion>
           ))}
+
+          {/* New check button */}
+          <Box sx={{ mt: 3 }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setAnalysisResult(null);
+                setSelectedDocument('');
+                setSelectedTemplate('');
+                setActiveStep(0);
+              }}
+            >
+              בדיקה חדשה
+            </Button>
+          </Box>
         </Box>
       )}
     </Box>

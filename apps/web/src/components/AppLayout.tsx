@@ -5,12 +5,11 @@ import {
   Home as HomeIcon,
   AccountCircle as AccountCircleIcon,
   Logout as LogoutIcon,
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
+  PersonSearch as PersonSearchIcon,
   Inventory as CatalogIcon,
   Settings as SettingsIcon,
-  Description as DocumentIcon,
-  ListAlt as TemplateIcon,
+  FactCheck as FactCheckIcon,
+  Policy as PolicyIcon,
   Compare as CompareIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
@@ -56,37 +55,33 @@ interface NavSection {
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    title: 'RFQ',
-    titleHe: 'RFQ',
+    title: 'Risk Management',
+    titleHe: 'ניהול סיכונים',
     accentColor: colors.blue,
     basePath: '/rfq',
     items: [
-      { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/rfq', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Clients', labelHe: 'לקוחות', href: '/rfq/clients', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Product Catalog', labelHe: 'קטלוג מוצרים', href: '/rfq/knowledge', icon: <CatalogIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Templates', labelHe: 'ניהול תבניות', href: '/rfq/admin/templates', icon: <SettingsIcon sx={{ fontSize: 20 }} /> },
+      { label: 'Clients', labelHe: 'לקוחות', href: '/rfq/clients', icon: <PersonSearchIcon sx={{ fontSize: 20 }} /> },
+      { label: 'Insurance Products', labelHe: 'מוצרי ביטוח', href: '/rfq/knowledge', icon: <CatalogIcon sx={{ fontSize: 20 }} /> },
+      { label: 'RFQ Templates', labelHe: 'תבניות RFQ', href: '/rfq/admin/templates', icon: <SettingsIcon sx={{ fontSize: 20 }} /> },
     ],
   },
   {
-    title: 'Comparison',
-    titleHe: 'השוואת אישורים',
+    title: 'Compliance Check',
+    titleHe: 'בדיקת תאימות',
     accentColor: colors.emerald,
     basePath: '/comparison',
     items: [
-      { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/comparison', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Documents', labelHe: 'מסמכים', href: '/comparison/documents', icon: <DocumentIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Templates', labelHe: 'תבניות', href: '/comparison/templates', icon: <TemplateIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Analyze', labelHe: 'ניתוח', href: '/comparison/analyze', icon: <CompareIcon sx={{ fontSize: 20 }} /> },
+      { label: 'New Check', labelHe: 'בדיקה חדשה', href: '/comparison/analyze', icon: <FactCheckIcon sx={{ fontSize: 20 }} /> },
+      { label: 'Requirement Templates', labelHe: 'תבניות דרישות', href: '/comparison/templates', icon: <PolicyIcon sx={{ fontSize: 20 }} /> },
     ],
   },
   {
-    title: 'Insurers',
-    titleHe: 'מבטחים',
+    title: 'Insurers & Policies',
+    titleHe: 'מבטחים ופוליסות',
     accentColor: colors.violet,
     basePath: '/insurers',
     items: [
-      { label: 'Dashboard', labelHe: 'לוח בקרה', href: '/insurers', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Browse Insurers', labelHe: 'חברות ביטוח', href: '/insurers/browse', icon: <BusinessIcon sx={{ fontSize: 20 }} /> },
+      { label: 'Insurance Companies', labelHe: 'חברות ביטוח', href: '/insurers/browse', icon: <BusinessIcon sx={{ fontSize: 20 }} /> },
       { label: 'Compare Policies', labelHe: 'השוואת פוליסות', href: '/insurers/compare', icon: <CompareIcon sx={{ fontSize: 20 }} /> },
     ],
   },
@@ -103,9 +98,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return NAV_SECTIONS.find((section) => pathname.startsWith(section.basePath));
   };
 
-  const isActive = (item: NavItem, section: NavSection) => {
-    if (item.href === section.basePath) return pathname === section.basePath;
-    return pathname.startsWith(item.href);
+  const isActive = (item: NavItem) => {
+    return pathname === item.href || pathname.startsWith(item.href + '/');
+  };
+
+  const isSectionActive = (section: NavSection) => {
+    return pathname.startsWith(section.basePath);
   };
 
   const activeSection = getActiveSection();
@@ -144,64 +142,107 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Navigation */}
       <List sx={{ flex: 1, pt: 1.5, px: 1, overflow: 'auto' }}>
-        {NAV_SECTIONS.map((section, sectionIdx) => (
-          <Box key={section.basePath}>
-            {/* Section header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, pt: sectionIdx === 0 ? 0.5 : 1.5, pb: 0.5 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: section.accentColor }} />
-              <Typography sx={{ color: alpha('#ffffff', 0.45), fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                {section.titleHe}
-              </Typography>
-            </Box>
+        {NAV_SECTIONS.map((section, sectionIdx) => {
+          const sectionIsActive = isSectionActive(section);
+          return (
+            <Box key={section.basePath}>
+              {/* Divider between modules */}
+              {sectionIdx > 0 && (
+                <Box sx={{ mx: 1.5, my: 1, borderBottom: `1px solid ${alpha('#ffffff', 0.08)}` }} />
+              )}
 
-            {/* Section items */}
-            {section.items.map((item) => {
-              const active = isActive(item, section);
-              return (
-                <ListItem key={item.href} disablePadding sx={{ mb: 0.25 }}>
-                  <ListItemButton
-                    component={Link}
-                    href={item.href}
-                    onClick={() => isMobile && setMobileOpen(false)}
+              {/* Section container with tinted background when active */}
+              <Box
+                sx={{
+                  borderRadius: '10px',
+                  bgcolor: sectionIsActive ? alpha(section.accentColor, 0.04) : 'transparent',
+                  py: 0.5,
+                  transition: 'background-color 0.2s ease',
+                }}
+              >
+                {/* Section header — clickable, with colored left border + tinted bg */}
+                <ListItemButton
+                  component={Link}
+                  href={section.basePath}
+                  onClick={() => isMobile && setMobileOpen(false)}
+                  sx={{
+                    borderRadius: '8px',
+                    mx: 0,
+                    py: 0.75,
+                    px: 1.5,
+                    borderLeft: `3px solid ${section.accentColor}`,
+                    bgcolor: alpha(section.accentColor, 0.08),
+                    '&:hover': {
+                      bgcolor: alpha(section.accentColor, 0.14),
+                    },
+                    mb: 0.5,
+                  }}
+                >
+                  <Typography
                     sx={{
-                      borderRadius: '8px',
-                      mx: 0,
-                      py: 1,
-                      px: 1.5,
-                      bgcolor: active ? alpha('#ffffff', 0.1) : 'transparent',
-                      borderRight: active ? `2px solid ${section.accentColor}` : '2px solid transparent',
-                      '&:hover': {
-                        bgcolor: alpha('#ffffff', 0.06),
-                      },
+                      color: section.accentColor,
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 34,
-                        color: active ? '#FFFFFF' : alpha('#ffffff', 0.45),
-                      }}
-                    >
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.labelHe}
-                      secondary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: '0.875rem',
-                        fontWeight: active ? 600 : 400,
-                        color: active ? '#FFFFFF' : alpha('#ffffff', 0.75),
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.6875rem',
-                        color: alpha('#ffffff', 0.35),
-                      }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </Box>
-        ))}
+                    {section.titleHe}
+                  </Typography>
+                </ListItemButton>
+
+                {/* Section items */}
+                {section.items.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <ListItem key={item.href} disablePadding sx={{ mb: 0.25 }}>
+                      <ListItemButton
+                        component={Link}
+                        href={item.href}
+                        onClick={() => isMobile && setMobileOpen(false)}
+                        sx={{
+                          borderRadius: '8px',
+                          mx: 0,
+                          py: 1,
+                          px: 1.5,
+                          borderLeft: active
+                            ? `3px solid ${section.accentColor}`
+                            : '3px solid transparent',
+                          bgcolor: active ? alpha('#ffffff', 0.12) : 'transparent',
+                          '&:hover': {
+                            bgcolor: alpha('#ffffff', 0.06),
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: 34,
+                            color: active ? '#FFFFFF' : alpha('#ffffff', 0.45),
+                          }}
+                        >
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.labelHe}
+                          secondary={item.label}
+                          primaryTypographyProps={{
+                            fontSize: '0.875rem',
+                            fontWeight: active ? 600 : 400,
+                            color: active ? '#FFFFFF' : alpha('#ffffff', 0.75),
+                          }}
+                          secondaryTypographyProps={{
+                            fontSize: '0.6875rem',
+                            color: alpha('#ffffff', 0.35),
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </Box>
+            </Box>
+          );
+        })}
       </List>
 
       {/* Bottom section */}
@@ -294,7 +335,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </Typography>
             {activeSection && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: activeSection.accentColor }} />
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: activeSection.accentColor,
+                  }}
+                />
                 <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
                   {activeSection.titleHe}
                 </Typography>
