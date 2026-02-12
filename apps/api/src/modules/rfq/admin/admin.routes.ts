@@ -182,14 +182,14 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Create template
   fastify.post('/templates', async (request, reply) => {
-    const data = createTemplateSchema.parse(request.body);
+    const data = createTemplateSchema.parse(request.body) as any;
     const template = await templateService.create(data);
     return reply.status(201).send({ success: true, data: template });
   });
 
   // Update template
   fastify.put<{ Params: { id: string } }>('/templates/:id', async (request, reply) => {
-    const data = updateTemplateSchema.parse(request.body);
+    const data = updateTemplateSchema.parse(request.body) as any;
     try {
       const template = await templateService.update(request.params.id, data);
       return { success: true, data: template };
