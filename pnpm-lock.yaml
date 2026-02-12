@@ -141,6 +141,9 @@ importers:
       next-intl:
         specifier: ^3.7.0
         version: 3.26.5(next@14.2.35(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      prisma:
+        specifier: ^5.9.1
+        version: 5.22.0
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -184,9 +187,6 @@ importers:
       eslint:
         specifier: ^8.57.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.9.1
-        version: 5.22.0
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
