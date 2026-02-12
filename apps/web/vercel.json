@@ -1,3 +1,0 @@
-{
-  "buildCommand": "prisma generate --schema=../api/prisma/schema.prisma && next build"
-}
