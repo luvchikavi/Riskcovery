@@ -234,7 +234,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Params: { templateId: string } }>(
     '/templates/:templateId/sections',
     async (request, reply) => {
-      const data = createSectionSchema.parse(request.body);
+      const data = createSectionSchema.parse(request.body) as any;
       const section = await sectionService.create({
         ...data,
         templateId: request.params.templateId,
@@ -257,7 +257,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Update section
   fastify.put<{ Params: { id: string } }>('/sections/:id', async (request, reply) => {
-    const data = updateSectionSchema.parse(request.body);
+    const data = updateSectionSchema.parse(request.body) as any;
     try {
       const section = await sectionService.update(request.params.id, data);
       return { success: true, data: section };
@@ -298,7 +298,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Params: { sectionId: string } }>(
     '/sections/:sectionId/questions',
     async (request, reply) => {
-      const data = createQuestionSchema.parse(request.body);
+      const data = createQuestionSchema.parse(request.body) as any;
       const question = await questionService.create({
         ...data,
         sectionId: request.params.sectionId,
@@ -321,7 +321,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Update question
   fastify.put<{ Params: { id: string } }>('/questions/:id', async (request, reply) => {
-    const data = updateQuestionSchema.parse(request.body);
+    const data = updateQuestionSchema.parse(request.body) as any;
     try {
       const question = await questionService.update(request.params.id, data);
       return { success: true, data: question };
@@ -391,7 +391,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Params: { templateId: string } }>(
     '/templates/:templateId/rules',
     async (request, reply) => {
-      const data = createRuleSchema.parse(request.body);
+      const data = createRuleSchema.parse(request.body) as any;
       const rule = await ruleService.create({
         ...data,
         templateId: request.params.templateId,
@@ -427,7 +427,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Update rule
   fastify.put<{ Params: { id: string } }>('/rules/:id', async (request, reply) => {
-    const data = updateRuleSchema.parse(request.body);
+    const data = updateRuleSchema.parse(request.body) as any;
     try {
       const rule = await ruleService.update(request.params.id, data);
       return { success: true, data: rule };
