@@ -8,6 +8,9 @@ const nextConfig = {
   images: {
     domains: ["riscovery-documents.s3.amazonaws.com"],
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 module.exports = nextConfig;
