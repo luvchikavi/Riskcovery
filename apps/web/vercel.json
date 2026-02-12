@@ -1,3 +1,3 @@
 {
-  "buildCommand": "echo 'BUILD_CWD:'$(pwd) && echo 'NEXT_CONFIG:' && cat next.config.js && prisma generate --schema=../api/prisma/schema.prisma && next build"
+  "buildCommand": "prisma generate --schema=../api/prisma/schema.prisma && next build"
 }

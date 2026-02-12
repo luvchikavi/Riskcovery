@@ -1,78 +1,85 @@
-# Riscovery — TODO (2026-02-12)
+# Riscovery — TODO (Updated 2026-02-12)
 
-## Morning — UX
+## Session Progress (2026-02-12)
 
-### 1. Single App Navigation Bar
-Currently each module (RFQ, Comparison, Insurers) has its own isolated sidebar with its own nav items. Once you enter a module, you can't reach the others without going back to the home page.
+### Completed
+- [x] Compact table layout for product catalog (`/rfq/knowledge` Tab 0) — replaced Grid+Card with Table rows
+- [x] Compact table layout for requirement templates (`/comparison/templates`) — same treatment
+- [x] Railway API deployed and online (`riscoveryapi-production.up.railway.app`)
+- [x] Railway PostgreSQL provisioned and connected
+- [x] Vercel project created, root directory set to `apps/web`
+- [x] Environment variables configured on both Railway and Vercel
+- [x] Dockerfile fixed (TypeScript build, Prisma client generation)
+- [x] Fixed Zod-to-interface type mismatches in admin.routes.ts and comparison.routes.ts
+- [x] Added `@ts-nocheck` to ocr.service.ts for OpenAI/pdf-parse types
 
-**Change:** Replace the three separate `ModuleLayout` sidebars with ONE app-wide sidebar under the name "Riscovery". All pages from all three modules appear in a single navigation list — no module separation needed. The home page stays as-is (module selector), but once you're inside the app, you see everything in one nav bar.
-
-Current structure (3 separate sidebars):
-- RFQ sidebar: Dashboard, Clients, Product Catalog, Templates Admin
-- Comparison sidebar: Dashboard, Documents, Templates, Analyze
-- Insurers sidebar: Dashboard, Browse Insurers, Compare Policies
-
-Target structure (1 sidebar):
-- RFQ: Dashboard, Clients, Product Catalog, Templates Admin
-- Comparison: Dashboard, Documents, Templates, Analyze
-- Insurers: Dashboard, Browse, Compare
-All in one sidebar, grouped by section.
-
-### 2. Fix DOCX Coverage Amount Parsing
-Some local authority templates (מחשוב, שירותי גרירה, מפעיל חוג ספורט, מפעיל מוסדות חינוך) had coverage amounts that didn't parse correctly from the DOCX text — they fell back to defaults. Improve the regex parsing to handle these edge cases.
+### In Progress
+- [ ] **Fix Vercel build** — Turbo overrides buildCommand and runs secondary TS check on API files. Current fix: renamed API `build` → `compile` so Turbo has nothing to build. Needs deploy verification.
 
 ---
 
-## Afternoon — Deployment (Get It Live)
+## Deployment — Remaining Steps
 
-### 3. Provision Production Database
-Set up Railway Postgres or Supabase for production. Get the DATABASE_URL connection string.
-
-### 4. Set Up Railway Project
-- Connect Railway to the GitHub repo
-- Set environment variables: DATABASE_URL, JWT_SECRET, NODE_ENV=production, PORT=3001, CORS_ORIGINS
-- Verify the Dockerfile builds and deploys correctly
-- Run `prisma migrate deploy` on production DB
-
-### 5. Set Up Vercel Project
-- Connect Vercel to the GitHub repo (apps/web)
-- Set environment variables: NEXT_PUBLIC_API_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-- Verify build and deployment
-
-### 6. Deploy & Verify
-- Push a version tag (e.g., v0.1.0) to trigger the CI/CD pipeline
-- Verify both frontend and API are reachable
-- Run seeds against production DB
+- [ ] Verify Vercel deployment succeeds after API build script rename
+- [ ] Update `CORS_ORIGINS` on Railway with actual Vercel domain
+- [ ] Update `NEXTAUTH_URL` on Vercel with actual deployed URL
+- [ ] Add Vercel URL to Google OAuth authorized redirect URIs (Google Cloud Console)
+- [ ] Seed Railway PostgreSQL with initial data (templates, products, sample clients)
+- [ ] End-to-end smoke test: login → navigate → upload → compare
 
 ---
 
-## Stretch / Next Day
+## UX & Features — Next Up
 
-### 7. Real S3 File Uploads
-Replace base64-in-DB storage with actual S3 uploads. Provision AWS S3 bucket, set credentials.
+### Navigation & Layout
+- [ ] Fix DOCX coverage amount parsing for edge-case templates (מחשוב, שירותי גרירה, etc.)
+- [ ] Dashboard / landing page with summary metrics
+- [ ] Hebrew RTL layout polish and consistency
 
-### 8. OCR Service for Scanned PDFs
-Integrate OpenAI Vision or Docupipe for scanned PDF processing (currently only text-based PDFs work via pdf-parse).
+### Core Features
+- [ ] Upload wizard flow improvements (multi-step with progress)
+- [ ] Comparison results export (PDF report generation)
+- [ ] Client management CRUD UI
+- [ ] Template builder UI for insurance requirements
+- [ ] Notification system for compliance gaps
 
-### 9. Production Google OAuth
-Set up production OAuth client ID/secret in Google Cloud Console. Update Vercel env vars.
+### Admin & Security
+- [ ] User roles and permissions (admin vs viewer)
+- [ ] Audit log for document processing history
 
-### 10. Custom Domain
-Configure custom domain for both Vercel (frontend) and Railway (API).
+---
+
+## Technical Debt
+
+- [ ] Fix Zod-to-interface type mismatches properly (remove `as any` casts in admin.routes.ts, comparison.routes.ts)
+- [ ] Remove `@ts-nocheck` from ocr.service.ts after fixing OpenAI/pdf-parse types
+- [ ] Remove root `tsconfig.json` workaround once Vercel build is stable
+- [ ] Clean up `.npmrc` `frozen-lockfile=false` — regenerate lockfile properly
+- [ ] Restore API `build` script (rename `compile` back to `build`) once Vercel Turbo issue resolved
+- [ ] Add proper error boundaries in Next.js pages
+- [ ] Add API request retry/timeout handling in the web frontend
+- [ ] Set up CI/CD pipeline (GitHub Actions for lint + typecheck + test)
+
+---
+
+## Infrastructure
+
+- [ ] Set up S3 bucket for document storage (currently using base64 in DB)
+- [ ] Configure Redis for API rate limiting and caching
+- [ ] Set up monitoring/alerting (Vercel analytics, Railway metrics)
+- [ ] Database backup strategy for Railway PostgreSQL
+- [ ] Custom domain setup (riskcovery.co.il or similar)
 
 ---
 
 ## Future — Product Vision
 
-### 11. Client Analytics & Decision Support System (Design Phase)
+### Client Analytics & Decision Support System (Design Phase)
 **Status:** Idea — needs design & architecture, not implementation yet.
 
-Design an analytics and decision-making support module based on client character profiling:
-- **Risk appetite profiling** — Classify clients on a spectrum (risk-averse ↔ risk-tolerant) based on their questionnaire answers, sector, business size, and coverage choices
-- **Common benchmarks** — Show how similar clients (same sector, size, region) typically insure: what coverage limits they choose, which endorsements are most common, average premiums
-- **Statistical dashboards** — Present industry statistics: claim frequency by sector, average claim size, loss ratios, common gaps found in certificate comparisons
-- **Decision support tools** — Help the advisor recommend coverage by surfacing: "80% of construction companies your size carry at least ₪10M general liability", "clients who skipped professional indemnity had 3x more uncovered claims"
-- **Visual risk maps** — Heat maps or scoring cards showing where a client is under/over-insured relative to peers
+- **Risk appetite profiling** — Classify clients on a spectrum (risk-averse ↔ risk-tolerant) based on questionnaire answers, sector, business size, and coverage choices
+- **Common benchmarks** — Show how similar clients typically insure: coverage limits, endorsements, average premiums
+- **Statistical dashboards** — Industry statistics: claim frequency by sector, average claim size, loss ratios
+- **Decision support tools** — Help the advisor recommend coverage based on peer data
+- **Visual risk maps** — Heat maps or scoring cards showing under/over-insured relative to peers
 - **Historical trends** — Track how a client's risk profile and coverage evolve over time
-
-This module would sit alongside the existing RFQ and Comparison tools, turning Riscovery from a document tool into an advisory intelligence platform.
