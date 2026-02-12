@@ -180,7 +180,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Create template
   fastify.post('/templates', async (request, reply) => {
-    const data = createTemplateSchema.parse(request.body);
+    const data = createTemplateSchema.parse(request.body) as import('./requirements/requirements.service.js').CreateTemplateInput;
     const template = await requirementsService.createTemplate(data);
     return reply.status(201).send({ success: true, data: template });
   });
