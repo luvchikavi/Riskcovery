@@ -11,7 +11,6 @@ import {
   Box,
   Card,
   CardContent,
-  CardActionArea,
   Typography,
   Table,
   TableBody,
@@ -449,74 +448,81 @@ export default function KnowledgeBasePage() {
                       <Chip label={`${categoryProducts.length} מוצרים`} size="small" variant="outlined" />
                     </Box>
                   </AccordionSummary>
-                  <AccordionDetails>
-                    <Grid container spacing={2}>
-                      {categoryProducts.map((product) => (
-                        <Grid item xs={12} md={6} lg={4} key={product.code}>
-                          <Card variant="outlined" sx={{ height: '100%' }}>
-                            <CardActionArea
+                  <AccordionDetails sx={{ p: 0 }}>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>שם מוצר</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>טריגר כיסוי</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>חיוניות</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>תיאור</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>מקור</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {categoryProducts.map((product) => (
+                            <TableRow
+                              key={product.code}
                               component={Link}
                               href={`/rfq/knowledge/${product.code}`}
-                              sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+                              hover
+                              sx={{
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                              }}
                             >
-                              <CardContent sx={{ flexGrow: 1 }}>
-                                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                              <TableCell>
+                                <Box display="flex" alignItems="center" gap={0.5}>
                                   <Box>
-                                    <Typography variant="subtitle1" fontWeight="bold">
+                                    <Typography variant="body2" fontWeight="bold">
                                       {product.nameHe}
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="caption" color="text.secondary">
                                       {product.nameEn}
                                     </Typography>
                                   </Box>
-                                  <OpenInNewIcon fontSize="small" color="action" />
+                                  <OpenInNewIcon sx={{ fontSize: 14, color: 'action.active', ml: 'auto' }} />
                                 </Box>
-
-                                <Box display="flex" gap={0.5} flexWrap="wrap" mb={1}>
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={product.coverageTrigger}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {product.necessity && (
                                   <Chip
-                                    label={product.coverageTrigger}
+                                    label={NECESSITY_LABELS[product.necessity]?.he || product.necessity}
                                     size="small"
-                                    variant="outlined"
+                                    color={NECESSITY_LABELS[product.necessity]?.color || 'default'}
                                   />
-                                  {product.necessity && (
-                                    <Chip
-                                      label={NECESSITY_LABELS[product.necessity]?.he || product.necessity}
-                                      size="small"
-                                      color={NECESSITY_LABELS[product.necessity]?.color || 'default'}
-                                    />
-                                  )}
-                                </Box>
-
+                                )}
+                              </TableCell>
+                              <TableCell>
                                 {product.descriptionHe && (
-                                  <Typography variant="body2" color="text.secondary" sx={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                  }}>
+                                  <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 300 }}>
                                     {product.descriptionHe}
                                   </Typography>
                                 )}
-
-                                <Box display="flex" gap={1} mt={1}>
-                                  {product.insurer && (
-                                    <Typography variant="caption" color="text.secondary">
-                                      {product.insurer}
-                                    </Typography>
-                                  )}
-                                  {product.bitStandard && (
-                                    <Typography variant="caption" color="text.secondary">
-                                      | {product.bitStandard}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              </CardContent>
-                            </CardActionArea>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="caption" color="text.secondary">
+                                  {product.bitStandard}
+                                </Typography>
+                                {product.insurer && (
+                                  <Typography variant="caption" color="text.secondary" display="block">
+                                    {product.insurer}
+                                  </Typography>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                   </AccordionDetails>
                 </Accordion>
               ))}
