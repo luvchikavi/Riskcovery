@@ -19,6 +19,12 @@ import {
   Grid,
   IconButton,
   LinearProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
   Alert,
@@ -234,21 +240,75 @@ export default function TemplatesPage() {
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={3}>
-          {templates.map((template) => (
-            <Grid item xs={12} md={6} key={template.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box>
-                      <Typography variant="h6" fontWeight="bold">
-                        {template.nameHe}
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>שם תבנית</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>תיאור</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>ענף / סוג חוזה</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', width: '5%' }}>דרישות</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', width: '22%' }}>סוגי פוליסות</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', width: '8%' }}>פעולות</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {templates.map((template) => (
+                <TableRow key={template.id} hover>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="bold">
+                      {template.nameHe}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {template.name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {template.description && (
+                      <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 250 }}>
+                        {template.descriptionHe || template.description}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {template.name}
-                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      {template.sector && (
+                        <Chip label={template.sector} size="small" variant="outlined" />
+                      )}
+                      {template.contractType && (
+                        <Chip label={template.contractType} size="small" variant="outlined" />
+                      )}
                     </Box>
-                    <Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={`${template.requirements?.length || 0} דרישות`}
+                      size="small"
+                      color="primary"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      {template.requirements?.slice(0, 4).map((req) => (
+                        <Chip
+                          key={req.id}
+                          label={req.policyTypeHe}
+                          size="small"
+                          variant="outlined"
+                          color={req.isMandatory ? 'error' : 'default'}
+                        />
+                      ))}
+                      {(template.requirements?.length || 0) > 4 && (
+                        <Chip
+                          label={`+${(template.requirements?.length || 0) - 4}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton size="small" color="primary">
                         <EditIcon />
                       </IconButton>
@@ -260,58 +320,12 @@ export default function TemplatesPage() {
                         <DeleteIcon />
                       </IconButton>
                     </Box>
-                  </Box>
-
-                  {template.description && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {template.descriptionHe || template.description}
-                    </Typography>
-                  )}
-
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {template.sector && (
-                      <Chip label={template.sector} size="small" variant="outlined" />
-                    )}
-                    {template.contractType && (
-                      <Chip label={template.contractType} size="small" variant="outlined" />
-                    )}
-                    <Chip
-                      label={`${template.requirements?.length || 0} דרישות`}
-                      size="small"
-                      color="primary"
-                    />
-                  </Box>
-
-                  {template.requirements && template.requirements.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight="bold">
-                        סוגי פוליסות:
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                        {template.requirements.slice(0, 4).map((req) => (
-                          <Chip
-                            key={req.id}
-                            label={req.policyTypeHe}
-                            size="small"
-                            variant="outlined"
-                            color={req.isMandatory ? 'error' : 'default'}
-                          />
-                        ))}
-                        {template.requirements.length > 4 && (
-                          <Chip
-                            label={`+${template.requirements.length - 4}`}
-                            size="small"
-                            variant="outlined"
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {/* Create Template Dialog */}
