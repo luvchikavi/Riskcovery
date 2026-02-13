@@ -75,12 +75,24 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       // On initial sign-in or when session is updated, fetch fresh user data
       if (user || trigger === 'update') {
-        const dbUser = await prisma.user.findUnique({
+        let dbUser = await prisma.user.findUnique({
           where: { email: token.email! },
           select: { id: true, email: true, name: true, role: true, organizationId: true },
         });
 
         if (dbUser) {
+          // Ensure user has an organization (may not exist yet on first sign-in)
+          if (!dbUser.organizationId) {
+            const org = await prisma.organization.create({
+              data: { name: `${dbUser.name || dbUser.email}'s Organization` },
+            });
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: { organizationId: org.id },
+            });
+            dbUser = { ...dbUser, organizationId: org.id };
+          }
+
           token.userId = dbUser.id;
           token.role = dbUser.role;
           token.organizationId = dbUser.organizationId;
