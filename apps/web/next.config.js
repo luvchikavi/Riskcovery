@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@riscovery/ui", "@riscovery/types", "@riscovery/utils"],
   experimental: {
-    // typedRoutes disabled due to dynamic route parameters
+    serverComponentsExternalPackages: ['@napi-rs/canvas', '@prisma/client', 'prisma'],
   },
   images: {
     domains: ["riscovery-documents.s3.amazonaws.com"],
