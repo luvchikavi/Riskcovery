@@ -9,7 +9,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   CORS_ORIGINS: z
     .string()
-    .transform((val) => val.split(','))
+    .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean))
     .default('http://localhost:3000'),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
 });

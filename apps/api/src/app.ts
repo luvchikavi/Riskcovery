@@ -38,7 +38,14 @@ export async function buildApp() {
   });
 
   await app.register(cors, {
-    origin: env.CORS_ORIGINS,
+    origin: (origin, cb) => {
+      if (!origin || env.CORS_ORIGINS.includes(origin)) {
+        cb(null, true);
+      } else {
+        app.log.warn(`CORS blocked origin: ${origin}, allowed: ${env.CORS_ORIGINS.join(', ')}`);
+        cb(null, false);
+      }
+    },
     credentials: true,
   });
 
