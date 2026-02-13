@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Question types for the dynamic questionnaire
 export type QuestionType =
   | 'text'

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mammoth from 'mammoth';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';

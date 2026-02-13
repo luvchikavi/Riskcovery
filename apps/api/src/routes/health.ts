@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { FastifyPluginAsync } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 

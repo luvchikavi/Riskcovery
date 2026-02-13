@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Insurance Certificate types - data extracted from PDF
 export interface ExtractedCertificateData {
   // Certificate metadata

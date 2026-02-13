@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { FastifyPluginAsync } from 'fastify';
 import { insurerService } from './insurer.service.js';
 

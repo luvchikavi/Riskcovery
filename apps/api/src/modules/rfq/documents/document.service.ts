@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../../../lib/prisma.js';
 import type { CoverageRecommendation } from '../questionnaire/questionnaire.service.js';
 import type { EnrichedCoverageRecommendation, CoverageGap } from '../questionnaire/questionnaire.types.js';

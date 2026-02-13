@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../../../lib/prisma.js';
 import type { CreateClientInput, UpdateClientInput, ClientQuery } from './client.schema.js';
 

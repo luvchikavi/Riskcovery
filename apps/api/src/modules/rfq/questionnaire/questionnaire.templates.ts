@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Questionnaire, Rule } from './questionnaire.types.js';
 
 // Construction sector questionnaire

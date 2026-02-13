@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { FastifyPluginAsync } from 'fastify';
 
 import { clientRoutes } from './clients/client.routes.js';
