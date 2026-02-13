@@ -37,12 +37,17 @@ export async function buildApp() {
     contentSecurityPolicy: env.NODE_ENV === 'production',
   });
 
+  // Build allowed origins list: env-configured + known Vercel deployments
+  const allowedOrigins = new Set(env.CORS_ORIGINS);
+  allowedOrigins.add('https://riskcovery-api.vercel.app');
+  allowedOrigins.add('http://localhost:3000');
+
   await app.register(cors, {
     origin: (origin, cb) => {
-      if (!origin || env.CORS_ORIGINS.includes(origin)) {
+      if (!origin || allowedOrigins.has(origin)) {
         cb(null, true);
       } else {
-        app.log.warn(`CORS blocked origin: ${origin}, allowed: ${env.CORS_ORIGINS.join(', ')}`);
+        app.log.warn(`CORS blocked origin: ${origin}, allowed: ${[...allowedOrigins].join(', ')}`);
         cb(null, false);
       }
     },
