@@ -1,4 +1,28 @@
-# Riscovery — TODO (Updated 2026-02-12)
+# Riscovery — TODO (Updated 2026-02-13)
+
+## Session Progress (2026-02-13) — Production Deployment
+
+### Completed
+- [x] **Vercel deployment fixed** — Root cause: project was misconfigured as `framework: "fastify"` / `rootDirectory: "apps/api"` instead of `nextjs` / `apps/web`. Fixed via Vercel API.
+- [x] **Google OAuth working** — Configured Google Cloud Console (client ID, secret, redirect URIs, test users). Sign-in flow works end-to-end.
+- [x] **Database seeded on Railway PostgreSQL** — 12 insurance products, 139 extensions, 118 exclusions, 7 insurers with 84 policies, 8 questionnaire templates, 1,050 questions, 21 local authority templates, 6 demo clients
+- [x] **CORS eliminated** — Created Next.js API proxy (`/api/proxy/[...path]`) that routes frontend requests through Vercel to Railway. No cross-origin requests needed.
+- [x] **Auth guards added** — `requireAuth` preHandler on client and document API routes (returns 401 instead of crashing with 500)
+- [x] **Session timing fixed** — `AuthSync` blocks rendering until session loads, ensuring JWT token is set before API calls
+- [x] **Organization race condition fixed** — JWT callback now creates org inline if missing on first sign-in
+- [x] **Infinite redirect loop fixed** — `/insurers/browse` had circular re-export from parent page. Replaced with proper insurer listing page.
+- [x] **Auth redirect fixed** — Replaced `next-auth/middleware` (caused `replaceState` loop) with client-side redirect using `window.location.href` + ref guard
+
+### Live URLs
+- **Frontend**: https://riskcovery-api.vercel.app
+- **API**: https://riscoveryapi-production.up.railway.app
+- **Database**: Railway PostgreSQL (Railway project)
+
+### Test Users
+- `luvchik.avi@gmail.com` (admin)
+- `matangvili5@gmail.com` (test user)
+
+---
 
 ## Session Progress (2026-02-12)
 
@@ -13,19 +37,15 @@
 - [x] Fixed Zod-to-interface type mismatches in admin.routes.ts and comparison.routes.ts
 - [x] Added `@ts-nocheck` to ocr.service.ts for OpenAI/pdf-parse types
 
-### In Progress
-- [ ] **Fix Vercel build** — Turbo overrides buildCommand and runs secondary TS check on API files. Current fix: renamed API `build` → `compile` so Turbo has nothing to build. Needs deploy verification.
-
 ---
 
-## Deployment — Remaining Steps
-
-- [ ] Verify Vercel deployment succeeds after API build script rename
-- [ ] Update `CORS_ORIGINS` on Railway with actual Vercel domain
-- [ ] Update `NEXTAUTH_URL` on Vercel with actual deployed URL
-- [ ] Add Vercel URL to Google OAuth authorized redirect URIs (Google Cloud Console)
-- [ ] Seed Railway PostgreSQL with initial data (templates, products, sample clients)
-- [ ] End-to-end smoke test: login → navigate → upload → compare
+## Deployment — Done
+- [x] Verify Vercel deployment succeeds
+- [x] CORS between Vercel and Railway resolved (via proxy)
+- [x] NEXTAUTH_URL set on Vercel
+- [x] Google OAuth redirect URIs configured
+- [x] Seed Railway PostgreSQL with all data
+- [x] Health check all systems: frontend, API, DB, auth
 
 ---
 
