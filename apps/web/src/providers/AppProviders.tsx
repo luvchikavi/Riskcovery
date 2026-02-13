@@ -18,11 +18,16 @@ const queryClient = new QueryClient({
 });
 
 function AuthSync({ children }: { children: ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     api.setToken(session?.apiToken ?? null);
   }, [session?.apiToken]);
+
+  // Don't render children until session is loaded so API calls have the token
+  if (status === 'loading') {
+    return null;
+  }
 
   return <>{children}</>;
 }
