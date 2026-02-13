@@ -1,8 +1,8 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SessionProvider, useSession, signIn } from 'next-auth/react';
-import { type ReactNode, useEffect } from 'react';
+import { SessionProvider, useSession } from 'next-auth/react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { ThemeProvider } from './ThemeProvider';
@@ -21,19 +21,22 @@ const queryClient = new QueryClient({
 function AuthSync({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const redirecting = useRef(false);
 
   useEffect(() => {
     api.setToken(session?.apiToken ?? null);
   }, [session?.apiToken]);
 
-  // Don't render children until session is loaded so API calls have the token
-  if (status === 'loading') {
-    return null;
-  }
-
   // Redirect unauthenticated users to sign-in (skip auth pages)
-  if (status === 'unauthenticated' && !pathname.startsWith('/auth')) {
-    signIn(undefined, { callbackUrl: pathname });
+  useEffect(() => {
+    if (status === 'unauthenticated' && !pathname.startsWith('/auth') && !redirecting.current) {
+      redirecting.current = true;
+      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`;
+    }
+  }, [status, pathname]);
+
+  // Don't render children until session is loaded so API calls have the token
+  if (status === 'loading' || (status === 'unauthenticated' && !pathname.startsWith('/auth'))) {
     return null;
   }
 
