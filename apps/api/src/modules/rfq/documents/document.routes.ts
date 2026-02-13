@@ -6,6 +6,7 @@ import { documentService, type RfqDocumentData } from './document.service.js';
 import { questionnaireService } from '../questionnaire/questionnaire.service.js';
 import { clientService } from '../clients/client.service.js';
 import type { QuestionnaireAnswers } from '../questionnaire/questionnaire.types.js';
+import { requireAuth } from '../../../plugins/auth.js';
 
 const generateDocumentSchema = z.object({
   clientId: z.string().uuid(),
@@ -14,6 +15,8 @@ const generateDocumentSchema = z.object({
 });
 
 export const documentRoutes: FastifyPluginAsync = async (fastify) => {
+  // All document routes require authentication
+  fastify.addHook('preHandler', requireAuth);
   // Generate RFQ document
   fastify.post('/generate', async (request, reply) => {
     const { clientId, answers, format } = generateDocumentSchema.parse(request.body);

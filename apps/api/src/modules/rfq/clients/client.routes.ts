@@ -3,8 +3,12 @@ import type { FastifyPluginAsync } from 'fastify';
 
 import { clientService } from './client.service.js';
 import { createClientSchema, updateClientSchema, clientQuerySchema } from './client.schema.js';
+import { requireAuth } from '../../../plugins/auth.js';
 
 export const clientRoutes: FastifyPluginAsync = async (fastify) => {
+  // All client routes require authentication
+  fastify.addHook('preHandler', requireAuth);
+
   // List clients
   fastify.get('/', async (request, reply) => {
     const query = clientQuerySchema.parse(request.query);
