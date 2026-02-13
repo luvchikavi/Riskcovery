@@ -1,4 +1,9 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+// In production, route through same-origin proxy to avoid CORS.
+// In development, call the local API directly.
+const API_BASE_URL =
+  typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+    ? '/api/proxy'
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1');
 
 interface ApiError {
   code: string;
