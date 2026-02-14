@@ -60,13 +60,13 @@ const analyzeSchema = z.object({
 });
 
 export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
-  // All comparison routes require authentication
-  fastify.addHook('preHandler', requireAuth);
+  // Auth is applied per-route on write operations (POST/PUT/DELETE).
+  // GET routes are open so the page can load before the session token is set.
 
   // ==================== DOCUMENTS ====================
 
   // Upload document
-  fastify.post('/documents', async (request, reply) => {
+  fastify.post('/documents', { preHandler: [requireAuth] }, async (request, reply) => {
     const data = uploadDocumentSchema.parse(request.body);
 
     // Generate S3 key (would upload to S3 in production)
@@ -119,7 +119,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Process document (run OCR)
-  fastify.post<{ Params: { id: string } }>('/documents/:id/process', async (request, reply) => {
+  fastify.post<{ Params: { id: string } }>('/documents/:id/process', { preHandler: [requireAuth] }, async (request, reply) => {
     const document = await comparisonDocumentService.getDocument(request.params.id);
 
     if (!document) {
@@ -168,7 +168,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Delete document
-  fastify.delete<{ Params: { id: string } }>('/documents/:id', async (request, reply) => {
+  fastify.delete<{ Params: { id: string } }>('/documents/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const deleted = await comparisonDocumentService.deleteDocument(request.params.id);
 
     if (!deleted) {
@@ -184,7 +184,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   // ==================== TEMPLATES ====================
 
   // Create template
-  fastify.post('/templates', async (request, reply) => {
+  fastify.post('/templates', { preHandler: [requireAuth] }, async (request, reply) => {
     const data = createTemplateSchema.parse(request.body) as import('./requirements/requirements.service.js').CreateTemplateInput;
     const template = await requirementsService.createTemplate(data);
     return reply.status(201).send({ success: true, data: template });
@@ -220,7 +220,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Update template
-  fastify.patch<{ Params: { id: string } }>('/templates/:id', async (request, reply) => {
+  fastify.patch<{ Params: { id: string } }>('/templates/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const data = request.body as Partial<z.infer<typeof createTemplateSchema>>;
     const template = await requirementsService.updateTemplate(request.params.id, data);
 
@@ -235,7 +235,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Delete template
-  fastify.delete<{ Params: { id: string } }>('/templates/:id', async (request, reply) => {
+  fastify.delete<{ Params: { id: string } }>('/templates/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const deleted = await requirementsService.deleteTemplate(request.params.id);
 
     if (!deleted) {
@@ -249,7 +249,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Import template from DOCX file
-  fastify.post('/templates/import-docx', async (request, reply) => {
+  fastify.post('/templates/import-docx', { preHandler: [requireAuth] }, async (request, reply) => {
     const data = importDocxSchema.parse(request.body);
 
     try {
@@ -411,7 +411,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   // ==================== ANALYSIS ====================
 
   // Run analysis
-  fastify.post('/analyze', async (request, reply) => {
+  fastify.post('/analyze', { preHandler: [requireAuth] }, async (request, reply) => {
     const data = analyzeSchema.parse(request.body);
 
     try {
@@ -450,7 +450,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // Delete analysis
-  fastify.delete<{ Params: { id: string } }>('/analyses/:id', async (request, reply) => {
+  fastify.delete<{ Params: { id: string } }>('/analyses/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const deleted = await analysisService.deleteAnalysis(request.params.id);
 
     if (!deleted) {
