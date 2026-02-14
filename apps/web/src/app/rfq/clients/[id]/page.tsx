@@ -2,6 +2,7 @@
 
 import {
   Delete as DeleteIcon,
+  Edit as EditIcon,
   QuestionAnswer as QuestionnaireIcon,
   Description as DocumentIcon,
   ArrowBack as ArrowBackIcon,
@@ -33,16 +34,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { rfqApi, type Client } from '@/lib/api';
-
-const SECTORS: Record<string, { label: string; labelEn: string }> = {
-  CONSTRUCTION: { label: 'בנייה', labelEn: 'Construction' },
-  TECHNOLOGY: { label: 'טכנולוגיה', labelEn: 'Technology' },
-  MANUFACTURING: { label: 'ייצור', labelEn: 'Manufacturing' },
-  RETAIL: { label: 'קמעונאות', labelEn: 'Retail' },
-  HEALTHCARE: { label: 'בריאות', labelEn: 'Healthcare' },
-  LOGISTICS: { label: 'לוגיסטיקה', labelEn: 'Logistics' },
-  CONSULTING: { label: 'ייעוץ', labelEn: 'Consulting' },
-};
+import { SECTORS_MAP } from '@/lib/constants';
 
 export default function ClientDetailPage() {
   const params = useParams();
@@ -112,7 +104,7 @@ export default function ClientDetailPage() {
     );
   }
 
-  const sector = SECTORS[client.sector] || { label: client.sector, labelEn: client.sector };
+  const sector = SECTORS_MAP[client.sector] || { label: client.sector, labelEn: client.sector };
 
   return (
     <Box>
@@ -156,6 +148,14 @@ export default function ClientDetailPage() {
             startIcon={<DocumentIcon />}
           >
             יצירת מסמך
+          </Button>
+          <Button
+            component={Link}
+            href={`/rfq/clients/${client.id}/edit`}
+            variant="outlined"
+            startIcon={<EditIcon />}
+          >
+            עריכה
           </Button>
           <Button
             variant="outlined"

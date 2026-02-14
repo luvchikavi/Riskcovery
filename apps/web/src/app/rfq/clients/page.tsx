@@ -4,6 +4,7 @@ import {
   Add as AddIcon,
   Search as SearchIcon,
   Visibility as ViewIcon,
+  Edit as EditIcon,
   QuestionAnswer as QuestionnaireIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
@@ -34,20 +35,10 @@ import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 
 import { rfqApi, type Client } from '@/lib/api';
+import { SECTORS_WITH_ALL } from '@/lib/constants';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/components/SnackbarProvider';
-
-const SECTORS = [
-  { value: '', label: 'הכל', labelEn: 'All' },
-  { value: 'CONSTRUCTION', label: 'בנייה', labelEn: 'Construction' },
-  { value: 'TECHNOLOGY', label: 'טכנולוגיה', labelEn: 'Technology' },
-  { value: 'MANUFACTURING', label: 'ייצור', labelEn: 'Manufacturing' },
-  { value: 'RETAIL', label: 'קמעונאות', labelEn: 'Retail' },
-  { value: 'HEALTHCARE', label: 'בריאות', labelEn: 'Healthcare' },
-  { value: 'LOGISTICS', label: 'לוגיסטיקה', labelEn: 'Logistics' },
-  { value: 'CONSULTING', label: 'ייעוץ', labelEn: 'Consulting' },
-];
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -119,7 +110,7 @@ export default function ClientsPage() {
   };
 
   const getSectorLabel = (sectorValue: string) => {
-    return SECTORS.find((s) => s.value === sectorValue)?.label || sectorValue;
+    return SECTORS_WITH_ALL.find((s) => s.value === sectorValue)?.label || sectorValue;
   };
 
   return (
@@ -169,7 +160,7 @@ export default function ClientsPage() {
                   setPage(0);
                 }}
               >
-                {SECTORS.map((s) => (
+                {SECTORS_WITH_ALL.map((s) => (
                   <MenuItem key={s.value} value={s.value}>
                     {s.label}
                   </MenuItem>
@@ -260,6 +251,11 @@ export default function ClientsPage() {
                         <Link href={`/rfq/clients/${client.id}`} passHref legacyBehavior>
                           <IconButton size="small" title="צפייה">
                             <ViewIcon fontSize="small" />
+                          </IconButton>
+                        </Link>
+                        <Link href={`/rfq/clients/${client.id}/edit`} passHref legacyBehavior>
+                          <IconButton size="small" color="info" title="עריכה">
+                            <EditIcon fontSize="small" />
                           </IconButton>
                         </Link>
                         <Link href={`/rfq/questionnaire/${client.id}`} passHref legacyBehavior>

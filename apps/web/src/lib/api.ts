@@ -151,7 +151,7 @@ export const rfqApi = {
     },
     get: (id: string) => api.get<Client>(`/rfq/clients/${id}`),
     create: (data: CreateClientData) => api.post<Client>('/rfq/clients', data),
-    update: (id: string, data: Partial<CreateClientData>) => api.patch<Client>(`/rfq/clients/${id}`, data),
+    update: (id: string, data: Partial<CreateClientData>) => api.put<Client>(`/rfq/clients/${id}`, data),
     delete: (id: string) => api.delete(`/rfq/clients/${id}`),
   },
 
