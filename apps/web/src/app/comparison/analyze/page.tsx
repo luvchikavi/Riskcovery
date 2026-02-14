@@ -7,6 +7,9 @@ import {
   Help as MissingIcon,
   Schedule as ExpiredIcon,
   CloudUpload as UploadIcon,
+  OpenInNew as OpenInNewIcon,
+  ExpandMore as CollapseIcon,
+  Assignment as TemplateIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -36,8 +39,10 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Collapse,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -87,6 +92,155 @@ function rowBgColor(status: ComparisonFieldStatus): string {
     case 'MISSING': return '#FAFAFA';
     default: return 'transparent';
   }
+}
+
+// ─── Helper: "What will be checked?" collapsible preview ──────────────
+function TemplatePreview({ template }: { template: ComparisonTemplate }) {
+  const [expanded, setExpanded] = useState(false);
+  const requirements = template.requirements || [];
+  const mandatoryCount = requirements.filter((r) => r.isMandatory).length;
+
+  return (
+    <Box sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          p: 2,
+          bgcolor: 'grey.50',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <Box>
+          <Typography variant="body2" fontWeight="bold">
+            {template.nameHe}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {requirements.length} סוגי פוליסות
+            {mandatoryCount > 0 && ` · ${mandatoryCount} חובה`}
+            {template.sector && ` · ${template.sector}`}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="caption" color="primary.main" fontWeight={600}>
+            מה ייבדק?
+          </Typography>
+          <CollapseIcon
+            sx={{
+              fontSize: 20,
+              color: 'primary.main',
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s',
+            }}
+          />
+        </Box>
+      </Box>
+      <Collapse in={expanded}>
+        <Box sx={{ p: 2 }}>
+          {/* Policy type chips */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2 }}>
+            {requirements.map((req) => (
+              <Chip
+                key={req.id}
+                label={req.policyTypeHe}
+                size="small"
+                variant="outlined"
+                color={req.isMandatory ? 'error' : 'default'}
+              />
+            ))}
+          </Box>
+
+          {/* Per-policy summary */}
+          {requirements.map((req) => (
+            <Box
+              key={req.id}
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: 1,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                '&:last-child': { borderBottom: 'none' },
+              }}
+            >
+              <Box>
+                <Typography variant="body2" fontWeight={500}>
+                  {req.policyTypeHe}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {req.minimumLimit > 0 && `גבול: ₪${req.minimumLimit.toLocaleString()}`}
+                  {req.requiredEndorsements?.length > 0 &&
+                    ` · ${req.requiredEndorsements.length} הרחבות`}
+                </Typography>
+              </Box>
+              {req.isMandatory && (
+                <Chip label="חובה" size="small" color="error" variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />
+              )}
+            </Box>
+          ))}
+
+          {/* Link to full template */}
+          <Box sx={{ mt: 2, textAlign: 'left' }}>
+            <Button
+              component={Link}
+              href={`/comparison/templates/${template.id}`}
+              target="_blank"
+              size="small"
+              endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+            >
+              צפה בפרטי התבנית
+            </Button>
+          </Box>
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+// ─── Helper: Template context info banner ─────────────────────────────
+function TemplateBanner({ template }: { template: ComparisonTemplate }) {
+  return (
+    <Card
+      variant="outlined"
+      sx={{
+        mb: 4,
+        borderColor: 'primary.light',
+        bgcolor: 'primary.50',
+      }}
+    >
+      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <TemplateIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+            <Box>
+              <Typography variant="body2" fontWeight={600}>
+                תבנית: {template.nameHe}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {template.descriptionHe || template.description || ''}
+                {template.requirements?.length
+                  ? ` · ${template.requirements.length} סוגי פוליסות`
+                  : ''}
+                {template.sector ? ` · ${template.sector}` : ''}
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            component={Link}
+            href={`/comparison/templates/${template.id}`}
+            target="_blank"
+            size="small"
+            endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+          >
+            צפה בדרישות המלאות
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function AnalyzePage() {
@@ -436,20 +590,7 @@ export default function AnalyzePage() {
             </FormControl>
 
             {selectedTemplateObj && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="body2" fontWeight="bold">
-                  {selectedTemplateObj.nameHe}
-                </Typography>
-                {selectedTemplateObj.descriptionHe && (
-                  <Typography variant="caption" color="text.secondary">
-                    {selectedTemplateObj.descriptionHe}
-                  </Typography>
-                )}
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  {selectedTemplateObj.requirements?.length || 0} דרישות
-                  {selectedTemplateObj.sector && ` · ${selectedTemplateObj.sector}`}
-                </Typography>
-              </Box>
+              <TemplatePreview template={selectedTemplateObj} />
             )}
 
             <Button
@@ -589,6 +730,11 @@ export default function AnalyzePage() {
               </Grid>
             </CardContent>
           </Card>
+
+          {/* Template Context Banner */}
+          {selectedTemplateObj && (
+            <TemplateBanner template={selectedTemplateObj} />
+          )}
 
           {/* Section 1: Summary Flat Table (new format) */}
           {hasRows && allRows.length > 0 && (

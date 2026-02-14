@@ -912,6 +912,7 @@ export interface ComparisonAnalysis {
   nonCompliantCount: number;
   missingCount: number;
   analyzedAt: string;
+  template?: ComparisonTemplate;
 }
 
 export interface PolicyComparisonResult {

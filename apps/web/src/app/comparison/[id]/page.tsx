@@ -9,6 +9,8 @@ import {
   Schedule as ExpiredIcon,
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
+  Assignment as TemplateIcon,
+  OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -41,6 +43,7 @@ import { useEffect, useState } from 'react';
 import {
   comparisonApi,
   type ComparisonAnalysis,
+  type ComparisonTemplate,
   type PolicyComparisonResult,
   type ComparisonRow,
   type ComparisonFieldStatus,
@@ -124,6 +127,7 @@ export default function AnalysisDetailPage() {
   const { showSuccess, showError } = useSnackbar();
 
   const [analysis, setAnalysis] = useState<ComparisonAnalysis | null>(null);
+  const [template, setTemplate] = useState<ComparisonTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -137,6 +141,19 @@ export default function AnalysisDetailPage() {
       const response = await comparisonApi.analysis.get(analysisId);
       if (response.success && response.data) {
         setAnalysis(response.data);
+        // Use embedded template if available, otherwise fetch separately
+        if (response.data.template) {
+          setTemplate(response.data.template);
+        } else if (response.data.requirementTemplateId) {
+          try {
+            const tplResponse = await comparisonApi.templates.get(response.data.requirementTemplateId);
+            if (tplResponse.success && tplResponse.data) {
+              setTemplate(tplResponse.data);
+            }
+          } catch {
+            // Template fetch is non-critical
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to load analysis:', err);
@@ -195,6 +212,17 @@ export default function AnalysisDetailPage() {
           <Typography variant="body2" sx={{ color: '#86868B' }}>
             Analysis Detail &middot; {new Date(analysis.analyzedAt).toLocaleString('he-IL')}
           </Typography>
+          {template && (
+            <Typography variant="body2" sx={{ color: '#86868B', mt: 0.5 }}>
+              תבנית:{' '}
+              <Link
+                href={`/comparison/templates/${template.id}`}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
+              >
+                {template.nameHe}
+              </Link>
+            </Typography>
+          )}
         </Box>
         <Button
           variant="outlined"
@@ -305,6 +333,43 @@ export default function AnalysisDetailPage() {
           </Grid>
         </CardContent>
       </Card>
+
+      {/* Template Context Banner */}
+      {template && (
+        <Card
+          variant="outlined"
+          sx={{ mb: 4, borderColor: 'primary.light', bgcolor: 'primary.50' }}
+        >
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <TemplateIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>
+                    תבנית: {template.nameHe}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {template.descriptionHe || template.description || ''}
+                    {template.requirements?.length
+                      ? ` · ${template.requirements.length} סוגי פוליסות`
+                      : ''}
+                    {template.sector ? ` · ${template.sector}` : ''}
+                  </Typography>
+                </Box>
+              </Box>
+              <Button
+                component={Link}
+                href={`/comparison/templates/${template.id}`}
+                target="_blank"
+                size="small"
+                endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+              >
+                צפה בדרישות המלאות
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Flat Table (new format) */}
       {(() => {

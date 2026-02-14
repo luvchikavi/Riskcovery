@@ -3,7 +3,7 @@
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
+  Visibility as ViewIcon,
   UploadFile as UploadFileIcon,
 } from '@mui/icons-material';
 import {
@@ -31,6 +31,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { comparisonApi, type ComparisonTemplate, type ComparisonRequirement } from '@/lib/api';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -309,8 +310,13 @@ export default function TemplatesPage() {
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton size="small" color="primary">
-                        <EditIcon />
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        component={Link}
+                        href={`/comparison/templates/${template.id}`}
+                      >
+                        <ViewIcon />
                       </IconButton>
                       <IconButton
                         size="small"
