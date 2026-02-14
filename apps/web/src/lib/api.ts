@@ -8,6 +8,7 @@ const API_BASE_URL =
 interface ApiError {
   code: string;
   message: string;
+  details?: Record<string, string>;
 }
 
 interface ApiResponse<T> {
@@ -30,9 +31,33 @@ interface PaginatedResponse<T> {
   };
 }
 
+/**
+ * Typed API error with status code and error code for categorized handling.
+ */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public code: string,
+    public details?: Record<string, string>,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+
+  get isAuth() { return this.status === 401; }
+  get isValidation() { return this.status === 400; }
+  get isNotFound() { return this.status === 404; }
+  get isServer() { return this.status >= 500; }
+  get isNetwork() { return this.code === 'NETWORK_ERROR'; }
+}
+
+type ErrorHandler = (error: ApiRequestError) => void;
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private onError: ErrorHandler | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -40,6 +65,11 @@ class ApiClient {
 
   setToken(token: string | null) {
     this.token = token;
+  }
+
+  /** Register a global error handler (e.g. to show snackbar notifications). */
+  setErrorHandler(handler: ErrorHandler | null) {
+    this.onError = handler;
   }
 
   private async request<T>(
@@ -62,17 +92,38 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, { ...options, headers });
+    } catch {
+      const err = new ApiRequestError(
+        'שגיאת רשת — בדוק את החיבור לאינטרנט',
+        0,
+        'NETWORK_ERROR',
+      );
+      this.onError?.(err);
+      throw err;
+    }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        success: false,
+      const body = await response.json().catch(() => ({
         error: { code: 'UNKNOWN_ERROR', message: response.statusText },
       }));
-      throw new Error(error.error?.message || 'Request failed');
+
+      const apiErr = body.error as ApiError | undefined;
+      const err = new ApiRequestError(
+        apiErr?.message || 'Request failed',
+        response.status,
+        apiErr?.code || 'UNKNOWN_ERROR',
+        apiErr?.details,
+      );
+
+      // Notify the global error handler (skip 401 — auth redirect handles it)
+      if (!err.isAuth) {
+        this.onError?.(err);
+      }
+
+      throw err;
     }
 
     // Check if response is JSON
@@ -120,14 +171,20 @@ class ApiClient {
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    });
+
+    let response: Response;
+    try {
+      response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(data) });
+    } catch {
+      const err = new ApiRequestError('שגיאת רשת — בדוק את החיבור לאינטרנט', 0, 'NETWORK_ERROR');
+      this.onError?.(err);
+      throw err;
+    }
 
     if (!response.ok) {
-      throw new Error('File download failed');
+      const err = new ApiRequestError('הורדת הקובץ נכשלה', response.status, 'DOWNLOAD_FAILED');
+      this.onError?.(err);
+      throw err;
     }
 
     return response.blob();

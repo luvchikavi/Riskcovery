@@ -6,8 +6,8 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { ThemeProvider } from './ThemeProvider';
-import { SnackbarProvider } from '@/components/SnackbarProvider';
-import { api } from '@/lib/api';
+import { SnackbarProvider, useSnackbar } from '@/components/SnackbarProvider';
+import { api, type ApiRequestError } from '@/lib/api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +43,20 @@ function AuthSync({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Bridges API errors to snackbar notifications. Must be inside SnackbarProvider. */
+function ApiErrorBridge({ children }: { children: ReactNode }) {
+  const { showError } = useSnackbar();
+
+  useEffect(() => {
+    api.setErrorHandler((err: ApiRequestError) => {
+      showError(err.message);
+    });
+    return () => { api.setErrorHandler(null); };
+  }, [showError]);
+
+  return <>{children}</>;
+}
+
 interface AppProvidersProps {
   children: ReactNode;
 }
@@ -53,7 +67,9 @@ export function AppProviders({ children }: AppProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <AuthSync>
           <ThemeProvider>
-            <SnackbarProvider>{children}</SnackbarProvider>
+            <SnackbarProvider>
+              <ApiErrorBridge>{children}</ApiErrorBridge>
+            </SnackbarProvider>
           </ThemeProvider>
         </AuthSync>
       </QueryClientProvider>

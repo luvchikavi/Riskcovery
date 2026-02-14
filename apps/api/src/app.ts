@@ -59,6 +59,28 @@ export async function buildApp() {
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
+    // Zod validation errors → 400 with field details
+    if (error.name === 'ZodError' && 'issues' in error) {
+      const issues = (error as unknown as { issues: Array<{ path: (string | number)[]; message: string }> }).issues;
+      const details: Record<string, string> = {};
+      for (const issue of issues) {
+        details[issue.path.join('.')] = issue.message;
+      }
+
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          details,
+        },
+        meta: {
+          requestId: request.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
     app.log.error({ err: error, requestId: request.id }, 'Request error');
 
     const statusCode = error.statusCode || 500;
