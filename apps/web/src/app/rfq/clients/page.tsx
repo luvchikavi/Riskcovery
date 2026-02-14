@@ -32,7 +32,8 @@ import {
   MenuItem,
 } from '@mui/material';
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { rfqApi, type Client } from '@/lib/api';
 import { SECTORS_WITH_ALL } from '@/lib/constants';
@@ -41,16 +42,42 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/components/SnackbarProvider';
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sector, setSector] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const { showSuccess, showError } = useSnackbar();
+
+  // Debounce search input
+  const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchTimer) clearTimeout(searchTimer);
+    setSearchTimer(setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(0);
+    }, 300));
+  };
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['rfq', 'clients', { page, rowsPerPage, sector, search: debouncedSearch }],
+    queryFn: async () => {
+      const res = await rfqApi.clients.list({
+        page: page + 1,
+        pageSize: rowsPerPage,
+        sector: sector || undefined,
+        search: debouncedSearch || undefined,
+      });
+      if (!res.success || !res.data) throw new Error('Failed to load clients');
+      return res.data;
+    },
+  });
+
+  const clients = data?.data ?? [];
+  const totalItems = data?.pagination.totalItems ?? 0;
 
   const handleDeleteClient = async () => {
     if (!deleteTarget) return;
@@ -58,47 +85,12 @@ export default function ClientsPage() {
       await rfqApi.clients.delete(deleteTarget.id);
       showSuccess(`הלקוח ${deleteTarget.name} נמחק בהצלחה`);
       setDeleteTarget(null);
-      loadClients();
+      queryClient.invalidateQueries({ queryKey: ['rfq', 'clients'] });
+      queryClient.invalidateQueries({ queryKey: ['rfq', 'stats'] });
     } catch {
       showError('שגיאה במחיקת הלקוח');
     }
   };
-
-  const loadClients = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await rfqApi.clients.list({
-        page: page + 1,
-        pageSize: rowsPerPage,
-        sector: sector || undefined,
-        search: search || undefined,
-      });
-      if (response.success && response.data) {
-        setClients(response.data.data);
-        setTotalItems(response.data.pagination.totalItems);
-      }
-    } catch (err) {
-      setError('Failed to load clients');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, rowsPerPage, sector, search]);
-
-  useEffect(() => {
-    loadClients();
-  }, [loadClients]);
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(0);
-      loadClients();
-    }, 300);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -140,7 +132,7 @@ export default function ClientsPage() {
             <TextField
               placeholder="חיפוש לקוחות..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -173,7 +165,7 @@ export default function ClientsPage() {
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          Failed to load clients
         </Alert>
       )}
 
@@ -193,7 +185,7 @@ export default function ClientsPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} sx={{ p: 0, border: 0 }}>
                     <TableSkeleton rows={5} columns={7} />

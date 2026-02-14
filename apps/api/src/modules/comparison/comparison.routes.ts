@@ -6,6 +6,7 @@ import { comparisonDocumentService } from './documents/document.service.js';
 import { ocrService, ENDORSEMENT_CODES } from './documents/ocr.service.js';
 import { requirementsService } from './requirements/requirements.service.js';
 import { analysisService } from './analysis/analysis.service.js';
+import { requireAuth } from '../../plugins/auth.js';
 
 // Schemas
 const uploadDocumentSchema = z.object({
@@ -59,6 +60,9 @@ const analyzeSchema = z.object({
 });
 
 export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
+  // All comparison routes require authentication
+  fastify.addHook('preHandler', requireAuth);
+
   // ==================== DOCUMENTS ====================
 
   // Upload document

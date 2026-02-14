@@ -143,30 +143,86 @@ const POLICY_TYPES = [
   },
 ];
 
+// Normalize a policyType string from Vision/OCR to our standard enum values
+export function normalizePolicyType(raw: string | undefined): string {
+  if (!raw) return 'UNKNOWN';
+
+  // Already in our enum format
+  const exactMatch = POLICY_TYPES.find(pt => pt.en === raw);
+  if (exactMatch) return exactMatch.en;
+
+  // Try uppercase with underscores (e.g., "General Liability" → "GENERAL_LIABILITY")
+  const upper = raw.toUpperCase().replace(/\s+/g, '_');
+  const upperMatch = POLICY_TYPES.find(pt => pt.en === upper);
+  if (upperMatch) return upperMatch.en;
+
+  // Try matching by Hebrew name or alias
+  for (const pt of POLICY_TYPES) {
+    const allPatterns = [pt.he, ...pt.aliases];
+    for (const pattern of allPatterns) {
+      if (raw.includes(pattern) || pattern.includes(raw)) {
+        return pt.en;
+      }
+    }
+  }
+
+  // Try partial English matching (e.g., "employer" → EMPLOYER_LIABILITY)
+  const lower = raw.toLowerCase();
+  const partialMap: Record<string, string> = {
+    'general': 'GENERAL_LIABILITY',
+    'third party': 'GENERAL_LIABILITY',
+    'employer': 'EMPLOYER_LIABILITY',
+    'professional': 'PROFESSIONAL_INDEMNITY',
+    'contractor': 'CONTRACTOR_ALL_RISKS',
+    'product': 'PRODUCT_LIABILITY',
+    'property': 'PROPERTY',
+    'car': 'CAR_THIRD_PARTY',
+    'vehicle': 'CAR_THIRD_PARTY',
+    'compulsory': 'CAR_COMPULSORY',
+    'cyber': 'CYBER_LIABILITY',
+    'd&o': 'D_AND_O',
+    'director': 'D_AND_O',
+  };
+  for (const [keyword, policyType] of Object.entries(partialMap)) {
+    if (lower.includes(keyword)) return policyType;
+  }
+
+  return raw; // Return as-is if no match found
+}
+
 export class OcrService {
-  // Extract data from a PDF buffer using pdf-parse + structured extraction
+  // Extract data from a PDF buffer — Vision-first with text fallback
   async extractFromPdf(pdfBuffer: Buffer, fileName: string): Promise<ExtractedCertificateData> {
     console.log(`Processing PDF: ${fileName}, size: ${pdfBuffer.length} bytes`);
 
+    // Primary: Use GPT-4o Vision for highest accuracy (understands document semantics)
     try {
-      // Extract raw text from the PDF using pdf-parse v2 class API
+      console.log('Using GPT-4o Vision as primary extraction method');
+      const result = await this.extractWithVision(pdfBuffer.toString('base64'), 'application/pdf');
+      if (result.policies.length > 0) {
+        return result;
+      }
+      console.log('Vision returned no policies, falling back to text extraction');
+    } catch (err) {
+      console.warn('Vision extraction failed, falling back to text extraction:', err);
+    }
+
+    // Fallback: Extract raw text from the PDF using pdf-parse + regex parsing
+    try {
       const parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
       const textResult = await parser.getText();
       const rawText = textResult.text;
       await parser.destroy();
 
       if (!rawText || rawText.trim().length === 0) {
-        console.log('PDF has no extractable text, routing to Vision OCR');
-        return this.extractWithVision(pdfBuffer.toString('base64'), 'application/pdf');
+        throw new Error('PDF has no extractable text and Vision extraction failed');
       }
 
-      console.log(`Extracted ${rawText.length} chars of text from PDF (${textResult.pages.length} pages)`);
-
-      // Parse the raw text using the structured certificate parser
+      console.log(`Fallback: Extracted ${rawText.length} chars of text from PDF (${textResult.pages.length} pages)`);
       return this.parseOcrText(rawText);
     } catch (err) {
-      console.error('Failed to extract text from PDF, falling back to mock:', err);
-      return this.createMockExtraction();
+      console.error('Both Vision and text extraction failed:', err);
+      throw new Error(`Failed to extract data from PDF "${fileName}". Please try uploading a clearer document.`);
     }
   }
 
@@ -181,44 +237,54 @@ export class OcrService {
     try {
       const client = getOpenAIClient();
 
-      const systemPrompt = `אתה מערכת OCR לחילוץ נתונים מאישורי ביטוח ישראליים (תעודות ביטוח בפורמט רשות שוק ההון).
-חלץ את כל הנתונים מהמסמך והחזר JSON בלבד בפורמט הבא:
+      const systemPrompt = `You are an expert OCR system for extracting data from Israeli insurance certificates (תעודות ביטוח בפורמט רשות שוק ההון).
+
+CRITICAL RULES — read carefully:
+1. Policy numbers (מספר פוליסה) are NOT coverage amounts. Policy numbers often contain dashes like "25-081-630-1055058" or "24-110-063-1071730". NEVER confuse them with monetary values.
+2. Coverage limits (גבול אחריות) are monetary values, typically round numbers like 1,000,000 or 2,000,000 or 5,000,000 or 10,000,000 or 20,000,000.
+3. "לתקופה" means "per period" and "למקרה" means "per occurrence" — extract both separately.
+4. If a single limit applies to both (e.g., "2,000,000 ₪ למקרה ולתקופה"), set BOTH coverageLimitPerPeriod AND coverageLimitPerOccurrence to that value.
+5. Endorsement codes (הרחבות) are 3-digit numbers in the range 300-440 that appear in a table or list.
+6. Dates in the document are DD/MM/YYYY format. Convert them to YYYY-MM-DD in your output.
+7. The deductible (השתתפות עצמית) is a monetary amount the insured pays per claim.
+
+Extract ALL data and return JSON ONLY in this exact format:
 {
-  "certificateNumber": "מספר אסמכתא",
+  "certificateNumber": "the אסמכתא number",
   "issueDate": "YYYY-MM-DD",
   "expiryDate": "YYYY-MM-DD",
-  "insurerName": "שם המבטח",
+  "insurerName": "insurer name in English if known",
   "insurerNameHe": "שם המבטח בעברית",
   "insuredName": "שם המבוטח",
-  "insuredId": "ח.פ./ת.ז. של המבוטח",
+  "insuredId": "ח.פ./ת.ז. of the insured (9 digits)",
   "insuredAddress": "כתובת המבוטח",
   "certificateRequester": { "name": "שם מבקש האישור", "id": "ח.פ. מבקש האישור" },
-  "serviceCodes": ["קודי שירות"],
+  "serviceCodes": ["3-digit service codes like 038, 043"],
   "policies": [
     {
       "policyType": "GENERAL_LIABILITY | EMPLOYER_LIABILITY | PROFESSIONAL_INDEMNITY | CONTRACTOR_ALL_RISKS | PRODUCT_LIABILITY | PROPERTY | CAR_THIRD_PARTY | CAR_COMPULSORY | CYBER_LIABILITY | D_AND_O",
-      "policyTypeHe": "שם סוג הפוליסה בעברית",
-      "policyNumber": "מספר פוליסה",
+      "policyTypeHe": "שם סוג הפוליסה בעברית as it appears in the document",
+      "policyNumber": "the policy number string (may contain dashes — this is NOT a monetary value)",
       "coverageLimitPerPeriod": 0,
       "coverageLimitPerOccurrence": 0,
-      "coverageLimit": 0,
       "deductible": 0,
-      "policyWording": "ביט או אחר",
+      "policyWording": "ביט XXXX or other",
       "currency": "ILS",
       "effectiveDate": "YYYY-MM-DD",
       "expirationDate": "YYYY-MM-DD",
-      "retroactiveDate": "YYYY-MM-DD או null",
-      "endorsementCodes": ["קודי הרחבות 3 ספרות"],
-      "endorsements": ["תיאורי הרחבות בעברית"]
+      "retroactiveDate": "YYYY-MM-DD or null",
+      "endorsementCodes": ["3-digit codes like 309, 318, 321"],
+      "endorsements": ["Hebrew descriptions of the endorsements"]
     }
   ],
   "additionalInsured": {
-    "name": "שם המבוטח הנוסף",
-    "isNamedAsAdditional": true/false,
-    "waiverOfSubrogation": true/false
-  }
+    "name": "name of additional insured if specified",
+    "isNamedAsAdditional": true,
+    "waiverOfSubrogation": true
+  },
+  "confidence": 0.85
 }
-אם שדה לא קיים במסמך, השמט אותו מה-JSON. החזר JSON בלבד, ללא טקסט נוסף.`;
+If a field is not present in the document, omit it from the JSON. Return ONLY valid JSON, no other text.`;
 
       const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
@@ -246,8 +312,7 @@ export class OcrService {
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
-        console.error('Vision API returned empty response, falling back to mock');
-        return this.createMockExtraction();
+        throw new Error('Vision API returned empty response');
       }
 
       const parsed = JSON.parse(content);
@@ -267,14 +332,15 @@ export class OcrService {
         policies: (parsed.policies || []).map((p: Record<string, unknown>) => {
           const perPeriod = typeof p.coverageLimitPerPeriod === 'number' ? p.coverageLimitPerPeriod : undefined;
           const perOccurrence = typeof p.coverageLimitPerOccurrence === 'number' ? p.coverageLimitPerOccurrence : undefined;
-          const legacy = typeof p.coverageLimit === 'number' ? p.coverageLimit : undefined;
+          const normalizedType = normalizePolicyType(p.policyType as string | undefined);
+          const typeInfo = POLICY_TYPES.find(pt => pt.en === normalizedType);
           return {
-            policyType: p.policyType as string,
-            policyTypeHe: p.policyTypeHe as string,
+            policyType: normalizedType,
+            policyTypeHe: (p.policyTypeHe as string) || typeInfo?.he || normalizedType,
             policyNumber: p.policyNumber as string | undefined,
             coverageLimitPerPeriod: perPeriod,
             coverageLimitPerOccurrence: perOccurrence,
-            coverageLimit: legacy ?? perPeriod, // fallback for backward compat
+            coverageLimit: perPeriod, // legacy compat: use perPeriod
             deductible: typeof p.deductible === 'number' ? p.deductible : undefined,
             policyWording: typeof p.policyWording === 'string' ? p.policyWording : undefined,
             currency: typeof p.currency === 'string' ? p.currency : 'ILS',
@@ -295,8 +361,8 @@ export class OcrService {
       console.log(`Vision OCR extracted: ${data.policies.length} policies, confidence: ${data.confidence}`);
       return data;
     } catch (err) {
-      console.error('Vision OCR failed, falling back to mock:', err);
-      return this.createMockExtraction();
+      console.error('Vision OCR failed:', err);
+      throw new Error(`Vision OCR extraction failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }
 
@@ -449,6 +515,85 @@ export class OcrService {
     return result;
   }
 
+  // Extract the text section for a specific policy type, bounded by the next policy type
+  private extractPolicySection(text: string, currentPolicyType: typeof POLICY_TYPES[number]): string {
+    const escapedHe = currentPolicyType.he.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const startRegex = new RegExp(escapedHe, 'i');
+    const startMatch = startRegex.exec(text);
+    if (!startMatch) return '';
+
+    const startIdx = startMatch.index;
+
+    // Find the next policy type header as the section boundary
+    let endIdx = text.length;
+    for (const otherType of POLICY_TYPES) {
+      if (otherType.en === currentPolicyType.en) continue;
+      const otherPatterns = [otherType.he, ...otherType.aliases];
+      for (const pattern of otherPatterns) {
+        const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const otherRegex = new RegExp(escaped, 'gi');
+        let otherMatch;
+        while ((otherMatch = otherRegex.exec(text)) !== null) {
+          if (otherMatch.index > startIdx + currentPolicyType.he.length && otherMatch.index < endIdx) {
+            endIdx = otherMatch.index;
+          }
+        }
+      }
+    }
+
+    // Cap section at 2000 chars max to avoid capturing too much
+    const maxEnd = Math.min(endIdx, startIdx + 2000);
+    return text.substring(startIdx, maxEnd);
+  }
+
+  // Extract monetary amounts from text, filtering out non-monetary numbers
+  private extractMonetaryAmounts(sectionText: string): number[] {
+    const amounts: number[] = [];
+
+    // Pattern 1 (highest confidence): "X מיליון" — Hebrew millions
+    const millionPat = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
+    let match;
+    while ((match = millionPat.exec(sectionText)) !== null) {
+      if (match[1]) amounts.push(parseFloat(match[1]) * 1_000_000);
+    }
+
+    // Pattern 2 (high confidence): Amounts explicitly marked with ₪
+    const shekelPattern = /₪\s*([\d,]+)|([\d,]+)\s*₪/g;
+    while ((match = shekelPattern.exec(sectionText)) !== null) {
+      const numStr = (match[1] || match[2] || '').replace(/,/g, '');
+      const num = parseInt(numStr, 10);
+      // Only accept amounts >= 10,000 and avoid duplicates from the million pattern
+      if (num >= 10000 && !amounts.includes(num)) amounts.push(num);
+    }
+
+    // If we found explicit monetary amounts, return those
+    if (amounts.length > 0) return amounts;
+
+    // Pattern 3 (fallback): Bare numbers, but filter out non-monetary ones
+    const bareNumberPattern = /[\d,]+/g;
+    while ((match = bareNumberPattern.exec(sectionText)) !== null) {
+      const raw = match[0];
+      const num = parseInt(raw.replace(/,/g, ''), 10);
+      if (num < 100000) continue; // Require at least 100k for bare numbers
+
+      // Skip if part of a dashed sequence (policy number like 25-081-630-1055058)
+      const charBefore = match.index > 0 ? sectionText[match.index - 1] : '';
+      const charAfter = sectionText[match.index + raw.length] || '';
+      if (charBefore === '-' || charAfter === '-') continue;
+
+      // Skip if preceded by identifying keywords (within 30 chars before)
+      const contextBefore = sectionText.substring(Math.max(0, match.index - 30), match.index);
+      if (/(?:מספר|פוליסה|ח\.?פ\.?|ת\.?ז\.?|טלפון|פקס|ת\.?ד\.?|אסמכתא|מס['\u2019]?)\s*:?\s*$/i.test(contextBefore)) continue;
+
+      // Skip numbers that look like dates (1-2 digits)
+      if (/^\d{1,2}$/.test(raw)) continue;
+
+      if (!amounts.includes(num)) amounts.push(num);
+    }
+
+    return amounts;
+  }
+
   // Extract detailed policy information
   private extractPoliciesDetailed(text: string): ExtractedPolicy[] {
     const policies: ExtractedPolicy[] = [];
@@ -476,49 +621,36 @@ export class OcrService {
         confidence: 0.7,
       };
 
-      // Extract policy number
-      const policyNumPattern = new RegExp(
-        `${policyType.he}[^]*?(?:מספר[\\s]*(?:ה)?פוליסה|פוליסה)[:\\s]*([\\d\\-]+)`,
-        'i'
-      );
-      const policyNumMatch = text.match(policyNumPattern);
+      // Extract section text bounded by the next policy type (not a fixed window)
+      const sectionText = this.extractPolicySection(text, policyType);
+
+      // Extract policy number from the section
+      const policyNumPattern = /(?:מספר[\s]*(?:ה)?פוליסה|פוליסה)[:\s]*([\d\-]+)/i;
+      const policyNumMatch = sectionText.match(policyNumPattern);
       if (policyNumMatch?.[1]) {
         policy.policyNumber = policyNumMatch[1].trim();
       }
 
-      // Extract section text for this policy type
-      const escapedHe = policyType.he.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const sectionRegex = new RegExp(`${escapedHe}[\\s\\S]{0,800}`, 'i');
-      const sectionMatch = text.match(sectionRegex);
-      const sectionText = sectionMatch ? sectionMatch[0] : '';
-
-      // Extract dual coverage limits — find all amounts >= 10000 in the section
-      const amounts: number[] = [];
-      const amountPattern = /[\d,]+(?:\s*₪)?/g;
-      let amountMatch;
-      while ((amountMatch = amountPattern.exec(sectionText)) !== null) {
-        const num = parseInt(amountMatch[0].replace(/[,₪\s]/g, ''), 10);
-        if (num >= 10000) amounts.push(num);
-      }
-      // Also check for "X מיליון" patterns
-      const millionPat = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
-      let mm;
-      while ((mm = millionPat.exec(sectionText)) !== null) {
-        if (mm[1]) amounts.push(parseFloat(mm[1]) * 1_000_000);
-      }
+      // Extract monetary amounts with smart filtering
+      const amounts = this.extractMonetaryAmounts(sectionText);
 
       if (amounts.length >= 2) {
-        // First = per period, second = per occurrence
         policy.coverageLimitPerPeriod = amounts[0];
         policy.coverageLimitPerOccurrence = amounts[1];
       } else if (amounts.length === 1) {
         policy.coverageLimitPerPeriod = amounts[0];
         policy.coverageLimitPerOccurrence = amounts[0];
       }
-      // Legacy fallback
       policy.coverageLimit = policy.coverageLimitPerPeriod;
 
-      // Extract policy wording — look for "ביט"
+      // Extract deductible (השתתפות עצמית)
+      const deductibleMatch = sectionText.match(/השתתפות\s*עצמית[:\s]*([\d,]+)/i);
+      if (deductibleMatch?.[1]) {
+        const ded = parseInt(deductibleMatch[1].replace(/,/g, ''), 10);
+        if (ded > 0) policy.deductible = ded;
+      }
+
+      // Extract policy wording
       if (/ביט/i.test(sectionText)) {
         const wordingMatch = sectionText.match(/ביט\s*\d{4}/i);
         policy.policyWording = wordingMatch ? wordingMatch[0] : 'ביט';
@@ -533,13 +665,13 @@ export class OcrService {
         policy.currency = 'ILS';
       }
 
-      // Extract dates
-      const datePatterns = [
+      // Extract dates from the section (not the whole document)
+      const startDatePatterns = [
         /תאריך תחילה[:\s]*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
         /ת\.\s*תחילה[:\s]*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
       ];
-      for (const dp of datePatterns) {
-        const dateMatch = text.match(dp);
+      for (const dp of startDatePatterns) {
+        const dateMatch = sectionText.match(dp);
         if (dateMatch?.[1]) {
           policy.effectiveDate = this.normalizeDate(dateMatch[1]);
           break;
@@ -551,15 +683,15 @@ export class OcrService {
         /ת\.\s*סיום[:\s]*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
       ];
       for (const dp of endDatePatterns) {
-        const dateMatch = text.match(dp);
+        const dateMatch = sectionText.match(dp);
         if (dateMatch?.[1]) {
           policy.expirationDate = this.normalizeDate(dateMatch[1]);
           break;
         }
       }
 
-      // Extract endorsement codes
-      policy.endorsementCodes = this.extractEndorsementCodes(text, policyType.he);
+      // Extract endorsement codes from the SECTION (not entire document)
+      policy.endorsementCodes = this.extractEndorsementCodes(sectionText, policyType.he);
       policy.endorsements = policy.endorsementCodes.map(
         (code) => ENDORSEMENT_CODES[code]?.he || code
       );
@@ -701,113 +833,7 @@ export class OcrService {
     return factors > 0 ? Math.min(score / factors, 1) : 0.5;
   }
 
-  // Create realistic mock extraction based on Israeli certificate patterns
-  private createMockExtraction(): ExtractedCertificateData {
-    return {
-      certificateNumber: '000050229',
-      issueDate: '2024-09-01',
-      expiryDate: '2024-12-31',
-      insurerName: 'הפניקס',
-      insurerNameHe: 'הפניקס השקעות, ביטוח ופיננסים',
-
-      insuredName: 'זילברמן גיל',
-      insuredId: '023898265',
-      insuredAddress: 'הכפר 11, קריית אונו',
-
-      certificateRequester: {
-        name: 'החברה הכלכלית לפיתוח עמק חפר בע"מ',
-        id: '511150397',
-      },
-
-      policies: [
-        {
-          policyType: 'GENERAL_LIABILITY',
-          policyTypeHe: 'צד שלישי',
-          policyNumber: '24-110-063-1071730',
-          coverageLimit: 5000000,
-          coverageLimitPerPeriod: 5000000,
-          coverageLimitPerOccurrence: 2000000,
-          deductible: 0,
-          policyWording: 'ביט 2019',
-          currency: 'ILS',
-          effectiveDate: '2024-08-12',
-          expirationDate: '2024-12-31',
-          endorsements: [
-            'הרחב שיפוי',
-            'רכוש מבקש האישור ייחשב כצד ג\'',
-            'אחריות צולבת',
-            'ויתור על תחלוף לטובת מבקש האישור',
-            'הרחבת צד ג\' - קבלנים וקבלני משנה',
-            'מבקש האישור מוגדר כצד ג\'',
-            'מבוטח נוסף בגין מעשי המבוטח',
-            'כיסוי לתביעות המל"ל',
-            'ראשוניות',
-          ],
-          endorsementCodes: ['304', '329', '302', '309', '307', '322', '321', '315', '328'],
-          confidence: 0.9,
-        },
-        {
-          policyType: 'EMPLOYER_LIABILITY',
-          policyTypeHe: 'חבות מעבידים',
-          policyNumber: '24-110-063-1071730',
-          coverageLimit: 20000000,
-          coverageLimitPerPeriod: 20000000,
-          coverageLimitPerOccurrence: 10000000,
-          deductible: 0,
-          policyWording: 'ביט 2019',
-          currency: 'ILS',
-          effectiveDate: '2024-08-12',
-          expirationDate: '2024-12-31',
-          endorsements: [
-            'ויתור על תחלוף לטובת מבקש האישור',
-            'מבוטח נוסף - כמעבידם של עובדי המבוטח',
-            'ראשוניות',
-          ],
-          endorsementCodes: ['309', '319', '328'],
-          confidence: 0.9,
-        },
-        {
-          policyType: 'PROFESSIONAL_INDEMNITY',
-          policyTypeHe: 'אחריות מקצועית',
-          policyNumber: '24-110-073-1003952',
-          coverageLimit: 2000000,
-          coverageLimitPerPeriod: 2000000,
-          coverageLimitPerOccurrence: 1000000,
-          deductible: 0,
-          policyWording: 'ביט 2019',
-          currency: 'ILS',
-          effectiveDate: '2024-08-12',
-          expirationDate: '2025-05-31',
-          retroactiveDate: '2024-08-12',
-          endorsements: [
-            'דיבה, השמצה והוצאת לשון הרע',
-            'אובדן מסמכים',
-            'מרמה ואי יושר עובדים',
-            'אחריות צולבת',
-            'הרחב שיפוי',
-            'תקופת גילוי: 6 חודשים',
-            'ויתור על תחלוף לטובת מבקש האישור',
-            'פגיעה בפרטיות',
-            'עיכוב/שיהוי עקב מקרה ביטוח',
-            'מבוטח נוסף בגין מעשי המבוטח',
-            'ראשוניות',
-          ],
-          endorsementCodes: ['303', '301', '325', '302', '304', '332', '309', '326', '327', '321', '328'],
-          confidence: 0.85,
-        },
-      ],
-
-      serviceCodes: ['038', '043'],
-
-      additionalInsured: {
-        name: 'החברה הכלכלית לפיתוח עמק חפר בע"מ',
-        isNamedAsAdditional: true,
-        waiverOfSubrogation: true,
-      },
-
-      confidence: 0.87,
-    };
-  }
+  // No more mock fallback — extraction failures are surfaced as errors
 
   // Get endorsement description by code
   static getEndorsementDescription(code: string): { he: string; en: string } | undefined {

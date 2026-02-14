@@ -153,9 +153,16 @@ export class AnalysisService {
     const rows: ComparisonRow[] = [];
     const gaps: ComplianceGap[] = [];
 
-    // Find matching policy in extracted data
+    // Find matching policy in extracted data (exact match → Hebrew name fallback)
     const foundPolicy = extractedData.policies.find(
       (p) => p.policyType === requirement.policyType
+    ) || extractedData.policies.find(
+      (p) => p.policyTypeHe === requirement.policyTypeHe
+    ) || extractedData.policies.find(
+      (p) => {
+        if (!p.policyType || !requirement.policyType) return false;
+        return p.policyType.toUpperCase().replace(/\s+/g, '_') === requirement.policyType.toUpperCase().replace(/\s+/g, '_');
+      }
     );
 
     // Row 1: Policy Type (found?)

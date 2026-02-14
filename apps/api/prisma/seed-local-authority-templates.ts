@@ -173,29 +173,55 @@ function getPolicyTypeHe(en: string): string {
   return POLICY_TYPE_MAP.find((p) => p.en === en)?.he || en;
 }
 
+// ─── Extract monetary amounts from text, filtering non-monetary numbers ──
+function extractMonetaryAmounts(text: string): number[] {
+  const amounts: number[] = [];
+  let match;
+
+  // Pattern 1 (highest confidence): "X מיליון" — Hebrew millions
+  const millionPat = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
+  while ((match = millionPat.exec(text)) !== null) {
+    if (match[1]) amounts.push(parseFloat(match[1]) * 1_000_000);
+  }
+
+  // Pattern 2 (high confidence): Amounts explicitly marked with ₪
+  const shekelPattern = /₪\s*([\d,]+)|([\d,]+)\s*₪/g;
+  while ((match = shekelPattern.exec(text)) !== null) {
+    const numStr = (match[1] || match[2] || '').replace(/,/g, '');
+    const num = parseInt(numStr, 10);
+    if (num >= 10000 && !amounts.includes(num)) amounts.push(num);
+  }
+
+  // If we found explicit monetary amounts, return those
+  if (amounts.length > 0) return amounts;
+
+  // Pattern 3 (fallback): Bare numbers >= 100k, excluding non-monetary
+  const bareNumberPattern = /[\d,]+/g;
+  while ((match = bareNumberPattern.exec(text)) !== null) {
+    const raw = match[0];
+    const num = parseInt(raw.replace(/,/g, ''), 10);
+    if (num < 100000) continue;
+
+    // Skip if part of a dashed sequence (policy/reference numbers)
+    const charBefore = match.index > 0 ? text[match.index - 1] : '';
+    const charAfter = text[match.index + raw.length] || '';
+    if (charBefore === '-' || charAfter === '-') continue;
+
+    // Skip if preceded by identifying keywords
+    const contextBefore = text.substring(Math.max(0, match.index - 30), match.index);
+    if (/(?:מספר|פוליסה|ח\.?פ\.?|ת\.?ז\.?|טלפון|פקס|ת\.?ד\.?|אסמכתא|מס['\u2019]?)\s*:?\s*$/i.test(contextBefore)) continue;
+
+    if (!amounts.includes(num)) amounts.push(num);
+  }
+
+  return amounts;
+}
+
 // ─── Parse dual coverage amounts from Hebrew text ─────────────────────
 function parseDualCoverageAmounts(text: string): { perPeriod: number; perOccurrence: number } {
-  const amounts: number[] = [];
-
-  // Match patterns like "2,000,000 ₪" or "2,000,000"
-  const directAmountMatches = text.match(/[\d,]+(?:\s*₪)?/g);
-  if (directAmountMatches) {
-    for (const match of directAmountMatches) {
-      const cleaned = match.replace(/[,₪\s]/g, '');
-      const num = parseInt(cleaned, 10);
-      if (num >= 10000) amounts.push(num);
-    }
-  }
-
-  // Match patterns like "20 מיליון" or "5 מליון"
-  const millionPattern = /(\d+(?:\.\d+)?)\s*מ[יי]?ל[יי]?ון/g;
-  let millionMatch;
-  while ((millionMatch = millionPattern.exec(text)) !== null) {
-    if (millionMatch[1]) amounts.push(parseFloat(millionMatch[1]) * 1_000_000);
-  }
+  const amounts = extractMonetaryAmounts(text);
 
   if (amounts.length >= 2) {
-    // First = per period, second = per occurrence
     return { perPeriod: amounts[0]!, perOccurrence: amounts[1]! };
   } else if (amounts.length === 1) {
     return { perPeriod: amounts[0]!, perOccurrence: amounts[0]! };
@@ -322,11 +348,30 @@ async function parseDocxTemplate(filePath: string, fileName: string): Promise<{
   for (const policyType of foundPolicies) {
     const policyTypeHe = getPolicyTypeHe(policyType);
 
-    // Try to find the section of text related to this policy
+    // Extract section bounded by the next policy type (not a fixed window)
     const escaped = policyTypeHe.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const sectionRegex = new RegExp(`${escaped}[\\s\\S]{0,500}`, 'i');
-    const sectionMatch = text.match(sectionRegex);
-    const sectionText = sectionMatch ? sectionMatch[0] : text;
+    const startRegex = new RegExp(escaped, 'i');
+    const startMatch = startRegex.exec(text);
+    let sectionText = text;
+    if (startMatch) {
+      const startIdx = startMatch.index;
+      let endIdx = text.length;
+      for (const otherPt of POLICY_TYPE_MAP) {
+        if (otherPt.en === policyType) continue;
+        const otherPatterns = [otherPt.he, ...otherPt.aliases];
+        for (const pattern of otherPatterns) {
+          const otherEscaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const otherRegex = new RegExp(otherEscaped, 'gi');
+          let otherMatch;
+          while ((otherMatch = otherRegex.exec(text)) !== null) {
+            if (otherMatch.index > startIdx + policyTypeHe.length && otherMatch.index < endIdx) {
+              endIdx = otherMatch.index;
+            }
+          }
+        }
+      }
+      sectionText = text.substring(startIdx, Math.min(endIdx, startIdx + 2000));
+    }
 
     // Parse dual coverage amounts from the section
     let dualAmounts = parseDualCoverageAmounts(sectionText);

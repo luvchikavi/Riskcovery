@@ -6,6 +6,7 @@ import { templateService } from './template.service.js';
 import { sectionService } from './section.service.js';
 import { questionService } from './question.service.js';
 import { ruleService } from './rule.service.js';
+import { requireAuth } from '../../../plugins/auth.js';
 
 // Validation schemas
 const createTemplateSchema = z.object({
@@ -160,6 +161,9 @@ const reorderRulesSchema = z.object({
 });
 
 export const adminRoutes: FastifyPluginAsync = async (fastify) => {
+  // All admin routes require authentication
+  fastify.addHook('preHandler', requireAuth);
+
   // ==================== TEMPLATES ====================
 
   // List all templates
