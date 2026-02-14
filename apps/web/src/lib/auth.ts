@@ -96,20 +96,34 @@ export const authOptions: NextAuthOptions = {
           token.userId = dbUser.id;
           token.role = dbUser.role;
           token.organizationId = dbUser.organizationId;
-
-          // Mint a plain JWT for API calls
-          token.apiToken = jwt.sign(
-            {
-              userId: dbUser.id,
-              email: dbUser.email,
-              name: dbUser.name,
-              role: dbUser.role,
-              organizationId: dbUser.organizationId,
-            },
-            process.env.JWT_SECRET!,
-            { expiresIn: '24h' }
-          );
         }
+      }
+
+      // Mint or refresh the API token if missing or expiring within 1 hour
+      let needsRefresh = !token.apiToken;
+      if (!needsRefresh && token.apiToken) {
+        try {
+          const decoded = jwt.decode(token.apiToken as string) as { exp?: number } | null;
+          if (!decoded?.exp || decoded.exp * 1000 - Date.now() < 60 * 60 * 1000) {
+            needsRefresh = true;
+          }
+        } catch {
+          needsRefresh = true;
+        }
+      }
+
+      if (needsRefresh && token.userId) {
+        token.apiToken = jwt.sign(
+          {
+            userId: token.userId,
+            email: token.email,
+            name: token.name,
+            role: token.role,
+            organizationId: token.organizationId,
+          },
+          process.env.JWT_SECRET!,
+          { expiresIn: '24h' }
+        );
       }
 
       return token;
