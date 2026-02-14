@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { OcrService } from '../ocr.service.js';
+import { OcrService, normalizePolicyType } from '../ocr.service.js';
 
 const ocr = new OcrService();
 
@@ -168,5 +168,41 @@ describe('OcrService.parseOcrText — metadata', () => {
     const result = ocr.parseOcrText(text);
     expect(result.additionalInsured?.isNamedAsAdditional).toBe(true);
     expect(result.additionalInsured?.waiverOfSubrogation).toBe(true);
+  });
+});
+
+describe('normalizePolicyType', () => {
+  it('returns exact enum match as-is', () => {
+    expect(normalizePolicyType('GENERAL_LIABILITY')).toBe('GENERAL_LIABILITY');
+    expect(normalizePolicyType('EMPLOYER_LIABILITY')).toBe('EMPLOYER_LIABILITY');
+    expect(normalizePolicyType('PROFESSIONAL_INDEMNITY')).toBe('PROFESSIONAL_INDEMNITY');
+  });
+
+  it('normalizes Hebrew names to enum values', () => {
+    expect(normalizePolicyType('צד שלישי')).toBe('GENERAL_LIABILITY');
+    expect(normalizePolicyType('חבות מעבידים')).toBe('EMPLOYER_LIABILITY');
+    expect(normalizePolicyType('אחריות מקצועית')).toBe('PROFESSIONAL_INDEMNITY');
+  });
+
+  it('normalizes Hebrew aliases', () => {
+    expect(normalizePolicyType('צד ג\'')).toBe('GENERAL_LIABILITY');
+    expect(normalizePolicyType('ביטוח קבלנים')).toBe('CONTRACTOR_ALL_RISKS');
+  });
+
+  it('normalizes spaced English to underscored uppercase', () => {
+    expect(normalizePolicyType('General Liability')).toBe('GENERAL_LIABILITY');
+    expect(normalizePolicyType('Employer Liability')).toBe('EMPLOYER_LIABILITY');
+  });
+
+  it('normalizes partial English keywords', () => {
+    expect(normalizePolicyType('Third Party Liability')).toBe('GENERAL_LIABILITY');
+    expect(normalizePolicyType('employer insurance')).toBe('EMPLOYER_LIABILITY');
+    expect(normalizePolicyType('professional liability')).toBe('PROFESSIONAL_INDEMNITY');
+    expect(normalizePolicyType('cyber risk')).toBe('CYBER_LIABILITY');
+  });
+
+  it('handles undefined/empty input', () => {
+    expect(normalizePolicyType(undefined)).toBe('UNKNOWN');
+    expect(normalizePolicyType('')).toBe('UNKNOWN');
   });
 });

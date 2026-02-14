@@ -143,6 +143,53 @@ const POLICY_TYPES = [
   },
 ];
 
+// Normalize a policyType string from Vision/OCR to our standard enum values
+export function normalizePolicyType(raw: string | undefined): string {
+  if (!raw) return 'UNKNOWN';
+
+  // Already in our enum format
+  const exactMatch = POLICY_TYPES.find(pt => pt.en === raw);
+  if (exactMatch) return exactMatch.en;
+
+  // Try uppercase with underscores (e.g., "General Liability" → "GENERAL_LIABILITY")
+  const upper = raw.toUpperCase().replace(/\s+/g, '_');
+  const upperMatch = POLICY_TYPES.find(pt => pt.en === upper);
+  if (upperMatch) return upperMatch.en;
+
+  // Try matching by Hebrew name or alias
+  for (const pt of POLICY_TYPES) {
+    const allPatterns = [pt.he, ...pt.aliases];
+    for (const pattern of allPatterns) {
+      if (raw.includes(pattern) || pattern.includes(raw)) {
+        return pt.en;
+      }
+    }
+  }
+
+  // Try partial English matching (e.g., "employer" → EMPLOYER_LIABILITY)
+  const lower = raw.toLowerCase();
+  const partialMap: Record<string, string> = {
+    'general': 'GENERAL_LIABILITY',
+    'third party': 'GENERAL_LIABILITY',
+    'employer': 'EMPLOYER_LIABILITY',
+    'professional': 'PROFESSIONAL_INDEMNITY',
+    'contractor': 'CONTRACTOR_ALL_RISKS',
+    'product': 'PRODUCT_LIABILITY',
+    'property': 'PROPERTY',
+    'car': 'CAR_THIRD_PARTY',
+    'vehicle': 'CAR_THIRD_PARTY',
+    'compulsory': 'CAR_COMPULSORY',
+    'cyber': 'CYBER_LIABILITY',
+    'd&o': 'D_AND_O',
+    'director': 'D_AND_O',
+  };
+  for (const [keyword, policyType] of Object.entries(partialMap)) {
+    if (lower.includes(keyword)) return policyType;
+  }
+
+  return raw; // Return as-is if no match found
+}
+
 export class OcrService {
   // Extract data from a PDF buffer — Vision-first with text fallback
   async extractFromPdf(pdfBuffer: Buffer, fileName: string): Promise<ExtractedCertificateData> {
@@ -285,9 +332,11 @@ If a field is not present in the document, omit it from the JSON. Return ONLY va
         policies: (parsed.policies || []).map((p: Record<string, unknown>) => {
           const perPeriod = typeof p.coverageLimitPerPeriod === 'number' ? p.coverageLimitPerPeriod : undefined;
           const perOccurrence = typeof p.coverageLimitPerOccurrence === 'number' ? p.coverageLimitPerOccurrence : undefined;
+          const normalizedType = normalizePolicyType(p.policyType as string | undefined);
+          const typeInfo = POLICY_TYPES.find(pt => pt.en === normalizedType);
           return {
-            policyType: p.policyType as string,
-            policyTypeHe: p.policyTypeHe as string,
+            policyType: normalizedType,
+            policyTypeHe: (p.policyTypeHe as string) || typeInfo?.he || normalizedType,
             policyNumber: p.policyNumber as string | undefined,
             coverageLimitPerPeriod: perPeriod,
             coverageLimitPerOccurrence: perOccurrence,
