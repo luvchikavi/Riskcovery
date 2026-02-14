@@ -2,6 +2,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 
 import { knowledgeBaseService } from './knowledge-base.service.js';
+import { requireAuth } from '../../../plugins/auth.js';
 
 export const knowledgeBaseRoutes: FastifyPluginAsync = async (fastify) => {
   // Get all sectors
@@ -33,7 +34,7 @@ export const knowledgeBaseRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Create/update knowledge base entry (admin only)
-  fastify.post('/', async (request, reply) => {
+  fastify.post('/', { preHandler: [requireAuth] }, async (request, reply) => {
     const data = request.body as Parameters<typeof knowledgeBaseService.upsert>[0];
     const entry = await knowledgeBaseService.upsert(data);
     return reply.status(201).send({ success: true, data: entry });
@@ -42,6 +43,7 @@ export const knowledgeBaseRoutes: FastifyPluginAsync = async (fastify) => {
   // Delete knowledge base entry (admin only)
   fastify.delete<{ Params: { sector: string; policyType: string } }>(
     '/:sector/:policyType',
+    { preHandler: [requireAuth] },
     async (request, reply) => {
       const deleted = await knowledgeBaseService.delete(
         request.params.sector,

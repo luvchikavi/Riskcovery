@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { questionnaireService } from './questionnaire.service.js';
 import type { QuestionnaireAnswers } from './questionnaire.types.js';
+import { requireAuth } from '../../../plugins/auth.js';
 
 const saveAnswersSchema = z.object({
   clientId: z.string().uuid(),
@@ -31,7 +32,7 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Save questionnaire answers
-  fastify.post('/', async (request, reply) => {
+  fastify.post('/', { preHandler: [requireAuth] }, async (request, reply) => {
     const { clientId, answers, status } = saveAnswersSchema.parse(request.body);
     const questionnaire = await questionnaireService.saveAnswers(
       clientId,
@@ -42,7 +43,7 @@ export const questionnaireRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Update questionnaire answers
-  fastify.put<{ Params: { id: string } }>('/:id', async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const { answers, status } = request.body as { answers: QuestionnaireAnswers; status?: string };
     const questionnaire = await questionnaireService.updateAnswers(
       request.params.id,
