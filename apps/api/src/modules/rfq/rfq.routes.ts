@@ -7,6 +7,7 @@ import { questionnaireRoutes } from './questionnaire/questionnaire.routes.js';
 import { documentRoutes } from './documents/document.routes.js';
 import { adminRoutes } from './admin/admin.routes.js';
 import { productRoutes } from './products/product.routes.js';
+import { statsRoutes } from './stats/stats.routes.js';
 
 export const rfqRoutes: FastifyPluginAsync = async (fastify) => {
   // Register all RFQ sub-routes
@@ -16,4 +17,5 @@ export const rfqRoutes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(documentRoutes, { prefix: '/documents' });
   await fastify.register(adminRoutes, { prefix: '/admin' });
   await fastify.register(productRoutes, { prefix: '/products' });
+  await fastify.register(statsRoutes, { prefix: '/stats' });
 };

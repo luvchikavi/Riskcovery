@@ -193,8 +193,27 @@ class ApiClient {
 
 export const api = new ApiClient(API_BASE_URL);
 
+// Dashboard stats type
+export interface DashboardStats {
+  totalClients: number;
+  totalQuestionnaires: number;
+  totalDocuments: number;
+  recentClients: Array<{
+    id: string;
+    name: string;
+    sector: string;
+    contactEmail: string | null;
+    createdAt: string;
+    _count: { questionnaires: number; documents: number };
+  }>;
+  clientsBySector: Record<string, number>;
+}
+
 // RFQ-specific API functions
 export const rfqApi = {
+  // Dashboard stats
+  stats: () => api.get<DashboardStats>('/rfq/stats'),
+
   // Clients
   clients: {
     list: (params?: { page?: number; pageSize?: number; sector?: string; search?: string }) => {

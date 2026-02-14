@@ -24,66 +24,57 @@ import {
   Alert,
   Breadcrumbs,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { rfqApi, type Client } from '@/lib/api';
+import { rfqApi } from '@/lib/api';
 import { SECTORS_MAP } from '@/lib/constants';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useSnackbar } from '@/components/SnackbarProvider';
+import { useState } from 'react';
 
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const qc = useQueryClient();
   const id = params.id as string;
+  const { showSuccess, showError } = useSnackbar();
 
-  const [client, setClient] = useState<Client | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    async function loadClient() {
-      try {
-        const response = await rfqApi.clients.get(id);
-        if (response.success && response.data) {
-          setClient(response.data);
-        } else {
-          setError('Client not found');
-        }
-      } catch (err) {
-        setError('Failed to load client');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadClient();
-  }, [id]);
+  const { data: client, isLoading, error } = useQuery({
+    queryKey: ['rfq', 'clients', id],
+    queryFn: async () => {
+      const res = await rfqApi.clients.get(id);
+      if (!res.success || !res.data) throw new Error('Client not found');
+      return res.data;
+    },
+  });
 
   const handleDelete = async () => {
     setDeleting(true);
     try {
       const response = await rfqApi.clients.delete(id);
       if (response.success) {
+        showSuccess('הלקוח נמחק בהצלחה');
+        qc.invalidateQueries({ queryKey: ['rfq', 'clients'] });
+        qc.invalidateQueries({ queryKey: ['rfq', 'stats'] });
         router.push('/rfq/clients');
       } else {
-        setError('Failed to delete client');
+        showError('Failed to delete client');
       }
-    } catch (err) {
-      setError('Failed to delete client');
+    } catch {
+      showError('Failed to delete client');
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
         <CircularProgress />
@@ -95,7 +86,7 @@ export default function ClientDetailPage() {
     return (
       <Box>
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error || 'Client not found'}
+          {error?.message || 'Client not found'}
         </Alert>
         <Button component={Link} href="/rfq/clients" variant="outlined" startIcon={<ArrowBackIcon />}>
           חזרה לרשימה
@@ -180,41 +171,25 @@ export default function ClientDetailPage() {
               <Divider sx={{ my: 2 }} />
               <Box display="flex" flexDirection="column" gap={2}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    שם החברה
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">שם החברה</Typography>
                   <Typography>{client.name}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    ח.פ / ע.מ
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">ח.פ / ע.מ</Typography>
                   <Typography>{client.companyId || '-'}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    ענף
-                  </Typography>
-                  <Typography>
-                    {sector.label} ({sector.labelEn})
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">ענף</Typography>
+                  <Typography>{sector.label} ({sector.labelEn})</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    מספר עובדים
-                  </Typography>
-                  <Typography>
-                    {client.employeeCount?.toLocaleString() || '-'}
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">מספר עובדים</Typography>
+                  <Typography>{client.employeeCount?.toLocaleString() || '-'}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    מחזור שנתי
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">מחזור שנתי</Typography>
                   <Typography>
-                    {client.annualRevenue
-                      ? `₪${client.annualRevenue.toLocaleString()}`
-                      : '-'}
+                    {client.annualRevenue ? `₪${client.annualRevenue.toLocaleString()}` : '-'}
                   </Typography>
                 </Box>
               </Box>
@@ -233,47 +208,35 @@ export default function ClientDetailPage() {
               <Divider sx={{ my: 2 }} />
               <Box display="flex" flexDirection="column" gap={2}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    שם איש קשר
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">שם איש קשר</Typography>
                   <Typography>{client.contactName || '-'}</Typography>
                 </Box>
                 <Box display="flex" alignItems="center" gap={1}>
                   <EmailIcon fontSize="small" color="action" />
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      דוא&quot;ל
-                    </Typography>
+                    <Typography variant="body2" color="text.secondary">דוא&quot;ל</Typography>
                     <Typography>
                       {client.contactEmail ? (
                         <a href={`mailto:${client.contactEmail}`}>{client.contactEmail}</a>
-                      ) : (
-                        '-'
-                      )}
+                      ) : '-'}
                     </Typography>
                   </Box>
                 </Box>
                 <Box display="flex" alignItems="center" gap={1}>
                   <PhoneIcon fontSize="small" color="action" />
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      טלפון
-                    </Typography>
+                    <Typography variant="body2" color="text.secondary">טלפון</Typography>
                     <Typography>
                       {client.contactPhone ? (
                         <a href={`tel:${client.contactPhone}`}>{client.contactPhone}</a>
-                      ) : (
-                        '-'
-                      )}
+                      ) : '-'}
                     </Typography>
                   </Box>
                 </Box>
                 <Box display="flex" alignItems="center" gap={1}>
                   <LocationIcon fontSize="small" color="action" />
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      כתובת
-                    </Typography>
+                    <Typography variant="body2" color="text.secondary">כתובת</Typography>
                     <Typography>{client.address || '-'}</Typography>
                   </Box>
                 </Box>
@@ -286,9 +249,7 @@ export default function ClientDetailPage() {
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                סטטיסטיקה
-              </Typography>
+              <Typography variant="h6" gutterBottom>סטטיסטיקה</Typography>
               <Divider sx={{ my: 2 }} />
               <Grid container spacing={3}>
                 <Grid item xs={6} sm={3}>
@@ -329,24 +290,15 @@ export default function ClientDetailPage() {
         </Grid>
       </Grid>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>מחיקת לקוח</DialogTitle>
-        <DialogContent>
-          <Typography>
-            האם אתה בטוח שברצונך למחוק את הלקוח &quot;{client.name}&quot;?
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
-            פעולה זו תמחק גם את כל השאלונים והמסמכים המשויכים ללקוח זה.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>ביטול</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
-            {deleting ? 'מוחק...' : 'מחק'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="מחיקת לקוח"
+        message={`האם למחוק את הלקוח "${client.name}"? פעולה זו תמחק גם את כל השאלונים והמסמכים המשויכים.`}
+        confirmLabel={deleting ? 'מוחק...' : 'מחק'}
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
     </Box>
   );
 }
