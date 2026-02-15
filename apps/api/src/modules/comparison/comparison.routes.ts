@@ -6,6 +6,7 @@ import { comparisonDocumentService } from './documents/document.service.js';
 import { ocrService, ENDORSEMENT_CODES } from './documents/ocr.service.js';
 import { requirementsService } from './requirements/requirements.service.js';
 import { analysisService } from './analysis/analysis.service.js';
+import { exportService } from './export/export.service.js';
 import { requireAuth } from '../../plugins/auth.js';
 
 // Schemas
@@ -461,5 +462,38 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     return { success: true, data: { deleted: true } };
+  });
+
+  // Export analysis to Excel
+  fastify.post<{ Params: { id: string } }>('/analyses/:id/export', { preHandler: [requireAuth] }, async (request, reply) => {
+    const { format } = (request.body as { format?: string }) || {};
+
+    if (format !== 'xlsx') {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'INVALID_FORMAT', message: 'Only xlsx format is supported' },
+      });
+    }
+
+    try {
+      const buffer = await exportService.generateExcel(request.params.id);
+
+      return reply
+        .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        .header('Content-Disposition', `attachment; filename="compliance-report-${request.params.id}.xlsx"`)
+        .send(buffer);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Export failed';
+      if (message === 'Analysis not found') {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message },
+        });
+      }
+      return reply.status(500).send({
+        success: false,
+        error: { code: 'EXPORT_FAILED', message },
+      });
+    }
   });
 };

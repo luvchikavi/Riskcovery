@@ -11,6 +11,8 @@ import {
   Delete as DeleteIcon,
   Assignment as TemplateIcon,
   OpenInNew as OpenInNewIcon,
+  Download as DownloadIcon,
+  Print as PrintIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -130,6 +132,7 @@ export default function AnalysisDetailPage() {
   const [template, setTemplate] = useState<ComparisonTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadAnalysis();
@@ -169,6 +172,26 @@ export default function AnalysisDetailPage() {
       router.push('/comparison/analyze');
     } catch {
       showError('שגיאה במחיקת הניתוח');
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await comparisonApi.analysis.export(analysisId, 'xlsx');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `compliance-report-${analysisId}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showSuccess('הקובץ הורד בהצלחה');
+    } catch {
+      showError('שגיאה בייצוא הקובץ');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -230,6 +253,21 @@ export default function AnalysisDetailPage() {
           onClick={loadAnalysis}
         >
           רענן
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          {exporting ? 'מייצא...' : 'ייצוא Excel'}
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => window.open(`/comparison/${analysisId}/print`, '_blank')}
+        >
+          הדפסה
         </Button>
         <Button
           variant="outlined"

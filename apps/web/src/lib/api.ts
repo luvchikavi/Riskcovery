@@ -1100,5 +1100,7 @@ export const comparisonApi = {
     getForDocument: (documentId: string) =>
       api.get<ComparisonAnalysis[]>(`/comparison/documents/${documentId}/analyses`),
     delete: (id: string) => api.delete(`/comparison/analyses/${id}`),
+    export: (id: string, format: 'xlsx') =>
+      api.downloadFile(`/comparison/analyses/${id}/export`, { format }),
   },
 };

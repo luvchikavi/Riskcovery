@@ -10,6 +10,7 @@ import {
   OpenInNew as OpenInNewIcon,
   ExpandMore as CollapseIcon,
   Assignment as TemplateIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -255,6 +256,7 @@ export default function AnalyzePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<ComparisonAnalysis | null>(null);
+  const [exporting, setExporting] = useState(false);
   const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
@@ -382,6 +384,27 @@ export default function AnalyzePage() {
       console.error(err);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!analysisResult?.id) return;
+    setExporting(true);
+    try {
+      const blob = await comparisonApi.analysis.export(analysisResult.id, 'xlsx');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `compliance-report-${analysisResult.id}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showSuccess('הקובץ הורד בהצלחה');
+    } catch {
+      showError('שגיאה בייצוא הקובץ');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -658,12 +681,23 @@ export default function AnalyzePage() {
                 <Typography variant="h6" fontWeight="bold">
                   תוצאות בדיקה
                 </Typography>
-                <Chip
-                  icon={getStatusIcon(analysisResult.overallStatus)}
-                  label={getStatusLabel(analysisResult.overallStatus)}
-                  color={getStatusColor(analysisResult.overallStatus) as 'success' | 'warning' | 'error' | 'default'}
-                  variant="outlined"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExport}
+                    disabled={exporting}
+                  >
+                    {exporting ? 'מייצא...' : 'ייצוא Excel'}
+                  </Button>
+                  <Chip
+                    icon={getStatusIcon(analysisResult.overallStatus)}
+                    label={getStatusLabel(analysisResult.overallStatus)}
+                    color={getStatusColor(analysisResult.overallStatus) as 'success' | 'warning' | 'error' | 'default'}
+                    variant="outlined"
+                  />
+                </Box>
               </Box>
 
               {/* Score */}

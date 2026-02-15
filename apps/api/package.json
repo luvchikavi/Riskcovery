@@ -19,6 +19,7 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "db:seed:templates": "tsx prisma/seed-templates.ts",
+    "db:seed:local-authority": "tsx prisma/seed-local-authority-templates.ts",
     "db:seed:products": "tsx prisma/seed-insurance-products.ts",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -31,6 +32,7 @@
     "@prisma/client": "^5.9.1",
     "@riscovery/types": "workspace:*",
     "dotenv": "^16.4.1",
+    "exceljs": "^4.4.0",
     "fastify": "^4.26.0",
     "fastify-plugin": "^4.5.1",
     "ioredis": "^5.3.2",
