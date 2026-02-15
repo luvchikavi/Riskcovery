@@ -331,6 +331,7 @@ model RfqClient {
   contactName    String?  @map("contact_name")
   contactEmail   String?  @map("contact_email")
   contactPhone   String?  @map("contact_phone")
+  address        String?
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
