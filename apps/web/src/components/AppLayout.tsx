@@ -378,14 +378,102 @@ export function AppLayout({ children }: { children: ReactNode }) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, md: 3.5 },
+          display: 'flex',
+          flexDirection: 'column',
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           mt: { xs: 8, md: 0 },
           bgcolor: colors.slate50,
           minHeight: '100vh',
         }}
       >
-        {children}
+        <Box sx={{ flex: 1, p: { xs: 2, md: 3.5 } }}>
+          {children}
+        </Box>
+
+        {/* Footer — Drishti Consulting */}
+        <Box
+          component="footer"
+          sx={{
+            borderTop: `1px solid ${colors.slate200}`,
+            bgcolor: '#FFFFFF',
+            py: 2.5,
+            px: { xs: 2, md: 3.5 },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            {/* Left: Drishti branding */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/drishti-logo.svg"
+                alt="Drishti Consulting"
+                width={28}
+                height={28}
+              />
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: 'var(--font-inter), "Inter", sans-serif',
+                    fontWeight: 600,
+                    fontSize: '0.8125rem',
+                    color: colors.slate700,
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  Drishti Consulting
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: '0.6875rem',
+                    color: colors.slate400,
+                    fontStyle: 'italic',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  Focused Vision. Precise Execution.
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Right: links & copyright */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography
+                component="a"
+                href="https://drishticonsulting.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  fontSize: '0.75rem',
+                  color: colors.slate400,
+                  textDecoration: 'none',
+                  '&:hover': { color: '#6366f1' },
+                  transition: 'color 0.15s',
+                }}
+              >
+                drishticonsulting.com
+              </Typography>
+              <Typography
+                sx={{ fontSize: '0.75rem', color: colors.slate300 }}
+              >
+                |
+              </Typography>
+              <Typography
+                sx={{ fontSize: '0.75rem', color: colors.slate400 }}
+              >
+                &copy; {new Date().getFullYear()} Drishti Consulting
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
