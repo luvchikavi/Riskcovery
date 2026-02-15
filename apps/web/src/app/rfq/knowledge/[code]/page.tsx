@@ -5,6 +5,8 @@ import {
   Extension as ExtensionIcon,
   Block as BlockIcon,
   Link as LinkIcon,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
 } from '@mui/icons-material';
 import {
   Box,
@@ -16,6 +18,8 @@ import {
   CircularProgress,
   Alert,
   Breadcrumbs,
+  Collapse,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -29,7 +33,7 @@ import {
 } from '@mui/material';
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   rfqApi,
@@ -63,6 +67,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [expandedExt, setExpandedExt] = useState<string | null>(null);
+  const [expandedExcl, setExpandedExcl] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -223,6 +229,7 @@ export default function ProductDetailPage() {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
+                        <TableCell padding="checkbox" />
                         <TableCell>קוד</TableCell>
                         <TableCell>שם (עברית)</TableCell>
                         <TableCell>שם (אנגלית)</TableCell>
@@ -231,27 +238,75 @@ export default function ProductDetailPage() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {chapterExts.map((ext) => (
-                        <TableRow key={ext.id} hover>
-                          <TableCell>
-                            <Chip label={ext.code} size="small" variant="outlined" />
-                          </TableCell>
-                          <TableCell>
-                            <Typography fontWeight="medium">{ext.nameHe}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="text.secondary">{ext.nameEn}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            {ext.defaultLimit ? `₪${Number(ext.defaultLimit).toLocaleString()}` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {ext.isFirstLoss && (
-                              <Chip label="First Loss" size="small" color="info" variant="outlined" />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {chapterExts.map((ext) => {
+                        const isExpanded = expandedExt === ext.id;
+                        return (
+                          <React.Fragment key={ext.id}>
+                            <TableRow
+                              hover
+                              onClick={() => setExpandedExt(isExpanded ? null : ext.id)}
+                              sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
+                            >
+                              <TableCell padding="checkbox">
+                                <IconButton size="small">
+                                  {isExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                                </IconButton>
+                              </TableCell>
+                              <TableCell>
+                                <Chip label={ext.code} size="small" variant="outlined" />
+                              </TableCell>
+                              <TableCell>
+                                <Typography fontWeight="medium">{ext.nameHe}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" color="text.secondary">{ext.nameEn}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                {ext.defaultLimit ? `₪${Number(ext.defaultLimit).toLocaleString()}` : '-'}
+                              </TableCell>
+                              <TableCell>
+                                {ext.isFirstLoss && (
+                                  <Chip label="First Loss" size="small" color="info" variant="outlined" />
+                                )}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell colSpan={6} sx={{ py: 0, px: 0 }}>
+                                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                  <Box sx={{ py: 2, px: 3, bgcolor: 'grey.50', borderInlineStart: '4px solid', borderColor: 'primary.main' }}>
+                                    <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                                      תיאור
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+                                      {ext.description || 'אין תיאור זמין'}
+                                    </Typography>
+                                    <Box display="flex" gap={4} flexWrap="wrap">
+                                      {ext.chapterCode && (
+                                        <Box>
+                                          <Typography variant="caption" color="text.secondary">פרק</Typography>
+                                          <Typography variant="body2">{ext.chapterCode}</Typography>
+                                        </Box>
+                                      )}
+                                      {ext.defaultLimit && (
+                                        <Box>
+                                          <Typography variant="caption" color="text.secondary">גבול ברירת מחדל</Typography>
+                                          <Typography variant="body2">₪{Number(ext.defaultLimit).toLocaleString()}</Typography>
+                                        </Box>
+                                      )}
+                                      <Box>
+                                        <Typography variant="caption" color="text.secondary">סוג</Typography>
+                                        <Typography variant="body2">
+                                          {ext.isFirstLoss ? 'First Loss – כיסוי עד גבול הביטוח ללא יחס ביטוח חסר' : 'כיסוי רגיל'}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Box>
+                                </Collapse>
+                              </TableCell>
+                            </TableRow>
+                          </React.Fragment>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -273,6 +328,7 @@ export default function ProductDetailPage() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
+                    <TableCell padding="checkbox" />
                     <TableCell>חריג (עברית)</TableCell>
                     <TableCell>חריג (אנגלית)</TableCell>
                     <TableCell>סוג</TableCell>
@@ -280,27 +336,69 @@ export default function ProductDetailPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {exclusions.map((excl) => (
-                    <TableRow key={excl.id} hover>
-                      <TableCell>
-                        <Typography fontWeight="medium">{excl.nameHe}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">{excl.nameEn}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={excl.isGeneral ? 'כללי' : 'ספציפי'}
-                          size="small"
-                          color={excl.isGeneral ? 'default' : 'info'}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {excl.chapterCode || '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {exclusions.map((excl) => {
+                    const isExpanded = expandedExcl === excl.id;
+                    return (
+                      <React.Fragment key={excl.id}>
+                        <TableRow
+                          hover
+                          onClick={() => setExpandedExcl(isExpanded ? null : excl.id)}
+                          sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
+                        >
+                          <TableCell padding="checkbox">
+                            <IconButton size="small">
+                              {isExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                            </IconButton>
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight="medium">{excl.nameHe}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">{excl.nameEn}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={excl.isGeneral ? 'כללי' : 'ספציפי'}
+                              size="small"
+                              color={excl.isGeneral ? 'default' : 'info'}
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {excl.chapterCode || '-'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell colSpan={5} sx={{ py: 0, px: 0 }}>
+                            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                              <Box sx={{ py: 2, px: 3, bgcolor: 'grey.50', borderInlineStart: '4px solid', borderColor: 'error.main' }}>
+                                <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                                  תיאור
+                                </Typography>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+                                  {excl.description || 'אין תיאור זמין'}
+                                </Typography>
+                                <Box display="flex" gap={4} flexWrap="wrap">
+                                  <Box>
+                                    <Typography variant="caption" color="text.secondary">סוג חריג</Typography>
+                                    <Typography variant="body2">
+                                      {excl.isGeneral ? 'כללי – חל על כל הפוליסה' : 'ספציפי – חל על פרק או כיסוי מסוים'}
+                                    </Typography>
+                                  </Box>
+                                  {excl.chapterCode && (
+                                    <Box>
+                                      <Typography variant="caption" color="text.secondary">פרק</Typography>
+                                      <Typography variant="body2">{excl.chapterCode}</Typography>
+                                    </Box>
+                                  )}
+                                </Box>
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
