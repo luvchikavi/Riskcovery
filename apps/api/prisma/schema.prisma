@@ -45,6 +45,7 @@ model User {
   tasks        VerificationTask[]
   auditLogs    AuditLog[]
 
+  @@index([organizationId])
   @@map("users")
 }
 
@@ -116,6 +117,7 @@ model Vendor {
   requirements      VendorRequirement[]
   complianceResults ComplianceResult[]
 
+  @@index([organizationId])
   @@map("vendors")
 }
 
@@ -149,6 +151,7 @@ model Document {
   coverages ExtractedCoverage[]
   tasks     VerificationTask[]
 
+  @@index([vendorId])
   @@map("documents")
 }
 
@@ -339,6 +342,7 @@ model RfqClient {
   questionnaires RfqQuestionnaire[]
   documents      RfqDocument[]
 
+  @@index([organizationId])
   @@map("rfq_clients")
 }
 
@@ -352,6 +356,7 @@ model RfqQuestionnaire {
 
   client RfqClient @relation(fields: [clientId], references: [id])
 
+  @@index([clientId])
   @@map("rfq_questionnaires")
 }
 
@@ -365,6 +370,7 @@ model RfqDocument {
 
   client RfqClient @relation(fields: [clientId], references: [id])
 
+  @@index([clientId])
   @@map("rfq_documents")
 }
 
@@ -404,6 +410,9 @@ model ComparisonDocument {
 
   comparisons ComparisonAnalysis[]
 
+  @@index([vendorId])
+  @@index([clientId])
+  @@index([status])
   @@map("comparison_documents")
 }
 

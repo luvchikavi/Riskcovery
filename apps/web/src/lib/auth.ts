@@ -1,8 +1,8 @@
-import type { NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import jwt from 'jsonwebtoken';
+import type { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 
 import { prisma } from './prisma';
 
@@ -14,7 +14,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
+    })
   );
 }
 
@@ -58,7 +58,7 @@ if (process.env.NODE_ENV !== 'production') {
           image: user.image,
         };
       },
-    }),
+    })
   );
 }
 
@@ -67,6 +67,8 @@ export const authOptions: NextAuthOptions = {
   providers,
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // Refresh session token every 24 hours
   },
   pages: {
     signIn: '/auth/signin',
@@ -99,12 +101,12 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Mint or refresh the API token if missing or expiring within 1 hour
+      // Mint or refresh the API token if missing or expiring within 4 hours
       let needsRefresh = !token.apiToken;
       if (!needsRefresh && token.apiToken) {
         try {
           const decoded = jwt.decode(token.apiToken as string) as { exp?: number } | null;
-          if (!decoded?.exp || decoded.exp * 1000 - Date.now() < 60 * 60 * 1000) {
+          if (!decoded?.exp || decoded.exp * 1000 - Date.now() < 4 * 60 * 60 * 1000) {
             needsRefresh = true;
           }
         } catch {

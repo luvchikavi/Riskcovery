@@ -1,17 +1,16 @@
-// @ts-nocheck
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { env } from './config/env.js';
-import jwtPlugin from './plugins/jwt.js';
-import authPlugin from './plugins/auth.js';
-import { healthRoutes } from './routes/health.js';
-import { rfqRoutes } from './modules/rfq/rfq.routes.js';
+import { disconnectPrisma } from './lib/prisma.js';
 import { comparisonRoutes } from './modules/comparison/comparison.routes.js';
 import { insurerRoutes } from './modules/insurer/insurer.routes.js';
-import { disconnectPrisma } from './lib/prisma.js';
+import { rfqRoutes } from './modules/rfq/rfq.routes.js';
+import authPlugin from './plugins/auth.js';
+import jwtPlugin from './plugins/jwt.js';
+import { healthRoutes } from './routes/health.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -30,6 +29,7 @@ export async function buildApp() {
         : true,
     requestIdHeader: 'x-request-id',
     requestIdLogLabel: 'requestId',
+    bodyLimit: 10 * 1024 * 1024, // 10 MB max body size
   });
 
   // Security plugins
@@ -61,7 +61,9 @@ export async function buildApp() {
   app.setErrorHandler((error, request, reply) => {
     // Zod validation errors → 400 with field details
     if (error.name === 'ZodError' && 'issues' in error) {
-      const issues = (error as unknown as { issues: Array<{ path: (string | number)[]; message: string }> }).issues;
+      const issues = (
+        error as unknown as { issues: Array<{ path: (string | number)[]; message: string }> }
+      ).issues;
       const details: Record<string, string> = {};
       for (const issue of issues) {
         details[issue.path.join('.')] = issue.message;

@@ -1,20 +1,32 @@
-// @ts-nocheck
 import type { FastifyPluginAsync } from 'fastify';
-import { z } from 'zod';
 import mammoth from 'mammoth';
+import { z } from 'zod';
+
+import { analysisService } from './analysis/analysis.service.js';
 import { comparisonDocumentService } from './documents/document.service.js';
 import { ocrService, ENDORSEMENT_CODES } from './documents/ocr.service.js';
-import { requirementsService } from './requirements/requirements.service.js';
-import { analysisService } from './analysis/analysis.service.js';
 import { exportService } from './export/export.service.js';
+import { requirementsService } from './requirements/requirements.service.js';
+import type { CreateTemplateInput } from './requirements/requirements.service.js';
 import { requireAuth } from '../../plugins/auth.js';
 
 // Schemas
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/tiff',
+  'image/webp',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+] as const;
+
 const uploadDocumentSchema = z.object({
   fileName: z.string(),
   originalName: z.string(),
-  mimeType: z.string(),
-  size: z.number(),
+  mimeType: z.enum(ALLOWED_MIME_TYPES, {
+    errorMap: () => ({ message: `Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}` }),
+  }),
+  size: z.number().max(10 * 1024 * 1024, 'File size must be under 10 MB'),
   content: z.string(), // base64 encoded
   vendorId: z.string().uuid().optional(),
   clientId: z.string().uuid().optional(),
@@ -88,18 +100,22 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get document by ID
-  fastify.get<{ Params: { id: string } }>('/documents/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const document = await comparisonDocumentService.getDocument(request.params.id);
+  fastify.get<{ Params: { id: string } }>(
+    '/documents/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const document = await comparisonDocumentService.getDocument(request.params.id);
 
-    if (!document) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Document not found' },
-      });
+      if (!document) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Document not found' },
+        });
+      }
+
+      return { success: true, data: document };
     }
-
-    return { success: true, data: document };
-  });
+  );
 
   // List documents
   fastify.get('/documents', { preHandler: [requireAuth] }, async (request) => {
@@ -119,73 +135,78 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Process document (run OCR)
-  fastify.post<{ Params: { id: string } }>('/documents/:id/process', { preHandler: [requireAuth] }, async (request, reply) => {
-    const document = await comparisonDocumentService.getDocument(request.params.id);
+  fastify.post<{ Params: { id: string } }>(
+    '/documents/:id/process',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const document = await comparisonDocumentService.getDocument(request.params.id);
 
-    if (!document) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Document not found' },
-      });
-    }
-
-    // Update status to processing
-    await comparisonDocumentService.updateStatus(document.id, 'processing');
-
-    try {
-      let extractedData;
-
-      if (document.mimeType.startsWith('image/') && document.fileContent) {
-        // Image file — route directly to Vision OCR
-        extractedData = await ocrService.extractFromImage(
-          document.fileContent,
-          document.mimeType
-        );
-      } else {
-        // PDF or fallback — use pdf-parse with Vision fallback for scanned PDFs
-        const pdfBuffer = document.fileContent
-          ? Buffer.from(document.fileContent, 'base64')
-          : Buffer.from('mock');
-
-        extractedData = await ocrService.extractFromPdf(
-          pdfBuffer,
-          document.originalName
-        );
+      if (!document) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Document not found' },
+        });
       }
 
-      // Update document with extracted data
-      const updatedDocument = await comparisonDocumentService.updateStatus(
-        document.id,
-        'processed',
-        extractedData
-      );
+      // Update status to processing
+      await comparisonDocumentService.updateStatus(document.id, 'processing');
 
-      return { success: true, data: updatedDocument };
-    } catch (error) {
-      await comparisonDocumentService.updateStatus(document.id, 'failed');
-      throw error;
+      try {
+        let extractedData;
+
+        if (document.mimeType.startsWith('image/') && document.fileContent) {
+          // Image file — route directly to Vision OCR
+          extractedData = await ocrService.extractFromImage(
+            document.fileContent,
+            document.mimeType
+          );
+        } else {
+          // PDF or fallback — use pdf-parse with Vision fallback for scanned PDFs
+          const pdfBuffer = document.fileContent
+            ? Buffer.from(document.fileContent, 'base64')
+            : Buffer.from('mock');
+
+          extractedData = await ocrService.extractFromPdf(pdfBuffer, document.originalName);
+        }
+
+        // Update document with extracted data
+        const updatedDocument = await comparisonDocumentService.updateStatus(
+          document.id,
+          'processed',
+          extractedData
+        );
+
+        return { success: true, data: updatedDocument };
+      } catch (error) {
+        await comparisonDocumentService.updateStatus(document.id, 'failed');
+        throw error;
+      }
     }
-  });
+  );
 
   // Delete document
-  fastify.delete<{ Params: { id: string } }>('/documents/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const deleted = await comparisonDocumentService.deleteDocument(request.params.id);
+  fastify.delete<{ Params: { id: string } }>(
+    '/documents/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const deleted = await comparisonDocumentService.deleteDocument(request.params.id);
 
-    if (!deleted) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Document not found' },
-      });
+      if (!deleted) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Document not found' },
+        });
+      }
+
+      return { success: true, data: { deleted: true } };
     }
-
-    return { success: true, data: { deleted: true } };
-  });
+  );
 
   // ==================== TEMPLATES ====================
 
   // Create template
   fastify.post('/templates', { preHandler: [requireAuth] }, async (request, reply) => {
-    const data = createTemplateSchema.parse(request.body) as import('./requirements/requirements.service.js').CreateTemplateInput;
+    const data = createTemplateSchema.parse(request.body) as CreateTemplateInput;
     const template = await requirementsService.createTemplate(data);
     return reply.status(201).send({ success: true, data: template });
   });
@@ -206,47 +227,59 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get template by ID
-  fastify.get<{ Params: { id: string } }>('/templates/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const template = await requirementsService.getTemplate(request.params.id);
+  fastify.get<{ Params: { id: string } }>(
+    '/templates/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const template = await requirementsService.getTemplate(request.params.id);
 
-    if (!template) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Template not found' },
-      });
+      if (!template) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Template not found' },
+        });
+      }
+
+      return { success: true, data: template };
     }
-
-    return { success: true, data: template };
-  });
+  );
 
   // Update template
-  fastify.patch<{ Params: { id: string } }>('/templates/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const data = request.body as Partial<z.infer<typeof createTemplateSchema>>;
-    const template = await requirementsService.updateTemplate(request.params.id, data);
+  fastify.patch<{ Params: { id: string } }>(
+    '/templates/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const data = request.body as Partial<z.infer<typeof createTemplateSchema>>;
+      const template = await requirementsService.updateTemplate(request.params.id, data);
 
-    if (!template) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Template not found' },
-      });
+      if (!template) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Template not found' },
+        });
+      }
+
+      return { success: true, data: template };
     }
-
-    return { success: true, data: template };
-  });
+  );
 
   // Delete template
-  fastify.delete<{ Params: { id: string } }>('/templates/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const deleted = await requirementsService.deleteTemplate(request.params.id);
+  fastify.delete<{ Params: { id: string } }>(
+    '/templates/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const deleted = await requirementsService.deleteTemplate(request.params.id);
 
-    if (!deleted) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Template not found' },
-      });
+      if (!deleted) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Template not found' },
+        });
+      }
+
+      return { success: true, data: { deleted: true } };
     }
-
-    return { success: true, data: { deleted: true } };
-  });
+  );
 
   // Import template from DOCX file
   fastify.post('/templates/import-docx', { preHandler: [requireAuth] }, async (request, reply) => {
@@ -265,13 +298,21 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Policy type detection
       const POLICY_TYPE_MAP = [
-        { en: 'GENERAL_LIABILITY', he: 'צד שלישי', aliases: ['צד ג\'', 'צד ג', 'אחריות כלפי צד שלישי'] },
+        {
+          en: 'GENERAL_LIABILITY',
+          he: 'צד שלישי',
+          aliases: ["צד ג'", 'צד ג', 'אחריות כלפי צד שלישי'],
+        },
         { en: 'EMPLOYER_LIABILITY', he: 'חבות מעבידים', aliases: ['אחריות מעבידים'] },
         { en: 'PROFESSIONAL_INDEMNITY', he: 'אחריות מקצועית', aliases: ['ביטוח מקצועי'] },
-        { en: 'CONTRACTOR_ALL_RISKS', he: 'כל הסיכונים עבודות קבלניות', aliases: ['עבודות קבלניות', 'ביטוח קבלנים', 'כל הסיכונים'] },
+        {
+          en: 'CONTRACTOR_ALL_RISKS',
+          he: 'כל הסיכונים עבודות קבלניות',
+          aliases: ['עבודות קבלניות', 'ביטוח קבלנים', 'כל הסיכונים'],
+        },
         { en: 'PRODUCT_LIABILITY', he: 'חבות מוצר', aliases: ['אחריות מוצר'] },
         { en: 'PROPERTY', he: 'ביטוח רכוש', aliases: ['רכוש'] },
-        { en: 'CAR_THIRD_PARTY', he: 'ביטוח רכב צד ג\'', aliases: ['רכב צד שלישי'] },
+        { en: 'CAR_THIRD_PARTY', he: "ביטוח רכב צד ג'", aliases: ['רכב צד שלישי'] },
         { en: 'CAR_COMPULSORY', he: 'ביטוח חובה', aliases: ['חובה רכב'] },
         { en: 'MOTOR_VEHICLE', he: 'ביטוח רכב', aliases: ['רכב'] },
       ];
@@ -341,7 +382,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
 
         // Detect policy wording
         const policyWording = /ביט/i.test(sectionText)
-          ? (sectionText.match(/ביט\s*\d{4}/i)?.[0] || 'ביט')
+          ? sectionText.match(/ביט\s*\d{4}/i)?.[0] || 'ביט'
           : undefined;
 
         // Detect currency
@@ -349,13 +390,13 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
         if (/\$|USD/i.test(sectionText)) currency = 'USD';
         else if (/€|EUR/i.test(sectionText)) currency = 'EUR';
 
-        const hasAdditionalInsured = endorsementCodes.some((c) =>
-          ['317', '318', '319', '320', '321'].includes(c)
-        ) || /מבוטח נוסף/i.test(sectionText);
+        const hasAdditionalInsured =
+          endorsementCodes.some((c) => ['317', '318', '319', '320', '321'].includes(c)) ||
+          /מבוטח נוסף/i.test(sectionText);
 
-        const hasWaiver = endorsementCodes.some((c) =>
-          ['308', '309'].includes(c)
-        ) || /ויתור\s+(?:על\s+)?(?:זכות\s+)?תחלוף/i.test(sectionText);
+        const hasWaiver =
+          endorsementCodes.some((c) => ['308', '309'].includes(c)) ||
+          /ויתור\s+(?:על\s+)?(?:זכות\s+)?תחלוף/i.test(sectionText);
 
         requirements.push({
           policyType: pt.en,
@@ -381,7 +422,9 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
           minimumLimitPerPeriod: 5_000_000,
           minimumLimitPerOccurrence: 5_000_000,
           requiredEndorsements: endorsementCodes,
-          requireAdditionalInsured: endorsementCodes.some((c) => ['317', '318', '319', '320', '321'].includes(c)),
+          requireAdditionalInsured: endorsementCodes.some((c) =>
+            ['317', '318', '319', '320', '321'].includes(c)
+          ),
           requireWaiverSubrogation: endorsementCodes.some((c) => ['308', '309'].includes(c)),
           currency: 'ILS',
           isMandatory: true,
@@ -427,18 +470,22 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get analysis by ID
-  fastify.get<{ Params: { id: string } }>('/analyses/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const analysis = await analysisService.getAnalysis(request.params.id);
+  fastify.get<{ Params: { id: string } }>(
+    '/analyses/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const analysis = await analysisService.getAnalysis(request.params.id);
 
-    if (!analysis) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Analysis not found' },
-      });
+      if (!analysis) {
+        return reply.status(404).send({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Analysis not found' },
+        });
+      }
+
+      return { success: true, data: analysis };
     }
-
-    return { success: true, data: analysis };
-  });
+  );
 
   // Get analyses for a document
   fastify.get<{ Params: { documentId: string } }>(
@@ -451,49 +498,63 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // Delete analysis
-  fastify.delete<{ Params: { id: string } }>('/analyses/:id', { preHandler: [requireAuth] }, async (request, reply) => {
-    const deleted = await analysisService.deleteAnalysis(request.params.id);
+  fastify.delete<{ Params: { id: string } }>(
+    '/analyses/:id',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const deleted = await analysisService.deleteAnalysis(request.params.id);
 
-    if (!deleted) {
-      return reply.status(404).send({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Analysis not found' },
-      });
-    }
-
-    return { success: true, data: { deleted: true } };
-  });
-
-  // Export analysis to Excel
-  fastify.post<{ Params: { id: string } }>('/analyses/:id/export', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { format } = (request.body as { format?: string }) || {};
-
-    if (format !== 'xlsx') {
-      return reply.status(400).send({
-        success: false,
-        error: { code: 'INVALID_FORMAT', message: 'Only xlsx format is supported' },
-      });
-    }
-
-    try {
-      const buffer = await exportService.generateExcel(request.params.id);
-
-      return reply
-        .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        .header('Content-Disposition', `attachment; filename="compliance-report-${request.params.id}.xlsx"`)
-        .send(buffer);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Export failed';
-      if (message === 'Analysis not found') {
+      if (!deleted) {
         return reply.status(404).send({
           success: false,
-          error: { code: 'NOT_FOUND', message },
+          error: { code: 'NOT_FOUND', message: 'Analysis not found' },
         });
       }
-      return reply.status(500).send({
-        success: false,
-        error: { code: 'EXPORT_FAILED', message },
-      });
+
+      return { success: true, data: { deleted: true } };
     }
-  });
+  );
+
+  // Export analysis to Excel
+  fastify.post<{ Params: { id: string } }>(
+    '/analyses/:id/export',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const { format } = (request.body as { format?: string }) || {};
+
+      if (format !== 'xlsx') {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'INVALID_FORMAT', message: 'Only xlsx format is supported' },
+        });
+      }
+
+      try {
+        const buffer = await exportService.generateExcel(request.params.id);
+
+        return reply
+          .header(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          )
+          .header(
+            'Content-Disposition',
+            `attachment; filename="compliance-report-${request.params.id}.xlsx"`
+          )
+          .send(buffer);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Export failed';
+        if (message === 'Analysis not found') {
+          return reply.status(404).send({
+            success: false,
+            error: { code: 'NOT_FOUND', message },
+          });
+        }
+        return reply.status(500).send({
+          success: false,
+          error: { code: 'EXPORT_FAILED', message },
+        });
+      }
+    }
+  );
 };
