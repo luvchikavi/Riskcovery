@@ -49,8 +49,8 @@ export default fp(async (fastify) => {
       }
     }
 
-    // Dev fallback: if no user was set and we're in development, use DEV_USER
-    if (!request.currentUser && env.NODE_ENV === 'development') {
+    // Dev fallback: only enabled when explicitly opted in via DEV_AUTH_BYPASS=true
+    if (!request.currentUser && env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
       request.currentUser = DEV_USER;
     }
   });

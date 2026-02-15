@@ -9,7 +9,7 @@ const nextConfig = {
     domains: ["riscovery-documents.s3.amazonaws.com"],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: true,

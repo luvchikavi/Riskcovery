@@ -61,8 +61,7 @@ const analyzeSchema = z.object({
 });
 
 export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
-  // Auth is applied per-route on write operations (POST/PUT/DELETE).
-  // GET routes are open so the page can load before the session token is set.
+  // Auth is applied on all routes via requireAuth preHandler.
 
   // ==================== DOCUMENTS ====================
 
@@ -89,7 +88,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get document by ID
-  fastify.get<{ Params: { id: string } }>('/documents/:id', async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>('/documents/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const document = await comparisonDocumentService.getDocument(request.params.id);
 
     if (!document) {
@@ -103,7 +102,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // List documents
-  fastify.get('/documents', async (request) => {
+  fastify.get('/documents', { preHandler: [requireAuth] }, async (request) => {
     const { vendorId, clientId, status } = request.query as {
       vendorId?: string;
       clientId?: string;
@@ -192,7 +191,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get all templates
-  fastify.get('/templates', async (request) => {
+  fastify.get('/templates', { preHandler: [requireAuth] }, async (request) => {
     const { sector, isActive } = request.query as {
       sector?: string;
       isActive?: string;
@@ -207,7 +206,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get template by ID
-  fastify.get<{ Params: { id: string } }>('/templates/:id', async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>('/templates/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const template = await requirementsService.getTemplate(request.params.id);
 
     if (!template) {
@@ -428,7 +427,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Get analysis by ID
-  fastify.get<{ Params: { id: string } }>('/analyses/:id', async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>('/analyses/:id', { preHandler: [requireAuth] }, async (request, reply) => {
     const analysis = await analysisService.getAnalysis(request.params.id);
 
     if (!analysis) {
@@ -444,6 +443,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
   // Get analyses for a document
   fastify.get<{ Params: { documentId: string } }>(
     '/documents/:documentId/analyses',
+    { preHandler: [requireAuth] },
     async (request) => {
       const analyses = await analysisService.getDocumentAnalyses(request.params.documentId);
       return { success: true, data: analyses };
