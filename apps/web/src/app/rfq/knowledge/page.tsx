@@ -6,6 +6,8 @@ import {
   Warning as WarningIcon,
   OpenInNew as OpenInNewIcon,
   QuestionAnswer as QuestionAnswerIcon,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
 } from '@mui/icons-material';
 import {
   Box,
@@ -21,6 +23,8 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Collapse,
+  IconButton,
   FormControl,
   InputLabel,
   Select,
@@ -35,7 +39,7 @@ import {
   Paper,
 } from '@mui/material';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   rfqApi,
@@ -329,6 +333,7 @@ export default function KnowledgeBasePage() {
   const [error, setError] = useState<string | null>(null);
   const [sector, setSector] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -694,53 +699,94 @@ export default function KnowledgeBasePage() {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
+                        <TableCell padding="checkbox" />
                         <TableCell sx={{ fontWeight: 'bold', minWidth: 200 }}>שאלה</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>סוג</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', minWidth: 300 }}>השפעה על כיסוי</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', minWidth: 150 }}>תוצאת כלל</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {section.questions.map((q) => (
-                        <TableRow key={q.questionId} hover>
-                          <TableCell>
-                            <Typography variant="body2" fontWeight="bold">
-                              {q.labelHe}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {q.questionId}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={q.type}
-                              size="small"
-                              variant="outlined"
-                              sx={{ fontSize: '0.7rem' }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{q.coverageImpact}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            {q.ruleEffect && (
-                              <Chip
-                                label={q.ruleEffect}
-                                size="small"
-                                color={
-                                  q.ruleEffect.includes('הוספת הרחבה') ? 'primary' :
-                                  q.ruleEffect.includes('מכפיל') ? 'warning' :
-                                  q.ruleEffect.includes('סימון סיכון') ? 'error' :
-                                  q.ruleEffect.includes('תנאי מוקדם') ? 'secondary' :
-                                  'default'
-                                }
-                                variant="outlined"
-                                sx={{ fontSize: '0.7rem' }}
-                              />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {section.questions.map((q) => {
+                        const isExpanded = expandedQuestion === q.questionId;
+                        return (
+                          <React.Fragment key={q.questionId}>
+                            <TableRow
+                              hover
+                              onClick={() => setExpandedQuestion(isExpanded ? null : q.questionId)}
+                              sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
+                            >
+                              <TableCell padding="checkbox">
+                                <IconButton size="small">
+                                  {isExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                                </IconButton>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="bold">
+                                  {q.labelHe}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {q.questionId}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={q.type}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ fontSize: '0.7rem' }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {q.ruleEffect && (
+                                  <Chip
+                                    label={q.ruleEffect}
+                                    size="small"
+                                    color={
+                                      q.ruleEffect.includes('הוספת הרחבה') ? 'primary' :
+                                      q.ruleEffect.includes('מכפיל') ? 'warning' :
+                                      q.ruleEffect.includes('סימון סיכון') ? 'error' :
+                                      q.ruleEffect.includes('תנאי מוקדם') ? 'secondary' :
+                                      'default'
+                                    }
+                                    variant="outlined"
+                                    sx={{ fontSize: '0.7rem' }}
+                                  />
+                                )}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell colSpan={4} sx={{ py: 0, px: 0 }}>
+                                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                  <Box sx={{ py: 2, px: 3, bgcolor: 'grey.50', borderInlineStart: '4px solid', borderColor: 'info.main' }}>
+                                    <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                                      השפעה על כיסוי
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+                                      {q.coverageImpact}
+                                    </Typography>
+                                    <Box display="flex" gap={4} flexWrap="wrap">
+                                      <Box>
+                                        <Typography variant="caption" color="text.secondary">סוג שדה</Typography>
+                                        <Typography variant="body2">{q.type}</Typography>
+                                      </Box>
+                                      {q.ruleEffect && (
+                                        <Box>
+                                          <Typography variant="caption" color="text.secondary">תוצאת כלל</Typography>
+                                          <Typography variant="body2">{q.ruleEffect}</Typography>
+                                        </Box>
+                                      )}
+                                      <Box>
+                                        <Typography variant="caption" color="text.secondary">מזהה שאלה</Typography>
+                                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{q.questionId}</Typography>
+                                      </Box>
+                                    </Box>
+                                  </Box>
+                                </Collapse>
+                              </TableCell>
+                            </TableRow>
+                          </React.Fragment>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
