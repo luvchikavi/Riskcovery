@@ -77,7 +77,7 @@ export default function RulesPage() {
       if (rulesResponse.success && rulesResponse.data) {
         setRules(rulesResponse.data);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load data');
       console.error(err);
     } finally {
@@ -93,7 +93,7 @@ export default function RulesPage() {
     try {
       await adminApi.rules.toggle(rule.id);
       loadData();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to toggle rule status');
       console.error(err);
     }
@@ -103,7 +103,7 @@ export default function RulesPage() {
     try {
       await adminApi.rules.duplicate(rule.id);
       loadData();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to duplicate rule');
       console.error(err);
     }
@@ -115,7 +115,7 @@ export default function RulesPage() {
       await adminApi.rules.delete(deleteRuleDialog.id);
       setDeleteRuleDialog(null);
       loadData();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to delete rule');
       console.error(err);
     }
@@ -132,7 +132,7 @@ export default function RulesPage() {
       }
       setRuleDialogOpen(false);
       loadData();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to save rule');
       console.error(err);
     }
@@ -165,7 +165,13 @@ export default function RulesPage() {
   // Lower number = runs first (higher priority)
   // Using 10-step gaps (10, 20, 30...) allows inserting rules between existing ones
   // without renumbering (e.g., add priority 15 between 10 and 20)
-  const getPriorityLabel = (priority: number): { phase: string; description: string; color: 'error' | 'warning' | 'info' | 'success' | 'default' } => {
+  const getPriorityLabel = (
+    priority: number
+  ): {
+    phase: string;
+    description: string;
+    color: 'error' | 'warning' | 'info' | 'success' | 'default';
+  } => {
     if (priority <= 10) {
       return { phase: 'שלב 1', description: 'גודל חברה', color: 'error' };
     } else if (priority <= 20) {
@@ -212,11 +218,7 @@ export default function RulesPage() {
           </Typography>
           <Typography color="text.secondary">Coverage Rules Management</Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => openRuleDialog()}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => openRuleDialog()}>
           הוסף כלל
         </Button>
       </Box>
@@ -281,7 +283,9 @@ export default function RulesPage() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Tooltip title={`עדיפות ${rule.priority} - ${getPriorityLabel(rule.priority).description}`}>
+                      <Tooltip
+                        title={`עדיפות ${rule.priority} - ${getPriorityLabel(rule.priority).description}`}
+                      >
                         <Box display="flex" flexDirection="column" gap={0.5}>
                           <Chip
                             label={getPriorityLabel(rule.priority).phase}
@@ -387,9 +391,7 @@ export default function RulesPage() {
       <Dialog open={!!deleteRuleDialog} onClose={() => setDeleteRuleDialog(null)}>
         <DialogTitle>מחיקת כלל</DialogTitle>
         <DialogContent>
-          <Typography>
-            האם אתה בטוח שברצונך למחוק את הכלל "{deleteRuleDialog?.nameHe}"?
-          </Typography>
+          <Typography>האם אתה בטוח שברצונך למחוק את הכלל "{deleteRuleDialog?.nameHe}"?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteRuleDialog(null)}>ביטול</Button>

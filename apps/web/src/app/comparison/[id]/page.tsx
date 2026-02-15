@@ -53,16 +53,23 @@ import {
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/components/SnackbarProvider';
 
-const STATUS_CONFIG: Record<string, { icon: typeof CompliantIcon; color: string; label: string }> = {
-  compliant: { icon: CompliantIcon, color: 'success.main', label: 'תואם' },
-  partial: { icon: WarningIcon, color: 'warning.main', label: 'תואם חלקית' },
-  non_compliant: { icon: ErrorIcon, color: 'error.main', label: 'לא תואם' },
-  missing: { icon: MissingIcon, color: 'grey.500', label: 'חסר' },
-  expired: { icon: ExpiredIcon, color: 'error.main', label: 'פג תוקף' },
+const MISSING_STATUS: { icon: typeof CompliantIcon; color: string; label: string } = {
+  icon: MissingIcon,
+  color: 'grey.500',
+  label: 'חסר',
 };
 
+const STATUS_CONFIG: Record<string, { icon: typeof CompliantIcon; color: string; label: string }> =
+  {
+    compliant: { icon: CompliantIcon, color: 'success.main', label: 'תואם' },
+    partial: { icon: WarningIcon, color: 'warning.main', label: 'תואם חלקית' },
+    non_compliant: { icon: ErrorIcon, color: 'error.main', label: 'לא תואם' },
+    missing: MISSING_STATUS,
+    expired: { icon: ExpiredIcon, color: 'error.main', label: 'פג תוקף' },
+  };
+
 function getStatusConfig(status: string) {
-  return STATUS_CONFIG[status] ?? STATUS_CONFIG['missing']!;
+  return STATUS_CONFIG[status] ?? MISSING_STATUS;
 }
 
 function getStatusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
@@ -102,7 +109,11 @@ function FieldStatusChip({ status }: { status: ComparisonFieldStatus }) {
   };
   const c = config[status] || config.MISSING;
   return (
-    <Chip label={c.label} size="small" sx={{ fontWeight: 600, color: c.color, backgroundColor: c.bg, minWidth: 70 }} />
+    <Chip
+      label={c.label}
+      size="small"
+      sx={{ fontWeight: 600, color: c.color, backgroundColor: c.bg, minWidth: 70 }}
+    />
   );
 }
 
@@ -114,11 +125,16 @@ function formatValue(v: string | number | null | undefined): string {
 
 function rowBgColor(status: ComparisonFieldStatus): string {
   switch (status) {
-    case 'PASS': return '#F1F8E9';
-    case 'FAIL': return '#FFF8F8';
-    case 'PARTIAL': return '#FFF8E1';
-    case 'MISSING': return '#FAFAFA';
-    default: return 'transparent';
+    case 'PASS':
+      return '#F1F8E9';
+    case 'FAIL':
+      return '#FFF8F8';
+    case 'PARTIAL':
+      return '#FFF8E1';
+    case 'MISSING':
+      return '#FAFAFA';
+    default:
+      return 'transparent';
   }
 }
 
@@ -149,7 +165,9 @@ export default function AnalysisDetailPage() {
           setTemplate(response.data.template);
         } else if (response.data.requirementTemplateId) {
           try {
-            const tplResponse = await comparisonApi.templates.get(response.data.requirementTemplateId);
+            const tplResponse = await comparisonApi.templates.get(
+              response.data.requirementTemplateId
+            );
             if (tplResponse.success && tplResponse.data) {
               setTemplate(tplResponse.data);
             }
@@ -158,7 +176,7 @@ export default function AnalysisDetailPage() {
           }
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load analysis:', err);
     } finally {
       setLoading(false);
@@ -200,8 +218,15 @@ export default function AnalysisDetailPage() {
   if (!analysis) {
     return (
       <Box>
-        <Alert severity="error" sx={{ mb: 3 }}>ניתוח לא נמצא</Alert>
-        <Button component={Link} href="/comparison/analyze" variant="outlined" startIcon={<BackIcon />}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          ניתוח לא נמצא
+        </Alert>
+        <Button
+          component={Link}
+          href="/comparison/analyze"
+          variant="outlined"
+          startIcon={<BackIcon />}
+        >
           חזרה לניתוח
         </Button>
       </Box>
@@ -213,12 +238,16 @@ export default function AnalysisDetailPage() {
     analysis.complianceScore >= 80
       ? 'success.main'
       : analysis.complianceScore >= 50
-      ? 'warning.main'
-      : 'error.main';
+        ? 'warning.main'
+        : 'error.main';
 
   // Separate results by status for organized display
-  const critical = analysis.policyResults.filter((r) => r.status === 'non_compliant' || r.status === 'missing');
-  const warnings = analysis.policyResults.filter((r) => r.status === 'partial' || r.status === 'expired');
+  const critical = analysis.policyResults.filter(
+    (r) => r.status === 'non_compliant' || r.status === 'missing'
+  );
+  const warnings = analysis.policyResults.filter(
+    (r) => r.status === 'partial' || r.status === 'expired'
+  );
   const compliant = analysis.policyResults.filter((r) => r.status === 'compliant');
 
   return (
@@ -247,11 +276,7 @@ export default function AnalysisDetailPage() {
             </Typography>
           )}
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadAnalysis}
-        >
+        <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadAnalysis}>
           רענן
         </Button>
         <Button
@@ -296,11 +321,7 @@ export default function AnalysisDetailPage() {
                   borderColor: scoreColor,
                 }}
               >
-                <Typography
-                  variant="h4"
-                  fontWeight={700}
-                  sx={{ color: scoreColor }}
-                >
+                <Typography variant="h4" fontWeight={700} sx={{ color: scoreColor }}>
                   {analysis.complianceScore}
                 </Typography>
               </Box>
@@ -341,7 +362,9 @@ export default function AnalysisDetailPage() {
                 <Typography variant="h3" fontWeight={700} color="success.main">
                   {analysis.compliantCount}
                 </Typography>
-                <Typography variant="caption" fontWeight={600}>תואם</Typography>
+                <Typography variant="caption" fontWeight={600}>
+                  תואם
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
@@ -349,7 +372,9 @@ export default function AnalysisDetailPage() {
                 <Typography variant="h3" fontWeight={700} color="warning.main">
                   {analysis.partialCount}
                 </Typography>
-                <Typography variant="caption" fontWeight={600}>תואם חלקית</Typography>
+                <Typography variant="caption" fontWeight={600}>
+                  תואם חלקית
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
@@ -357,7 +382,9 @@ export default function AnalysisDetailPage() {
                 <Typography variant="h3" fontWeight={700} color="error.main">
                   {analysis.nonCompliantCount}
                 </Typography>
-                <Typography variant="caption" fontWeight={600}>לא תואם</Typography>
+                <Typography variant="caption" fontWeight={600}>
+                  לא תואם
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
@@ -365,7 +392,9 @@ export default function AnalysisDetailPage() {
                 <Typography variant="h3" fontWeight={700} color="grey.500">
                   {analysis.missingCount}
                 </Typography>
-                <Typography variant="caption" fontWeight={600}>חסר</Typography>
+                <Typography variant="caption" fontWeight={600}>
+                  חסר
+                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -420,7 +449,7 @@ export default function AnalysisDetailPage() {
                 טבלת השוואה מפורטת
               </Typography>
               <TableContainer component={Paper} variant="outlined">
-                <Table size="small" dir="rtl">
+                <Table size="small">
                   <TableHead>
                     <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
                       <TableCell sx={{ fontWeight: 700 }}>סוג ביטוח</TableCell>
@@ -457,7 +486,11 @@ export default function AnalysisDetailPage() {
             בעיות קריטיות ({critical.length})
           </Typography>
           {critical.map((result, index) => (
-            <PolicyResultAccordion key={result.requirementId || index} result={result} defaultExpanded />
+            <PolicyResultAccordion
+              key={result.requirementId || index}
+              result={result}
+              defaultExpanded
+            />
           ))}
         </Box>
       )}
@@ -560,18 +593,14 @@ function PolicyResultAccordion({
               />
             )}
           </Box>
-          <Chip
-            label={config.label}
-            size="small"
-            color={getStatusColor(result.status)}
-          />
+          <Chip label={config.label} size="small" color={getStatusColor(result.status)} />
         </Box>
       </AccordionSummary>
       <AccordionDetails>
         {/* New: Field-by-field table inside accordion */}
         {result.rows && result.rows.length > 0 ? (
           <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-            <Table size="small" dir="rtl">
+            <Table size="small">
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
                   <TableCell sx={{ fontWeight: 700 }}>שדה</TableCell>
@@ -605,26 +634,42 @@ function PolicyResultAccordion({
                 <Grid container spacing={2} sx={{ mb: 2 }}>
                   {result.foundPolicy.policyNumber && (
                     <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">מספר פוליסה</Typography>
-                      <Typography variant="body2" fontWeight={500}>{result.foundPolicy.policyNumber}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        מספר פוליסה
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        {result.foundPolicy.policyNumber}
+                      </Typography>
                     </Grid>
                   )}
                   {result.foundPolicy.coverageLimit != null && (
                     <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">גבול אחריות</Typography>
-                      <Typography variant="body2" fontWeight={500}>₪{result.foundPolicy.coverageLimit.toLocaleString()}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        גבול אחריות
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        ₪{result.foundPolicy.coverageLimit.toLocaleString()}
+                      </Typography>
                     </Grid>
                   )}
                   {result.foundPolicy.deductible != null && (
                     <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">השתתפות עצמית</Typography>
-                      <Typography variant="body2" fontWeight={500}>₪{result.foundPolicy.deductible.toLocaleString()}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        השתתפות עצמית
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        ₪{result.foundPolicy.deductible.toLocaleString()}
+                      </Typography>
                     </Grid>
                   )}
                   {result.foundPolicy.expirationDate && (
                     <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">סוף תוקף</Typography>
-                      <Typography variant="body2" fontWeight={500}>{result.foundPolicy.expirationDate}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        סוף תוקף
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        {result.foundPolicy.expirationDate}
+                      </Typography>
                     </Grid>
                   )}
                 </Grid>
@@ -661,7 +706,13 @@ function PolicyResultAccordion({
                     {gap.descriptionHe}
                   </Typography>
                   <Chip
-                    label={gap.severity === 'critical' ? 'קריטי' : gap.severity === 'major' ? 'משמעותי' : 'קל'}
+                    label={
+                      gap.severity === 'critical'
+                        ? 'קריטי'
+                        : gap.severity === 'major'
+                          ? 'משמעותי'
+                          : 'קל'
+                    }
                     size="small"
                     sx={{
                       backgroundColor: getSeverityColor(gap.severity),
@@ -671,9 +722,19 @@ function PolicyResultAccordion({
                   />
                 </Box>
                 {(gap.required != null || gap.found != null) && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                    נדרש: {typeof gap.required === 'number' ? `₪${gap.required.toLocaleString()}` : gap.required || '—'}{' '}
-                    | נמצא: {typeof gap.found === 'number' ? `₪${gap.found.toLocaleString()}` : gap.found || '—'}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    נדרש:{' '}
+                    {typeof gap.required === 'number'
+                      ? `₪${gap.required.toLocaleString()}`
+                      : gap.required || '—'}{' '}
+                    | נמצא:{' '}
+                    {typeof gap.found === 'number'
+                      ? `₪${gap.found.toLocaleString()}`
+                      : gap.found || '—'}
                   </Typography>
                 )}
                 {gap.recommendationHe && (

@@ -32,7 +32,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { rfqApi, type Client } from '@/lib/api';
@@ -59,9 +59,9 @@ export default function ClientsPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
-  };
+  }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['rfq', 'clients', { page, rowsPerPage, sector, search: debouncedSearch }],

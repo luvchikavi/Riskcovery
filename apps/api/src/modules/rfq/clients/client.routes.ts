@@ -1,8 +1,7 @@
-// @ts-nocheck
 import type { FastifyPluginAsync } from 'fastify';
 
-import { clientService } from './client.service.js';
 import { createClientSchema, updateClientSchema, clientQuerySchema } from './client.schema.js';
+import { clientService } from './client.service.js';
 import { requireAuth } from '../../../plugins/auth.js';
 
 export const clientRoutes: FastifyPluginAsync = async (fastify) => {
@@ -10,7 +9,7 @@ export const clientRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', requireAuth);
 
   // List clients
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', async (request) => {
     const query = clientQuerySchema.parse(request.query);
     const orgId = request.currentUser!.organizationId;
     const result = await clientService.findAll(orgId, query);

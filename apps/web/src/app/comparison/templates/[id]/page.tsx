@@ -31,9 +31,12 @@ const ENDORSEMENT_CODES: Record<string, { he: string; en: string }> = {
   '304': { he: 'הרחב שיפוי', en: 'Extended indemnification' },
   '305': { he: 'הרחבת כלי ירייה המוחזק כדין', en: 'Firearms extension' },
   '306': { he: 'הרחבת צד ג\' - נזק בעת שהות זמנית בחו"ל', en: 'Third party abroad extension' },
-  '307': { he: 'הרחבת צד ג\' - קבלנים וקבלני משנה', en: 'Contractors and subcontractors extension' },
+  '307': { he: "הרחבת צד ג' - קבלנים וקבלני משנה", en: 'Contractors and subcontractors extension' },
   '308': { he: 'ויתור על תחלוף לטובת גורם אחר', en: 'Waiver of subrogation for other party' },
-  '309': { he: 'ויתור על תחלוף לטובת מבקש האישור', en: 'Waiver of subrogation for certificate requester' },
+  '309': {
+    he: 'ויתור על תחלוף לטובת מבקש האישור',
+    en: 'Waiver of subrogation for certificate requester',
+  },
   '310': { he: 'כיסוי למשווקים במסגרת חבות מוצר', en: 'Marketers coverage in product liability' },
   '311': { he: 'כיסוי אובדן תוצאתי בגין נזק לרכוש', en: 'Consequential loss coverage' },
   '312': { he: 'כיסוי בגין נזק גוף משימוש בצמ"ה', en: 'Bodily injury from heavy equipment' },
@@ -44,37 +47,67 @@ const ENDORSEMENT_CODES: Record<string, { he: string; en: string }> = {
   '317': { he: 'מבוטח נוסף - אחר', en: 'Additional insured - other' },
   '318': { he: 'מבוטח נוסף - מבקש האישור', en: 'Additional insured - certificate requester' },
   '319': { he: 'מבוטח נוסף - כמעבידם של עובדי המבוטח', en: 'Additional insured - as employer' },
-  '320': { he: 'מבוטח נוסף בגין מעשי המבוטח - אחר', en: 'Additional insured for insured acts - other' },
-  '321': { he: 'מבוטח נוסף בגין מעשי המבוטח - מבקש האישור', en: 'Additional insured for insured acts - requester' },
-  '322': { he: 'מבקש האישור מוגדר כצד ג\'', en: 'Requester defined as third party' },
+  '320': {
+    he: 'מבוטח נוסף בגין מעשי המבוטח - אחר',
+    en: 'Additional insured for insured acts - other',
+  },
+  '321': {
+    he: 'מבוטח נוסף בגין מעשי המבוטח - מבקש האישור',
+    en: 'Additional insured for insured acts - requester',
+  },
+  '322': { he: "מבקש האישור מוגדר כצד ג'", en: 'Requester defined as third party' },
   '323': { he: 'מוטב לתגמולי ביטוח - אחר', en: 'Insurance beneficiary - other' },
   '324': { he: 'מוטב לתגמולי ביטוח - מבקש האישור', en: 'Insurance beneficiary - requester' },
   '325': { he: 'מרמה ואי יושר עובדים', en: 'Employee fraud and dishonesty' },
-  '326': { he: 'פגיעה בפרטיות במסגרת אחריות מקצועית', en: 'Privacy breach in professional liability' },
+  '326': {
+    he: 'פגיעה בפרטיות במסגרת אחריות מקצועית',
+    en: 'Privacy breach in professional liability',
+  },
   '327': { he: 'עיכוב/שיהוי עקב מקרה ביטוח', en: 'Delay due to insurance event' },
-  '328': { he: 'ראשוניות - המבטח מוותר על דרישה ממבטח מבקש האישור', en: 'Primary - insurer waives claims against requester insurer' },
-  '329': { he: 'רכוש מבקש האישור ייחשב כצד ג\'', en: 'Requester property considered third party' },
+  '328': {
+    he: 'ראשוניות - המבטח מוותר על דרישה ממבטח מבקש האישור',
+    en: 'Primary - insurer waives claims against requester insurer',
+  },
+  '329': { he: "רכוש מבקש האישור ייחשב כצד ג'", en: 'Requester property considered third party' },
   '330': { he: 'שעבוד לטובת גורם אחר', en: 'Lien for other party' },
   '331': { he: 'שעבוד לטובת מבקש האישור', en: 'Lien for certificate requester' },
   '332': { he: 'תקופת גילוי', en: 'Discovery period' },
   '333': { he: 'גבול האחריות לטובת ההתקשרות בלבד', en: 'Limit for contract only' },
   '334': { he: 'תקופת תחזוקה', en: 'Maintenance period' },
   '335': { he: 'תקופת שיפוי', en: 'Indemnification period' },
-  '336': { he: 'ביטול חריג אחריות מקצועית בצד ג\'', en: 'Cancel professional liability exclusion in TPL' },
-  '337': { he: 'ביטול חריג חבות מוצר בצד ג\'', en: 'Cancel product liability exclusion in TPL' },
+  '336': {
+    he: "ביטול חריג אחריות מקצועית בצד ג'",
+    en: 'Cancel professional liability exclusion in TPL',
+  },
+  '337': { he: "ביטול חריג חבות מוצר בצד ג'", en: 'Cancel product liability exclusion in TPL' },
   '338': { he: 'הרחבת כיסוי על בסיס ערך כינון', en: 'Replacement value coverage' },
   '339': { he: 'הרחבה לסיכון סייבר', en: 'Cyber risk extension' },
   '340': { he: 'הרחבת רעידות והחלשת משען', en: 'Vibration and weakening of support' },
-  '341': { he: 'הרחבת נזק עקיף למתקנים תת קרקעיים', en: 'Indirect damage to underground facilities' },
+  '341': {
+    he: 'הרחבת נזק עקיף למתקנים תת קרקעיים',
+    en: 'Indirect damage to underground facilities',
+  },
   '342': { he: 'הרחבת מעבידים - כלי ירייה', en: 'Employer extension - firearms' },
   '343': { he: 'הרחבת הכיסוי לנזקים בעת פריקה וטעינה', en: 'Loading/unloading coverage' },
   '344': { he: 'הרחבת הכיסוי לעבודות בגובה', en: 'Working at heights coverage' },
   '345': { he: 'הרחבה לנזק בגין פרעות ושביתות', en: 'Riots and strikes coverage' },
   '346': { he: 'הרחבה לנזקי חשמל', en: 'Electrical damage coverage' },
-  '347': { he: 'הרחבת שם המבוטח בביטוח חבות מוצר', en: 'Insured name extension in product liability' },
-  '348': { he: 'ביטול סייג רכוש עליו פעלו במישרין', en: 'Cancel direct work on property exclusion' },
-  '349': { he: 'ביטול סייג רכוש בשליטה בחזקה ופיקוח', en: 'Cancel property in care custody control exclusion' },
-  '350': { he: 'הרחבת חבות כלפי קבלנים בחבות מעבידים', en: 'Contractor liability in employer coverage' },
+  '347': {
+    he: 'הרחבת שם המבוטח בביטוח חבות מוצר',
+    en: 'Insured name extension in product liability',
+  },
+  '348': {
+    he: 'ביטול סייג רכוש עליו פעלו במישרין',
+    en: 'Cancel direct work on property exclusion',
+  },
+  '349': {
+    he: 'ביטול סייג רכוש בשליטה בחזקה ופיקוח',
+    en: 'Cancel property in care custody control exclusion',
+  },
+  '350': {
+    he: 'הרחבת חבות כלפי קבלנים בחבות מעבידים',
+    en: 'Contractor liability in employer coverage',
+  },
 };
 
 function formatCurrency(amount: number | undefined | null): string {
@@ -107,7 +140,9 @@ function RequirementCard({ requirement }: { requirement: ComparisonRequirement }
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
         {/* Header: Policy Type + Mandatory badge */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}
+        >
           <Box>
             <Typography variant="h6" fontWeight={600}>
               {requirement.policyTypeHe}
@@ -141,16 +176,17 @@ function RequirementCard({ requirement }: { requirement: ComparisonRequirement }
               </Typography>
             </Grid>
           )}
-          {requirement.minimumLimitPerOccurrence != null && requirement.minimumLimitPerOccurrence > 0 && (
-            <Grid item xs={6} sm={4}>
-              <Typography variant="caption" color="text.secondary">
-                גבול אחריות למקרה
-              </Typography>
-              <Typography variant="body1" fontWeight={600}>
-                {formatCurrency(requirement.minimumLimitPerOccurrence)}
-              </Typography>
-            </Grid>
-          )}
+          {requirement.minimumLimitPerOccurrence != null &&
+            requirement.minimumLimitPerOccurrence > 0 && (
+              <Grid item xs={6} sm={4}>
+                <Typography variant="caption" color="text.secondary">
+                  גבול אחריות למקרה
+                </Typography>
+                <Typography variant="body1" fontWeight={600}>
+                  {formatCurrency(requirement.minimumLimitPerOccurrence)}
+                </Typography>
+              </Grid>
+            )}
           {requirement.minimumLimit > 0 && (
             <Grid item xs={6} sm={4}>
               <Typography variant="caption" color="text.secondary">
@@ -234,7 +270,7 @@ export default function TemplateDetailPage() {
       } else {
         setError('התבנית לא נמצאה');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('שגיאה בטעינת התבנית');
       console.error(err);
     } finally {
@@ -247,7 +283,9 @@ export default function TemplateDetailPage() {
   if (error || !template) {
     return (
       <Box>
-        <Alert severity="error" sx={{ mb: 3 }}>{error || 'התבנית לא נמצאה'}</Alert>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error || 'התבנית לא נמצאה'}
+        </Alert>
         <IconButton component={Link} href="/comparison/templates">
           <BackIcon />
         </IconButton>
@@ -288,9 +326,7 @@ export default function TemplateDetailPage() {
             </Typography>
           )}
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {template.sector && (
-              <Chip label={template.sector} size="small" variant="outlined" />
-            )}
+            {template.sector && <Chip label={template.sector} size="small" variant="outlined" />}
             {template.contractType && (
               <Chip label={template.contractType} size="small" variant="outlined" />
             )}
@@ -317,9 +353,7 @@ export default function TemplateDetailPage() {
       </Typography>
 
       {template.requirements && template.requirements.length > 0 ? (
-        template.requirements.map((req) => (
-          <RequirementCard key={req.id} requirement={req} />
-        ))
+        template.requirements.map((req) => <RequirementCard key={req.id} requirement={req} />)
       ) : (
         <Alert severity="info">לא הוגדרו דרישות לתבנית זו</Alert>
       )}

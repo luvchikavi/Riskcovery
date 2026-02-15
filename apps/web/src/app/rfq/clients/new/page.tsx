@@ -31,7 +31,7 @@ export default function NewClientPage() {
       } else {
         setError('Failed to create client');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create client');
     } finally {
       setLoading(false);
@@ -57,17 +57,17 @@ export default function NewClientPage() {
           </Typography>
           <Typography color="text.secondary">Add New Client</Typography>
         </Box>
-        <Button component={Link} href="/rfq/clients" variant="outlined" startIcon={<ArrowBackIcon />}>
+        <Button
+          component={Link}
+          href="/rfq/clients"
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
           חזרה לרשימה
         </Button>
       </Box>
 
-      <ClientForm
-        onSubmit={handleCreate}
-        loading={loading}
-        submitLabel="שמור לקוח"
-        error={error}
-      />
+      <ClientForm onSubmit={handleCreate} loading={loading} submitLabel="שמור לקוח" error={error} />
     </Box>
   );
 }

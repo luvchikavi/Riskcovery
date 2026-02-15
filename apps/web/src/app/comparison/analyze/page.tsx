@@ -87,11 +87,16 @@ function formatValue(v: string | number | null | undefined): string {
 // ─── Helper: Row background color ─────────────────────────────────────
 function rowBgColor(status: ComparisonFieldStatus): string {
   switch (status) {
-    case 'PASS': return '#F1F8E9';
-    case 'FAIL': return '#FFF8F8';
-    case 'PARTIAL': return '#FFF8E1';
-    case 'MISSING': return '#FAFAFA';
-    default: return 'transparent';
+    case 'PASS':
+      return '#F1F8E9';
+    case 'FAIL':
+      return '#FFF8F8';
+    case 'PARTIAL':
+      return '#FFF8E1';
+    case 'MISSING':
+      return '#FAFAFA';
+    default:
+      return 'transparent';
   }
 }
 
@@ -102,7 +107,15 @@ function TemplatePreview({ template }: { template: ComparisonTemplate }) {
   const mandatoryCount = requirements.filter((r) => r.isMandatory).length;
 
   return (
-    <Box sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+    <Box
+      sx={{
+        mt: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }}
+    >
       <Box
         sx={{
           p: 2,
@@ -178,7 +191,13 @@ function TemplatePreview({ template }: { template: ComparisonTemplate }) {
                 </Typography>
               </Box>
               {req.isMandatory && (
-                <Chip label="חובה" size="small" color="error" variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />
+                <Chip
+                  label="חובה"
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  sx={{ height: 22, fontSize: '0.7rem' }}
+                />
               )}
             </Box>
           ))}
@@ -272,7 +291,7 @@ export default function AnalyzePage() {
 
       setDocuments(docsResponse.data || []);
       setTemplates(templatesResponse.data || []);
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load data');
       console.error(err);
     } finally {
@@ -331,7 +350,7 @@ export default function AnalyzePage() {
         // Auto-advance to step 2
         setActiveStep(1);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError(`שגיאה בהעלאת ${file.name}`);
       showError('שגיאה בהעלאת הקובץ');
       console.error(err);
@@ -339,7 +358,7 @@ export default function AnalyzePage() {
       setUploading(false);
       setProcessing(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -379,7 +398,7 @@ export default function AnalyzePage() {
       const response = await comparisonApi.analysis.run(selectedDocument, selectedTemplate);
       setAnalysisResult(response.data || null);
       showSuccess('הבדיקה הושלמה בהצלחה');
-    } catch (err) {
+    } catch (err: unknown) {
       showError('שגיאה בהרצת הבדיקה');
       console.error(err);
     } finally {
@@ -427,38 +446,55 @@ export default function AnalyzePage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'compliant': return 'תואם';
-      case 'partial': return 'תואם חלקית';
-      case 'non_compliant': return 'לא תואם';
-      case 'missing': return 'חסר';
-      case 'expired': return 'פג תוקף';
-      default: return status;
+      case 'compliant':
+        return 'תואם';
+      case 'partial':
+        return 'תואם חלקית';
+      case 'non_compliant':
+        return 'לא תואם';
+      case 'missing':
+        return 'חסר';
+      case 'expired':
+        return 'פג תוקף';
+      default:
+        return status;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'compliant': return 'success';
-      case 'partial': return 'warning';
-      case 'non_compliant': case 'expired': return 'error';
-      default: return 'default';
+      case 'compliant':
+        return 'success';
+      case 'partial':
+        return 'warning';
+      case 'non_compliant':
+      case 'expired':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'error.main';
-      case 'major': return 'warning.main';
-      case 'minor': return 'info.main';
-      default: return 'text.secondary';
+      case 'critical':
+        return 'error.main';
+      case 'major':
+        return 'warning.main';
+      case 'minor':
+        return 'info.main';
+      default:
+        return 'text.secondary';
     }
   };
 
   // Check if any policy result has rows (new format)
-  const hasRows = analysisResult?.policyResults?.some((pr) => pr.rows && pr.rows.length > 0) ?? false;
+  const hasRows =
+    analysisResult?.policyResults?.some((pr) => pr.rows && pr.rows.length > 0) ?? false;
 
   // Flatten all rows from all policies for summary table
-  const allRows: ComparisonRow[] = analysisResult?.policyResults?.flatMap((pr) => pr.rows || []) ?? [];
+  const allRows: ComparisonRow[] =
+    analysisResult?.policyResults?.flatMap((pr) => pr.rows || []) ?? [];
 
   if (loading) {
     return <LinearProgress />;
@@ -612,16 +648,9 @@ export default function AnalyzePage() {
               </Select>
             </FormControl>
 
-            {selectedTemplateObj && (
-              <TemplatePreview template={selectedTemplateObj} />
-            )}
+            {selectedTemplateObj && <TemplatePreview template={selectedTemplateObj} />}
 
-            <Button
-              variant="text"
-              size="small"
-              sx={{ mt: 1 }}
-              onClick={() => setActiveStep(0)}
-            >
+            <Button variant="text" size="small" sx={{ mt: 1 }} onClick={() => setActiveStep(0)}>
               חזור לשלב הקודם
             </Button>
           </CardContent>
@@ -677,7 +706,14 @@ export default function AnalyzePage() {
           {/* Summary Card */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 3,
+                }}
+              >
                 <Typography variant="h6" fontWeight="bold">
                   תוצאות בדיקה
                 </Typography>
@@ -694,7 +730,13 @@ export default function AnalyzePage() {
                   <Chip
                     icon={getStatusIcon(analysisResult.overallStatus)}
                     label={getStatusLabel(analysisResult.overallStatus)}
-                    color={getStatusColor(analysisResult.overallStatus) as 'success' | 'warning' | 'error' | 'default'}
+                    color={
+                      getStatusColor(analysisResult.overallStatus) as
+                        | 'success'
+                        | 'warning'
+                        | 'error'
+                        | 'default'
+                    }
                     variant="outlined"
                   />
                 </Box>
@@ -720,8 +762,8 @@ export default function AnalyzePage() {
                         analysisResult.complianceScore >= 80
                           ? 'success.main'
                           : analysisResult.complianceScore >= 50
-                          ? 'warning.main'
-                          : 'error.main',
+                            ? 'warning.main'
+                            : 'error.main',
                     },
                   }}
                 />
@@ -766,9 +808,7 @@ export default function AnalyzePage() {
           </Card>
 
           {/* Template Context Banner */}
-          {selectedTemplateObj && (
-            <TemplateBanner template={selectedTemplateObj} />
-          )}
+          {selectedTemplateObj && <TemplateBanner template={selectedTemplateObj} />}
 
           {/* Section 1: Summary Flat Table (new format) */}
           {hasRows && allRows.length > 0 && (
@@ -778,7 +818,7 @@ export default function AnalyzePage() {
                   טבלת השוואה מפורטת
                 </Typography>
                 <TableContainer component={Paper} variant="outlined">
-                  <Table size="small" dir="rtl">
+                  <Table size="small">
                     <TableHead>
                       <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
                         <TableCell sx={{ fontWeight: 700 }}>סוג ביטוח</TableCell>
@@ -825,7 +865,9 @@ export default function AnalyzePage() {
                   <Chip
                     label={getStatusLabel(result.status)}
                     size="small"
-                    color={getStatusColor(result.status) as 'success' | 'warning' | 'error' | 'default'}
+                    color={
+                      getStatusColor(result.status) as 'success' | 'warning' | 'error' | 'default'
+                    }
                   />
                 </Box>
               </AccordionSummary>
@@ -833,7 +875,7 @@ export default function AnalyzePage() {
                 {/* New: Field-by-field table inside accordion */}
                 {result.rows && result.rows.length > 0 ? (
                   <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-                    <Table size="small" dir="rtl">
+                    <Table size="small">
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
                           <TableCell sx={{ fontWeight: 700 }}>שדה</TableCell>
@@ -867,26 +909,42 @@ export default function AnalyzePage() {
                         <Grid container spacing={2} sx={{ mb: 2 }}>
                           {result.foundPolicy.policyNumber && (
                             <Grid item xs={6} md={3}>
-                              <Typography variant="caption" color="text.secondary">מספר פוליסה</Typography>
-                              <Typography variant="body2">{result.foundPolicy.policyNumber}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                מספר פוליסה
+                              </Typography>
+                              <Typography variant="body2">
+                                {result.foundPolicy.policyNumber}
+                              </Typography>
                             </Grid>
                           )}
                           {result.foundPolicy.coverageLimit && (
                             <Grid item xs={6} md={3}>
-                              <Typography variant="caption" color="text.secondary">גבול אחריות</Typography>
-                              <Typography variant="body2">₪{result.foundPolicy.coverageLimit.toLocaleString()}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                גבול אחריות
+                              </Typography>
+                              <Typography variant="body2">
+                                ₪{result.foundPolicy.coverageLimit.toLocaleString()}
+                              </Typography>
                             </Grid>
                           )}
                           {result.foundPolicy.deductible && (
                             <Grid item xs={6} md={3}>
-                              <Typography variant="caption" color="text.secondary">השתתפות עצמית</Typography>
-                              <Typography variant="body2">₪{result.foundPolicy.deductible.toLocaleString()}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                השתתפות עצמית
+                              </Typography>
+                              <Typography variant="body2">
+                                ₪{result.foundPolicy.deductible.toLocaleString()}
+                              </Typography>
                             </Grid>
                           )}
                           {result.foundPolicy.expirationDate && (
                             <Grid item xs={6} md={3}>
-                              <Typography variant="caption" color="text.secondary">תוקף עד</Typography>
-                              <Typography variant="body2">{result.foundPolicy.expirationDate}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                תוקף עד
+                              </Typography>
+                              <Typography variant="body2">
+                                {result.foundPolicy.expirationDate}
+                              </Typography>
                             </Grid>
                           )}
                         </Grid>
@@ -932,9 +990,19 @@ export default function AnalyzePage() {
                           />
                         </Box>
                         {(gap.required != null || gap.found != null) && (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                            נדרש: {typeof gap.required === 'number' ? `₪${gap.required.toLocaleString()}` : gap.required || '—'} |
-                            נמצא: {typeof gap.found === 'number' ? `₪${gap.found.toLocaleString()}` : gap.found || '—'}
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: 'block', mb: 1 }}
+                          >
+                            נדרש:{' '}
+                            {typeof gap.required === 'number'
+                              ? `₪${gap.required.toLocaleString()}`
+                              : gap.required || '—'}{' '}
+                            | נמצא:{' '}
+                            {typeof gap.found === 'number'
+                              ? `₪${gap.found.toLocaleString()}`
+                              : gap.found || '—'}
                           </Typography>
                         )}
                         {gap.recommendationHe && (

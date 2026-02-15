@@ -89,7 +89,7 @@ export default function TemplatesPage() {
     try {
       const response = await comparisonApi.templates.list();
       setTemplates(response.data || []);
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load templates');
       console.error(err);
     } finally {
@@ -120,7 +120,7 @@ export default function TemplatesPage() {
       });
       showSuccess('התבנית נוצרה בהצלחה');
       loadTemplates();
-    } catch (err) {
+    } catch (err: unknown) {
       showError('שגיאה ביצירת תבנית');
       console.error(err);
     }
@@ -132,7 +132,7 @@ export default function TemplatesPage() {
       await comparisonApi.templates.delete(deleteTarget.id);
       setTemplates(templates.filter((t) => t.id !== deleteTarget.id));
       showSuccess('התבנית נמחקה בהצלחה');
-    } catch (err) {
+    } catch (err: unknown) {
       showError('שגיאה במחיקת תבנית');
       console.error(err);
     } finally {
@@ -171,7 +171,7 @@ export default function TemplatesPage() {
       await comparisonApi.templates.importDocx(file.name, base64);
       showSuccess('התבנית יובאה בהצלחה');
       loadTemplates();
-    } catch (err) {
+    } catch (err: unknown) {
       showError('שגיאה בייבוא קובץ DOCX');
       console.error(err);
     } finally {
@@ -266,7 +266,12 @@ export default function TemplatesPage() {
                   </TableCell>
                   <TableCell>
                     {template.description && (
-                      <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 250 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                        sx={{ maxWidth: 250 }}
+                      >
                         {template.descriptionHe || template.description}
                       </Typography>
                     )}

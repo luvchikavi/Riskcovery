@@ -105,7 +105,9 @@ export default function HomePage() {
             }}
           >
             <ShieldIcon sx={{ fontSize: 16, color: colors.blue }} />
-            <Typography sx={{ color: alpha('#ffffff', 0.8), fontSize: '0.8125rem', fontWeight: 500 }}>
+            <Typography
+              sx={{ color: alpha('#ffffff', 0.8), fontSize: '0.8125rem', fontWeight: 500 }}
+            >
               Insurance Advisory Platform
             </Typography>
           </Box>
@@ -147,10 +149,13 @@ export default function HomePage() {
       </Box>
 
       {/* Module Cards */}
-      <Container maxWidth="lg" sx={{ mt: -6, position: 'relative', zIndex: 1, pb: { xs: 6, md: 10 } }}>
+      <Container
+        maxWidth="lg"
+        sx={{ mt: -6, position: 'relative', zIndex: 1, pb: { xs: 6, md: 10 } }}
+      >
         <Grid container spacing={3}>
           {modules.map((mod) => (
-            <Grid item xs={12} md={4} key={mod.href}>
+            <Grid item xs={12} sm={6} md={4} key={mod.href}>
               <Card
                 sx={{
                   height: '100%',
@@ -165,7 +170,14 @@ export default function HomePage() {
                   },
                 }}
               >
-                <CardContent sx={{ p: { xs: 3, md: 3.5 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent
+                  sx={{
+                    p: { xs: 3, md: 3.5 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                  }}
+                >
                   <Box
                     sx={{
                       width: 52,
@@ -184,10 +196,22 @@ export default function HomePage() {
                   <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
                     {mod.titleHe}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: colors.slate400, mb: 1.5, fontSize: '0.8125rem' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: colors.slate400, mb: 1.5, fontSize: '0.8125rem' }}
+                  >
                     {mod.titleEn}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: colors.slate500, mb: 3, flex: 1, fontSize: '0.875rem', lineHeight: 1.7 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: colors.slate500,
+                      mb: 3,
+                      flex: 1,
+                      fontSize: '0.875rem',
+                      lineHeight: 1.7,
+                    }}
+                  >
                     {mod.descHe}
                   </Typography>
                   <Button

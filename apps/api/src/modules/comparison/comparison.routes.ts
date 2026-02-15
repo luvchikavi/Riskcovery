@@ -459,7 +459,7 @@ export const comparisonRoutes: FastifyPluginAsync = async (fastify) => {
 
     try {
       const result = await analysisService.analyze(data.documentId, data.templateId);
-      return { success: true, data: result };
+      return reply.status(201).send({ success: true, data: result });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Analysis failed';
       return reply.status(400).send({

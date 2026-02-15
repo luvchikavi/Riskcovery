@@ -58,7 +58,7 @@ export default function TemplatesPage() {
       if (response.success && response.data) {
         setTemplates(response.data);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load templates');
       console.error(err);
     } finally {
@@ -77,7 +77,7 @@ export default function TemplatesPage() {
       setDeleteDialogOpen(false);
       setSelectedTemplate(null);
       loadTemplates();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to delete template');
       console.error(err);
     }
@@ -92,7 +92,7 @@ export default function TemplatesPage() {
       setDuplicateSector('');
       setDuplicateSectorHe('');
       loadTemplates();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to duplicate template');
       console.error(err);
     }
@@ -237,10 +237,7 @@ export default function TemplatesPage() {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="שכפול">
-                          <IconButton
-                            size="small"
-                            onClick={() => openDuplicateDialog(template)}
-                          >
+                          <IconButton size="small" onClick={() => openDuplicateDialog(template)}>
                             <DuplicateIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>

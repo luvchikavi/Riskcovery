@@ -21,7 +21,7 @@ export async function GET() {
     const { prisma } = await import('@/lib/prisma');
     const count = await prisma.user.count();
     diagnostics.prisma = { status: 'ok', userCount: count };
-  } catch (err) {
+  } catch (err: unknown) {
     diagnostics.prisma = { status: 'error', message: String(err) };
   }
 

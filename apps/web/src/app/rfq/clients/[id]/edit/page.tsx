@@ -31,7 +31,7 @@ export default function EditClientPage() {
         } else {
           setFetchError('Client not found');
         }
-      } catch (err) {
+      } catch (err: unknown) {
         setFetchError('Failed to load client');
         console.error(err);
       } finally {
@@ -59,7 +59,7 @@ export default function EditClientPage() {
       } else {
         setSaveError('Failed to update client');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : 'Failed to update client');
     } finally {
       setSaving(false);
@@ -80,7 +80,12 @@ export default function EditClientPage() {
         <Alert severity="error" sx={{ mb: 3 }}>
           {fetchError || 'Client not found'}
         </Alert>
-        <Button component={Link} href="/rfq/clients" variant="outlined" startIcon={<ArrowBackIcon />}>
+        <Button
+          component={Link}
+          href="/rfq/clients"
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
           חזרה לרשימה
         </Button>
       </Box>
@@ -109,7 +114,12 @@ export default function EditClientPage() {
           </Typography>
           <Typography color="text.secondary">Edit Client — {client.name}</Typography>
         </Box>
-        <Button component={Link} href={`/rfq/clients/${id}`} variant="outlined" startIcon={<ArrowBackIcon />}>
+        <Button
+          component={Link}
+          href={`/rfq/clients/${id}`}
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
           חזרה לפרטי לקוח
         </Button>
       </Box>

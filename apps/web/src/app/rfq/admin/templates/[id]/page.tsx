@@ -106,7 +106,7 @@ export default function TemplateEditorPage() {
         setIsActive(response.data.isActive);
         setVersion(response.data.version);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load template');
       console.error(err);
     } finally {
@@ -131,7 +131,7 @@ export default function TemplateEditorPage() {
       });
       setSuccess('Template saved successfully');
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to save template');
       console.error(err);
     } finally {
@@ -166,7 +166,7 @@ export default function TemplateEditorPage() {
       }
       setSectionDialogOpen(false);
       loadTemplate();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to save section');
       console.error(err);
     } finally {
@@ -180,7 +180,7 @@ export default function TemplateEditorPage() {
       await adminApi.sections.delete(deleteSectionDialog.id);
       setDeleteSectionDialog(null);
       loadTemplate();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to delete section');
       console.error(err);
     }
@@ -193,7 +193,9 @@ export default function TemplateEditorPage() {
     setQuestionDialogOpen(true);
   };
 
-  const handleSaveQuestion = async (data: Omit<QuestionAdmin, 'id' | 'sectionId' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveQuestion = async (
+    data: Omit<QuestionAdmin, 'id' | 'sectionId' | 'createdAt' | 'updatedAt'>
+  ) => {
     setSaving(true);
     try {
       if (editingQuestion) {
@@ -203,7 +205,7 @@ export default function TemplateEditorPage() {
       }
       setQuestionDialogOpen(false);
       loadTemplate();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to save question');
       console.error(err);
     } finally {
@@ -217,7 +219,7 @@ export default function TemplateEditorPage() {
       await adminApi.questions.delete(deleteQuestionDialog.id);
       setDeleteQuestionDialog(null);
       loadTemplate();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to delete question');
       console.error(err);
     }
@@ -245,9 +247,7 @@ export default function TemplateEditorPage() {
   }
 
   if (!template) {
-    return (
-      <Alert severity="error">Template not found</Alert>
-    );
+    return <Alert severity="error">Template not found</Alert>;
   }
 
   return (
@@ -343,11 +343,7 @@ export default function TemplateEditorPage() {
             <Typography variant="h5" fontWeight="bold">
               מקטעים ושאלות
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => openSectionDialog()}
-            >
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => openSectionDialog()}>
               הוסף מקטע
             </Button>
           </Box>
@@ -415,9 +411,7 @@ export default function TemplateEditorPage() {
                         <Box key={question.id}>
                           {qIndex > 0 && <Divider />}
                           <ListItem>
-                            <DragIcon
-                              sx={{ color: 'text.secondary', mr: 2, cursor: 'grab' }}
-                            />
+                            <DragIcon sx={{ color: 'text.secondary', mr: 2, cursor: 'grab' }} />
                             <ListItemText
                               primary={
                                 <Box display="flex" alignItems="center" gap={1}>
@@ -539,9 +533,7 @@ export default function TemplateEditorPage() {
         onClose={() => setQuestionDialogOpen(false)}
         question={editingQuestion}
         onSave={handleSaveQuestion}
-        allQuestions={
-          template.sections?.flatMap((s) => s.questions || []) || []
-        }
+        allQuestions={template.sections?.flatMap((s) => s.questions || []) || []}
       />
 
       {/* Delete Section Dialog */}

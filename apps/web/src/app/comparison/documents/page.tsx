@@ -52,7 +52,7 @@ export default function DocumentsPage() {
     try {
       const response = await comparisonApi.documents.list();
       setDocuments(response.data || []);
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load documents');
       console.error(err);
     } finally {
@@ -74,7 +74,7 @@ export default function DocumentsPage() {
           size: file.size,
           content: base64,
         });
-      } catch (err) {
+      } catch (err: unknown) {
         setError(`Failed to upload ${file.name}`);
         console.error(err);
       }
@@ -83,7 +83,7 @@ export default function DocumentsPage() {
     setUploading(false);
     showSuccess('הקבצים הועלו בהצלחה');
     loadDocuments();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -112,7 +112,7 @@ export default function DocumentsPage() {
     try {
       await comparisonApi.documents.process(docId);
       loadDocuments();
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to process document');
       console.error(err);
     }
@@ -124,7 +124,7 @@ export default function DocumentsPage() {
       await comparisonApi.documents.delete(deleteTarget.id);
       setDocuments(documents.filter((d) => d.id !== deleteTarget.id));
       showSuccess('המסמך נמחק בהצלחה');
-    } catch (err) {
+    } catch (err: unknown) {
       showError('שגיאה במחיקת המסמך');
       console.error(err);
     } finally {
@@ -222,7 +222,11 @@ export default function DocumentsPage() {
                 <Typography variant="body2" color="text.secondary">
                   Drag & drop PDF or image files here, or click to select
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
+                >
                   PDF, PNG, JPG supported
                 </Typography>
               </Box>
@@ -274,9 +278,7 @@ export default function DocumentsPage() {
                         </Typography>
                       </TableCell>
                       <TableCell>{formatFileSize(doc.size)}</TableCell>
-                      <TableCell>
-                        {new Date(doc.uploadedAt).toLocaleDateString('he-IL')}
-                      </TableCell>
+                      <TableCell>{new Date(doc.uploadedAt).toLocaleDateString('he-IL')}</TableCell>
                       <TableCell align="right">
                         {doc.status === 'uploaded' && (
                           <IconButton

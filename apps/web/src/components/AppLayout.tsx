@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { colors } from '@/theme';
 
@@ -60,9 +61,24 @@ const NAV_SECTIONS: NavSection[] = [
     accentColor: colors.blue,
     basePath: '/rfq',
     items: [
-      { label: 'Clients', labelHe: 'לקוחות', href: '/rfq/clients', icon: <PersonSearchIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Insurance Products', labelHe: 'מוצרי ביטוח', href: '/rfq/knowledge', icon: <CatalogIcon sx={{ fontSize: 20 }} /> },
-      { label: 'RFQ Templates', labelHe: 'תבניות RFQ', href: '/rfq/admin/templates', icon: <SettingsIcon sx={{ fontSize: 20 }} /> },
+      {
+        label: 'Clients',
+        labelHe: 'לקוחות',
+        href: '/rfq/clients',
+        icon: <PersonSearchIcon sx={{ fontSize: 20 }} />,
+      },
+      {
+        label: 'Insurance Products',
+        labelHe: 'מוצרי ביטוח',
+        href: '/rfq/knowledge',
+        icon: <CatalogIcon sx={{ fontSize: 20 }} />,
+      },
+      {
+        label: 'RFQ Templates',
+        labelHe: 'תבניות RFQ',
+        href: '/rfq/admin/templates',
+        icon: <SettingsIcon sx={{ fontSize: 20 }} />,
+      },
     ],
   },
   {
@@ -71,8 +87,18 @@ const NAV_SECTIONS: NavSection[] = [
     accentColor: colors.emerald,
     basePath: '/comparison',
     items: [
-      { label: 'New Check', labelHe: 'בדיקה חדשה', href: '/comparison/analyze', icon: <FactCheckIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Requirement Templates', labelHe: 'תבניות דרישות', href: '/comparison/templates', icon: <PolicyIcon sx={{ fontSize: 20 }} /> },
+      {
+        label: 'New Check',
+        labelHe: 'בדיקה חדשה',
+        href: '/comparison/analyze',
+        icon: <FactCheckIcon sx={{ fontSize: 20 }} />,
+      },
+      {
+        label: 'Requirement Templates',
+        labelHe: 'תבניות דרישות',
+        href: '/comparison/templates',
+        icon: <PolicyIcon sx={{ fontSize: 20 }} />,
+      },
     ],
   },
   {
@@ -81,8 +107,18 @@ const NAV_SECTIONS: NavSection[] = [
     accentColor: colors.violet,
     basePath: '/insurers',
     items: [
-      { label: 'Insurance Companies', labelHe: 'חברות ביטוח', href: '/insurers/browse', icon: <BusinessIcon sx={{ fontSize: 20 }} /> },
-      { label: 'Compare Policies', labelHe: 'השוואת פוליסות', href: '/insurers/compare', icon: <CompareIcon sx={{ fontSize: 20 }} /> },
+      {
+        label: 'Insurance Companies',
+        labelHe: 'חברות ביטוח',
+        href: '/insurers/browse',
+        icon: <BusinessIcon sx={{ fontSize: 20 }} />,
+      },
+      {
+        label: 'Compare Policies',
+        labelHe: 'השוואת פוליסות',
+        href: '/insurers/compare',
+        icon: <CompareIcon sx={{ fontSize: 20 }} />,
+      },
     ],
   },
 ];
@@ -309,7 +345,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
             size="small"
             onClick={() => signOut({ callbackUrl: '/' })}
             title="התנתק"
-            sx={{ color: alpha('#ffffff', 0.4), '&:hover': { color: '#FFFFFF', bgcolor: alpha('#ffffff', 0.1) } }}
+            sx={{
+              color: alpha('#ffffff', 0.4),
+              '&:hover': { color: '#FFFFFF', bgcolor: alpha('#ffffff', 0.1) },
+            }}
           >
             <LogoutIcon sx={{ fontSize: 16 }} />
           </IconButton>
@@ -323,7 +362,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {isMobile && (
         <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
           <Toolbar>
-            <IconButton aria-label="open drawer" edge="start" onClick={() => setMobileOpen(!mobileOpen)} sx={{ mr: 2 }}>
+            <IconButton
+              aria-label="open drawer"
+              edge="start"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              sx={{ mr: 2 }}
+            >
               <MenuIcon />
             </IconButton>
             <Typography
@@ -359,14 +403,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
             open={mobileOpen}
             onClose={() => setMobileOpen(false)}
             ModalProps={{ keepMounted: true }}
-            sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none' } }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: DRAWER_WIDTH,
+                border: 'none',
+              },
+            }}
           >
             {drawer}
           </Drawer>
         ) : (
           <Drawer
             variant="permanent"
-            sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none' } }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: DRAWER_WIDTH,
+                border: 'none',
+              },
+            }}
             open
           >
             {drawer}
@@ -386,9 +442,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           minHeight: '100vh',
         }}
       >
-        <Box sx={{ flex: 1, p: { xs: 2, md: 3.5 } }}>
-          {children}
-        </Box>
+        <Box sx={{ flex: 1, p: { xs: 2, md: 3.5 } }}>{children}</Box>
 
         {/* Footer — Drishti Consulting */}
         <Box
@@ -411,13 +465,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             {/* Left: Drishti branding */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/drishti-logo.svg"
-                alt="Drishti Consulting"
-                width={28}
-                height={28}
-              />
+              <Image src="/drishti-logo.svg" alt="Drishti Consulting" width={28} height={28} />
               <Box>
                 <Typography
                   sx={{
@@ -461,14 +509,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               >
                 drishticonsulting.com
               </Typography>
-              <Typography
-                sx={{ fontSize: '0.75rem', color: colors.slate300 }}
-              >
-                |
-              </Typography>
-              <Typography
-                sx={{ fontSize: '0.75rem', color: colors.slate400 }}
-              >
+              <Typography sx={{ fontSize: '0.75rem', color: colors.slate300 }}>|</Typography>
+              <Typography sx={{ fontSize: '0.75rem', color: colors.slate400 }}>
                 &copy; {new Date().getFullYear()} Drishti Consulting
               </Typography>
             </Box>

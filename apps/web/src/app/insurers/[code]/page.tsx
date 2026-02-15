@@ -42,7 +42,7 @@ export default function InsurerDetailPage() {
         ]);
         if (insurerRes.success && insurerRes.data) setInsurer(insurerRes.data);
         if (policiesRes.success && policiesRes.data) setPolicies(policiesRes.data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to load insurer:', err);
       } finally {
         setLoading(false);
@@ -86,11 +86,7 @@ export default function InsurerDetailPage() {
                       </Typography>
                     )}
                   </Box>
-                  <Chip
-                    label={policy.bitStandard || 'N/A'}
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip label={policy.bitStandard || 'N/A'} size="small" variant="outlined" />
                 </Box>
 
                 <Box display="flex" gap={1} mb={2} flexWrap="wrap">
@@ -106,9 +102,7 @@ export default function InsurerDetailPage() {
                     color="error"
                     variant="outlined"
                   />
-                  {policy.isMaster && (
-                    <Chip label="BIT Standard" size="small" color="primary" />
-                  )}
+                  {policy.isMaster && <Chip label="BIT Standard" size="small" color="primary" />}
                 </Box>
 
                 {/* Strengths */}
@@ -117,7 +111,9 @@ export default function InsurerDetailPage() {
                     {(policy.strengths as string[]).slice(0, 2).map((s, i) => (
                       <Box key={i} display="flex" alignItems="center" gap={0.5} mb={0.5}>
                         <CheckIcon sx={{ fontSize: 14, color: '#34C759' }} />
-                        <Typography variant="caption" sx={{ color: '#1D1D1F' }}>{s}</Typography>
+                        <Typography variant="caption" sx={{ color: '#1D1D1F' }}>
+                          {s}
+                        </Typography>
                       </Box>
                     ))}
                   </Box>
@@ -129,7 +125,9 @@ export default function InsurerDetailPage() {
                     {(policy.weaknesses as string[]).slice(0, 2).map((w, i) => (
                       <Box key={i} display="flex" alignItems="center" gap={0.5} mb={0.5}>
                         <WarningIcon sx={{ fontSize: 14, color: '#FF9500' }} />
-                        <Typography variant="caption" sx={{ color: '#1D1D1F' }}>{w}</Typography>
+                        <Typography variant="caption" sx={{ color: '#1D1D1F' }}>
+                          {w}
+                        </Typography>
                       </Box>
                     ))}
                   </Box>
@@ -146,9 +144,16 @@ export default function InsurerDetailPage() {
                     <AccordionDetails sx={{ px: 0, pt: 0 }}>
                       {policy.extensions.map((ext) => (
                         <Box key={ext.id} display="flex" justifyContent="space-between" py={0.5}>
-                          <Typography variant="caption">{ext.code} - {ext.nameHe}</Typography>
+                          <Typography variant="caption">
+                            {ext.code} - {ext.nameHe}
+                          </Typography>
                           {!ext.isStandard && (
-                            <Chip label="ייחודי" size="small" color="info" sx={{ height: 18, fontSize: '0.625rem' }} />
+                            <Chip
+                              label="ייחודי"
+                              size="small"
+                              color="info"
+                              sx={{ height: 18, fontSize: '0.625rem' }}
+                            />
                           )}
                         </Box>
                       ))}

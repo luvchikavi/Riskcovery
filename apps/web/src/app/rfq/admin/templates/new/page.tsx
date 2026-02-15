@@ -47,7 +47,7 @@ export default function NewTemplatePage() {
       } else {
         setError('Failed to create template');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to create template');
       console.error(err);
     } finally {
@@ -135,7 +135,11 @@ export default function NewTemplatePage() {
                 <Button component={Link} href="/rfq/admin/templates" disabled={loading}>
                   ביטול
                 </Button>
-                <Button type="submit" variant="contained" disabled={loading || !sector || !sectorHe}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={loading || !sector || !sectorHe}
+                >
                   {loading ? 'יוצר...' : 'צור תבנית'}
                 </Button>
               </Box>

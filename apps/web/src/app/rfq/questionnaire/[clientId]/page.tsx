@@ -83,21 +83,26 @@ export default function QuestionnairePage() {
         // Try to load existing questionnaire answers
         try {
           const existingResponse = await rfqApi.questionnaire.getByClient(clientId);
-          if (existingResponse.success && existingResponse.data && existingResponse.data.length > 0) {
+          if (
+            existingResponse.success &&
+            existingResponse.data &&
+            existingResponse.data.length > 0
+          ) {
             // Get the most recent draft or the latest one
-            const latestQuestionnaire = existingResponse.data
-              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+            const latestQuestionnaire = existingResponse.data.sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            )[0];
             if (latestQuestionnaire && latestQuestionnaire.answers) {
               setAnswers(latestQuestionnaire.answers as QuestionnaireAnswers);
               setHasExistingAnswers(true);
             }
           }
-        } catch {
-          // No existing answers, that's fine
+        } catch (err: unknown) {
+          console.warn('No existing questionnaire answers found:', err);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         setError('Failed to load data');
-        console.error(err);
+        console.error('Failed to load questionnaire data:', err);
       } finally {
         setLoading(false);
       }
@@ -105,12 +110,15 @@ export default function QuestionnairePage() {
     loadData();
   }, [clientId]);
 
-  const handleAnswerChange = useCallback((questionId: string, value: QuestionnaireAnswers[string]) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: value,
-    }));
-  }, []);
+  const handleAnswerChange = useCallback(
+    (questionId: string, value: QuestionnaireAnswers[string]) => {
+      setAnswers((prev) => ({
+        ...prev,
+        [questionId]: value,
+      }));
+    },
+    []
+  );
 
   const evaluateConditions = useCallback(
     (conditions: Array<{ questionId: string; operator: string; value: unknown }>): boolean => {
@@ -156,9 +164,7 @@ export default function QuestionnairePage() {
   );
 
   // Compute visible sections
-  const visibleSections = questionnaire
-    ? questionnaire.sections.filter(shouldShowSection)
-    : [];
+  const visibleSections = questionnaire ? questionnaire.sections.filter(shouldShowSection) : [];
 
   // Calculate progress
   const calculateProgress = useCallback(() => {
@@ -230,13 +236,16 @@ export default function QuestionnairePage() {
     try {
       if (submit) {
         await rfqApi.questionnaire.submit(clientId, answers);
-        router.push(`/rfq/documents/${clientId}?answers=${encodeURIComponent(JSON.stringify(answers))}`);
+        router.push(
+          `/rfq/documents/${clientId}?answers=${encodeURIComponent(JSON.stringify(answers))}`
+        );
       } else {
         await rfqApi.questionnaire.save(clientId, answers);
         setSavedNotification(true);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to save questionnaire');
+      console.error('Failed to save questionnaire:', err);
     } finally {
       setSaving(false);
     }
@@ -281,7 +290,9 @@ export default function QuestionnairePage() {
             label={question.labelHe}
             placeholder={question.placeholderHe || question.placeholder}
             value={value !== undefined && value !== null ? value : ''}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              handleAnswerChange(question.id, e.target.value ? Number(e.target.value) : null)
+            }
             required={question.required}
             inputProps={{ min: question.min, max: question.max }}
             helperText={question.descriptionHe || question.description}
@@ -296,7 +307,9 @@ export default function QuestionnairePage() {
             label={question.labelHe}
             placeholder={question.placeholderHe || question.placeholder}
             value={value !== undefined && value !== null ? value : ''}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              handleAnswerChange(question.id, e.target.value ? Number(e.target.value) : null)
+            }
             required={question.required}
             InputProps={{
               startAdornment: <InputAdornment position="start">₪</InputAdornment>,
@@ -417,7 +430,12 @@ export default function QuestionnairePage() {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error || 'Failed to load questionnaire'}
         </Alert>
-        <Button component={Link} href="/rfq/clients" variant="outlined" startIcon={<ArrowBackIcon />}>
+        <Button
+          component={Link}
+          href="/rfq/clients"
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
           חזרה לרשימת לקוחות
         </Button>
       </Box>
@@ -444,7 +462,10 @@ export default function QuestionnairePage() {
         <Link href="/rfq/clients" style={{ textDecoration: 'none', color: 'inherit' }}>
           לקוחות
         </Link>
-        <Link href={`/rfq/clients/${client.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link
+          href={`/rfq/clients/${client.id}`}
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
           {client.name}
         </Link>
         <Typography color="text.primary">שאלון</Typography>
@@ -456,9 +477,7 @@ export default function QuestionnairePage() {
           <Typography variant="h4" fontWeight="bold" gutterBottom>
             שאלון סיכונים - {client.name}
           </Typography>
-          <Typography color="text.secondary">
-            Risk Questionnaire
-          </Typography>
+          <Typography color="text.secondary">Risk Questionnaire</Typography>
         </Box>
         <Button
           component={Link}
@@ -488,7 +507,8 @@ export default function QuestionnairePage() {
                 />
               )}
               <Typography variant="body2" fontWeight="bold">
-                {calculateProgress().answered}/{calculateProgress().total} שאלות ({calculateProgress().percentage}%)
+                {calculateProgress().answered}/{calculateProgress().total} שאלות (
+                {calculateProgress().percentage}%)
               </Typography>
             </Box>
           </Box>
@@ -504,10 +524,7 @@ export default function QuestionnairePage() {
       <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
         {visibleSections.map((section, index) => (
           <Step key={section.id}>
-            <StepLabel
-              onClick={() => setActiveStep(index)}
-              sx={{ cursor: 'pointer' }}
-            >
+            <StepLabel onClick={() => setActiveStep(index)} sx={{ cursor: 'pointer' }}>
               {section.titleHe}
             </StepLabel>
           </Step>
@@ -566,11 +583,7 @@ export default function QuestionnairePage() {
               {saving ? 'שומר...' : 'סיום ויצירת מסמך'}
             </Button>
           ) : (
-            <Button
-              variant="contained"
-              endIcon={<ArrowBackIcon />}
-              onClick={handleNext}
-            >
+            <Button variant="contained" endIcon={<ArrowBackIcon />} onClick={handleNext}>
               הבא
             </Button>
           )}

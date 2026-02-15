@@ -50,7 +50,10 @@ const CATEGORY_LABELS: Record<string, { he: string; en: string }> = {
   engineering: { he: 'הנדסי', en: 'Engineering' },
 };
 
-const RELATION_TYPE_LABELS: Record<string, { he: string; color: 'primary' | 'secondary' | 'info' }> = {
+const RELATION_TYPE_LABELS: Record<
+  string,
+  { he: string; color: 'primary' | 'secondary' | 'info' }
+> = {
   complementary: { he: 'משלים', color: 'primary' },
   bundled: { he: 'משולב', color: 'secondary' },
   residual: { he: 'שיורי', color: 'info' },
@@ -89,7 +92,7 @@ export default function ProductDetailPage() {
         if (extRes.success && extRes.data) setExtensions(extRes.data);
         if (exclRes.success && exclRes.data) setExclusions(exclRes.data);
         if (relRes.success && relRes.data) setRelations(relRes.data);
-      } catch (err) {
+      } catch (err: unknown) {
         setError('Failed to load product');
         console.error(err);
       } finally {
@@ -110,8 +113,15 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <Box>
-        <Alert severity="error" sx={{ mb: 3 }}>{error || 'Product not found'}</Alert>
-        <Button component={NextLink} href="/rfq/knowledge" variant="outlined" startIcon={<ArrowBackIcon />}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error || 'Product not found'}
+        </Alert>
+        <Button
+          component={NextLink}
+          href="/rfq/knowledge"
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
           חזרה לקטלוג
         </Button>
       </Box>
@@ -149,7 +159,10 @@ export default function ProductDetailPage() {
             {product.nameEn}
           </Typography>
           <Box display="flex" gap={1} flexWrap="wrap">
-            <Chip label={CATEGORY_LABELS[product.category]?.he || product.category} color="primary" />
+            <Chip
+              label={CATEGORY_LABELS[product.category]?.he || product.category}
+              color="primary"
+            />
             <Chip label={product.coverageTrigger} variant="outlined" />
             {product.insurer && <Chip label={product.insurer} variant="outlined" />}
             {product.bitStandard && <Chip label={product.bitStandard} variant="outlined" />}
@@ -182,22 +195,32 @@ export default function ProductDetailPage() {
                   <Typography variant="subtitle2" color="text.secondary">
                     מבנה הפוליסה
                   </Typography>
-                  {(product.structure as { chapters?: string[] })?.chapters?.map((ch: string, i: number) => (
-                    <Typography key={i} variant="body2">{ch}</Typography>
-                  ))}
+                  {(product.structure as { chapters?: string[] })?.chapters?.map(
+                    (ch: string, i: number) => (
+                      <Typography key={i} variant="body2">
+                        {ch}
+                      </Typography>
+                    )
+                  )}
                 </Box>
                 <Divider />
                 <Box display="flex" gap={2}>
                   <Box textAlign="center">
-                    <Typography variant="h5" color="primary">{extensions.length}</Typography>
+                    <Typography variant="h5" color="primary">
+                      {extensions.length}
+                    </Typography>
                     <Typography variant="caption">הרחבות</Typography>
                   </Box>
                   <Box textAlign="center">
-                    <Typography variant="h5" color="error">{exclusions.length}</Typography>
+                    <Typography variant="h5" color="error">
+                      {exclusions.length}
+                    </Typography>
                     <Typography variant="caption">חריגים</Typography>
                   </Box>
                   <Box textAlign="center">
-                    <Typography variant="h5" color="info.main">{relations.length}</Typography>
+                    <Typography variant="h5" color="info.main">
+                      {relations.length}
+                    </Typography>
                     <Typography variant="caption">קשרים</Typography>
                   </Box>
                 </Box>
@@ -210,7 +233,11 @@ export default function ProductDetailPage() {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-          <Tab icon={<ExtensionIcon />} iconPosition="start" label={`הרחבות (${extensions.length})`} />
+          <Tab
+            icon={<ExtensionIcon />}
+            iconPosition="start"
+            label={`הרחבות (${extensions.length})`}
+          />
           <Tab icon={<BlockIcon />} iconPosition="start" label={`חריגים (${exclusions.length})`} />
           <Tab icon={<LinkIcon />} iconPosition="start" label={`קשרים (${relations.length})`} />
         </Tabs>
@@ -245,7 +272,10 @@ export default function ProductDetailPage() {
                             <TableRow
                               hover
                               onClick={() => setExpandedExt(isExpanded ? null : ext.id)}
-                              sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
+                              sx={{
+                                cursor: 'pointer',
+                                '& > *': { borderBottom: isExpanded ? 'unset' : undefined },
+                              }}
                             >
                               <TableCell padding="checkbox">
                                 <IconButton size="small">
@@ -259,44 +289,74 @@ export default function ProductDetailPage() {
                                 <Typography fontWeight="medium">{ext.nameHe}</Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" color="text.secondary">{ext.nameEn}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {ext.nameEn}
+                                </Typography>
                               </TableCell>
                               <TableCell>
-                                {ext.defaultLimit ? `₪${Number(ext.defaultLimit).toLocaleString()}` : '-'}
+                                {ext.defaultLimit
+                                  ? `₪${Number(ext.defaultLimit).toLocaleString()}`
+                                  : '-'}
                               </TableCell>
                               <TableCell>
                                 {ext.isFirstLoss && (
-                                  <Chip label="First Loss" size="small" color="info" variant="outlined" />
+                                  <Chip
+                                    label="First Loss"
+                                    size="small"
+                                    color="info"
+                                    variant="outlined"
+                                  />
                                 )}
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell colSpan={6} sx={{ py: 0, px: 0 }}>
                                 <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                                  <Box sx={{ py: 2, px: 3, bgcolor: 'grey.50', borderInlineStart: '4px solid', borderColor: 'primary.main' }}>
+                                  <Box
+                                    sx={{
+                                      py: 2,
+                                      px: 3,
+                                      bgcolor: 'grey.50',
+                                      borderInlineStart: '4px solid',
+                                      borderColor: 'primary.main',
+                                    }}
+                                  >
                                     <Typography variant="subtitle2" gutterBottom fontWeight="bold">
                                       תיאור
                                     </Typography>
-                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ whiteSpace: 'pre-line', mb: 2 }}
+                                    >
                                       {ext.description || 'אין תיאור זמין'}
                                     </Typography>
                                     <Box display="flex" gap={4} flexWrap="wrap">
                                       {ext.chapterCode && (
                                         <Box>
-                                          <Typography variant="caption" color="text.secondary">פרק</Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            פרק
+                                          </Typography>
                                           <Typography variant="body2">{ext.chapterCode}</Typography>
                                         </Box>
                                       )}
                                       {ext.defaultLimit && (
                                         <Box>
-                                          <Typography variant="caption" color="text.secondary">גבול ברירת מחדל</Typography>
-                                          <Typography variant="body2">₪{Number(ext.defaultLimit).toLocaleString()}</Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            גבול ברירת מחדל
+                                          </Typography>
+                                          <Typography variant="body2">
+                                            ₪{Number(ext.defaultLimit).toLocaleString()}
+                                          </Typography>
                                         </Box>
                                       )}
                                       <Box>
-                                        <Typography variant="caption" color="text.secondary">סוג</Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                          סוג
+                                        </Typography>
                                         <Typography variant="body2">
-                                          {ext.isFirstLoss ? 'First Loss – כיסוי עד גבול הביטוח ללא יחס ביטוח חסר' : 'כיסוי רגיל'}
+                                          {ext.isFirstLoss
+                                            ? 'First Loss – כיסוי עד גבול הביטוח ללא יחס ביטוח חסר'
+                                            : 'כיסוי רגיל'}
                                         </Typography>
                                       </Box>
                                     </Box>
@@ -314,9 +374,7 @@ export default function ProductDetailPage() {
             </Card>
           ))}
 
-          {extensions.length === 0 && (
-            <Alert severity="info">אין הרחבות זמינות למוצר זה</Alert>
-          )}
+          {extensions.length === 0 && <Alert severity="info">אין הרחבות זמינות למוצר זה</Alert>}
         </Box>
       )}
 
@@ -343,7 +401,10 @@ export default function ProductDetailPage() {
                         <TableRow
                           hover
                           onClick={() => setExpandedExcl(isExpanded ? null : excl.id)}
-                          sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
+                          sx={{
+                            cursor: 'pointer',
+                            '& > *': { borderBottom: isExpanded ? 'unset' : undefined },
+                          }}
                         >
                           <TableCell padding="checkbox">
                             <IconButton size="small">
@@ -354,7 +415,9 @@ export default function ProductDetailPage() {
                             <Typography fontWeight="medium">{excl.nameHe}</Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" color="text.secondary">{excl.nameEn}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {excl.nameEn}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Chip
@@ -364,14 +427,20 @@ export default function ProductDetailPage() {
                               variant="outlined"
                             />
                           </TableCell>
-                          <TableCell>
-                            {excl.chapterCode || '-'}
-                          </TableCell>
+                          <TableCell>{excl.chapterCode || '-'}</TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell colSpan={5} sx={{ py: 0, px: 0 }}>
                             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                              <Box sx={{ py: 2, px: 3, bgcolor: 'grey.50', borderInlineStart: '4px solid', borderColor: 'error.main' }}>
+                              <Box
+                                sx={{
+                                  py: 2,
+                                  px: 3,
+                                  bgcolor: 'grey.50',
+                                  borderInlineStart: '4px solid',
+                                  borderColor: 'error.main',
+                                }}
+                              >
                                 <Typography variant="subtitle2" gutterBottom fontWeight="bold">
                                   תיאור
                                 </Typography>
@@ -380,14 +449,20 @@ export default function ProductDetailPage() {
                                 </Typography>
                                 <Box display="flex" gap={4} flexWrap="wrap">
                                   <Box>
-                                    <Typography variant="caption" color="text.secondary">סוג חריג</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      סוג חריג
+                                    </Typography>
                                     <Typography variant="body2">
-                                      {excl.isGeneral ? 'כללי – חל על כל הפוליסה' : 'ספציפי – חל על פרק או כיסוי מסוים'}
+                                      {excl.isGeneral
+                                        ? 'כללי – חל על כל הפוליסה'
+                                        : 'ספציפי – חל על פרק או כיסוי מסוים'}
                                     </Typography>
                                   </Box>
                                   {excl.chapterCode && (
                                     <Box>
-                                      <Typography variant="caption" color="text.secondary">פרק</Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        פרק
+                                      </Typography>
                                       <Typography variant="body2">{excl.chapterCode}</Typography>
                                     </Box>
                                   )}
