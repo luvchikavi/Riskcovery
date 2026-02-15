@@ -17,9 +17,9 @@ export default function SignInPage() {
   const [devEmail, setDevEmail] = useState('dev@riscovery.local');
   const [devLoading, setDevLoading] = useState(false);
 
-  const [magicEmail, setMagicEmail] = useState('');
-  const [magicLoading, setMagicLoading] = useState(false);
-  const [magicSent, setMagicSent] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const handleDevLogin = async () => {
     setDevLoading(true);
@@ -27,11 +27,16 @@ export default function SignInPage() {
     setDevLoading(false);
   };
 
-  const handleMagicLink = async () => {
-    setMagicLoading(true);
-    await signIn('email', { email: magicEmail, callbackUrl: '/', redirect: false });
-    setMagicLoading(false);
-    setMagicSent(true);
+  const handleEmailLogin = async () => {
+    setEmailLoading(true);
+    setEmailError('');
+    const res = await signIn('email-login', { email, callbackUrl: '/', redirect: false });
+    setEmailLoading(false);
+    if (res?.error) {
+      setEmailError('אימייל לא מורשה');
+    } else if (res?.ok) {
+      window.location.href = '/';
+    }
   };
 
   return (
@@ -79,46 +84,47 @@ export default function SignInPage() {
             Sign in with Google
           </Button>
 
-          {/* Email magic link login */}
+          {/* Email login for whitelisted users */}
           <Divider sx={{ my: 3 }}>
             <Typography variant="caption" color="text.secondary">
               או התחברות עם אימייל
             </Typography>
           </Divider>
 
-          {magicSent ? (
-            <Alert severity="success" sx={{ textAlign: 'left' }}>
-              קישור התחברות נשלח לאימייל שלך
+          {emailError && (
+            <Alert severity="error" sx={{ mb: 2, textAlign: 'left' }}>
+              {emailError}
             </Alert>
-          ) : (
-            <>
-              <TextField
-                fullWidth
-                size="small"
-                label="Email"
-                type="email"
-                value={magicEmail}
-                onChange={(e) => setMagicEmail(e.target.value)}
-                sx={{ mb: 2 }}
-              />
-              <Button
-                variant="outlined"
-                size="large"
-                fullWidth
-                disabled={magicLoading || !magicEmail}
-                onClick={handleMagicLink}
-                sx={{
-                  py: 1.5,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                }}
-              >
-                {magicLoading ? 'שולח...' : 'Send Magic Link'}
-              </Button>
-            </>
           )}
+
+          <TextField
+            fullWidth
+            size="small"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError('');
+            }}
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="outlined"
+            size="large"
+            fullWidth
+            disabled={emailLoading || !email}
+            onClick={handleEmailLogin}
+            sx={{
+              py: 1.5,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600,
+            }}
+          >
+            {emailLoading ? 'מתחבר...' : 'התחברות עם אימייל'}
+          </Button>
 
           {/* Dev login — only shown in development */}
           {process.env.NODE_ENV !== 'production' && (

@@ -2,9 +2,7 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import jwt from 'jsonwebtoken';
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import EmailProvider from 'next-auth/providers/email';
 import GoogleProvider from 'next-auth/providers/google';
-import { Resend } from 'resend';
 
 import { prisma } from './prisma';
 
@@ -20,20 +18,53 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-// Email magic link — only add if Resend API key is configured
-if (process.env.RESEND_API_KEY) {
+// Whitelisted email login — allows specific non-Google users to sign in
+const ALLOWED_EMAILS = (process.env.ALLOWED_LOGIN_EMAILS || '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+if (ALLOWED_EMAILS.length > 0) {
   providers.push(
-    EmailProvider({
-      server: '', // Not used — we override sendVerificationRequest
-      from: process.env.EMAIL_FROM || 'Riscovery <noreply@riskcovery.co.il>',
-      async sendVerificationRequest({ identifier: email, url }) {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'Riscovery <noreply@riskcovery.co.il>',
-          to: email,
-          subject: 'Sign in to Riscovery',
-          html: `<p>Click <a href="${url}">here</a> to sign in to Riscovery.</p>`,
+    CredentialsProvider({
+      id: 'email-login',
+      name: 'Email Login',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) return null;
+
+        const email = credentials.email.trim().toLowerCase();
+        if (!ALLOWED_EMAILS.includes(email)) return null;
+
+        // Find or create user
+        let user = await prisma.user.findUnique({
+          where: { email },
+          include: { organization: true },
         });
+
+        if (!user) {
+          const org = await prisma.organization.create({
+            data: { name: `${email.split('@')[0]}'s Organization` },
+          });
+          user = await prisma.user.create({
+            data: {
+              email,
+              name: email.split('@')[0] || 'User',
+              role: 'ADMIN',
+              organizationId: org.id,
+            },
+            include: { organization: true },
+          });
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
       },
     })
   );
