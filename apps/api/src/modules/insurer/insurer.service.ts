@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { prisma } from '../../lib/prisma.js';
 
 export const insurerService = {
@@ -61,31 +60,25 @@ export const insurerService = {
   async getInsurerPolicy(code: string, productCode: string) {
     const insurer = await prisma.insurer.findUnique({
       where: { code },
+      include: {
+        policies: {
+          where: { productCode },
+          include: {
+            extensions: { orderBy: { code: 'asc' } },
+            exclusions: { orderBy: { code: 'asc' } },
+          },
+          take: 1,
+        },
+      },
     });
 
     if (!insurer) return null;
 
-    const policy = await prisma.insurerPolicy.findUnique({
-      where: {
-        insurerId_productCode: {
-          insurerId: insurer.id,
-          productCode,
-        },
-      },
-      include: {
-        extensions: {
-          orderBy: { code: 'asc' },
-        },
-        exclusions: {
-          orderBy: { code: 'asc' },
-        },
-      },
-    });
-
+    const policy = insurer.policies[0];
     if (!policy) return null;
 
     return {
-      insurer,
+      insurer: { ...insurer, policies: undefined },
       policy,
     };
   },
@@ -170,10 +163,7 @@ export const insurerService = {
         code: string;
         nameHe: string;
         nameEn: string;
-        insurers: Record<
-          string,
-          { has: boolean; limit?: number; limitNotes?: string }
-        >;
+        insurers: Record<string, { has: boolean; limit?: number; limitNotes?: string }>;
       }
     >();
 
@@ -211,7 +201,7 @@ export const insurerService = {
 
     // Return sorted by extension code.
     return Array.from(extensionMap.values()).sort((a, b) =>
-      a.code.localeCompare(b.code, undefined, { numeric: true }),
+      a.code.localeCompare(b.code, undefined, { numeric: true })
     );
   },
 };

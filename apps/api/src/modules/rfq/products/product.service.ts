@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { prisma } from '../../../lib/prisma.js';
 
 export class ProductService {
@@ -35,21 +34,15 @@ export class ProductService {
   }
 
   async getExtensions(productCode: string) {
-    const product = await prisma.insuranceProduct.findUnique({ where: { code: productCode } });
-    if (!product) return [];
-
     return prisma.policyExtension.findMany({
-      where: { productId: product.id },
+      where: { product: { code: productCode } },
       orderBy: { code: 'asc' },
     });
   }
 
   async getExclusions(productCode: string) {
-    const product = await prisma.insuranceProduct.findUnique({ where: { code: productCode } });
-    if (!product) return [];
-
     return prisma.policyExclusion.findMany({
-      where: { productId: product.id },
+      where: { product: { code: productCode } },
       orderBy: { nameEn: 'asc' },
     });
   }
@@ -92,7 +85,10 @@ export class ProductService {
     });
 
     // Group by sector
-    const matrix: Record<string, { product: typeof mappings[0]['product']; necessity: string }[]> = {};
+    const matrix: Record<
+      string,
+      { product: (typeof mappings)[0]['product']; necessity: string }[]
+    > = {};
     for (const m of mappings) {
       if (!matrix[m.sector]) matrix[m.sector] = [];
       matrix[m.sector]!.push({ product: m.product, necessity: m.necessity });

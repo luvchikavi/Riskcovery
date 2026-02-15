@@ -32,7 +32,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { rfqApi, type Client } from '@/lib/api';
@@ -52,14 +52,15 @@ export default function ClientsPage() {
   const { showSuccess, showError } = useSnackbar();
 
   // Debounce search input
-  const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
   const handleSearchChange = (value: string) => {
     setSearch(value);
-    if (searchTimer) clearTimeout(searchTimer);
-    setSearchTimer(setTimeout(() => {
-      setDebouncedSearch(value);
-      setPage(0);
-    }, 300));
   };
 
   const { data, isLoading, error } = useQuery({
@@ -240,18 +241,28 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={1}>
-                        <Link href={`/rfq/clients/${client.id}`} passHref legacyBehavior>
-                          <IconButton size="small" title="צפייה">
+                        <Link href={`/rfq/clients/${client.id}`}>
+                          <IconButton size="small" title="צפייה" aria-label="צפייה בלקוח">
                             <ViewIcon fontSize="small" />
                           </IconButton>
                         </Link>
-                        <Link href={`/rfq/clients/${client.id}/edit`} passHref legacyBehavior>
-                          <IconButton size="small" color="info" title="עריכה">
+                        <Link href={`/rfq/clients/${client.id}/edit`}>
+                          <IconButton
+                            size="small"
+                            color="info"
+                            title="עריכה"
+                            aria-label="עריכת לקוח"
+                          >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Link>
-                        <Link href={`/rfq/questionnaire/${client.id}`} passHref legacyBehavior>
-                          <IconButton size="small" color="primary" title="שאלון">
+                        <Link href={`/rfq/questionnaire/${client.id}`}>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            title="שאלון"
+                            aria-label="שאלון לקוח"
+                          >
                             <QuestionnaireIcon fontSize="small" />
                           </IconButton>
                         </Link>
@@ -259,6 +270,7 @@ export default function ClientsPage() {
                           size="small"
                           color="error"
                           title="מחק"
+                          aria-label="מחיקת לקוח"
                           onClick={() => setDeleteTarget(client)}
                         >
                           <DeleteIcon fontSize="small" />

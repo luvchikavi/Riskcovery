@@ -50,6 +50,12 @@ WORKDIR /app/apps/api
 # Generate Prisma client in runner context (avoids pnpm path issues)
 RUN npx prisma generate
 
+# Run as non-root user
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup appuser && \
+    chown -R appuser:appgroup /app
+USER appuser
+
 EXPOSE 3001
 
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
